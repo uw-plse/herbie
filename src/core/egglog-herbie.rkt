@@ -139,6 +139,24 @@
 (define (run-egglog-single-extractor runner extractor) ; single expression extraction
   (define curr-batch (egg-runner-batch runner))
 
+  ;; 1. make the program
+
+  ;; requires prelude -> list of exprs (only based on platform)
+
+  ;; eglog has ssyntax for which ruleset a rule belongs to
+
+  ;; when making schedule, direct which specific ruleset to run
+  ;; basically an expr
+  ;; run-schedule
+
+  ;; need to translate all rules of runner
+
+  ;; egglog-add-exprs : batch ctx -> listof exprs
+
+  ;; 2. Call process-egglog
+
+  ;; 3. Parse output
+
   ;; (Listof (Listof batchref))
   (define out
     (for/list ([root (batch-roots curr-batch)])
