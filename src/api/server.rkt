@@ -153,6 +153,22 @@
          (match (server-action-action-type action)
            ['herbie-command
             (define command (server-action-associated-type action))
+            (match-define (herbie-command type test seed pcontext profile? timeline-disabled?)
+              command)
+            (match type
+              ['errors-hash
+               (when (hash-has-key? completed-work pcontext)
+                 (set! command
+                       (herbie-command 'errors
+                                       test
+                                       seed
+                                       (json->pcontext (hash-ref (hash-ref completed-work pcontext)
+                                                                 'points)
+                                                       (test-context test))
+                                       profile?
+                                       timeline-disabled?))
+                 (set! action (server-action 'herbie-command command)))]
+              [_ empty])
             (hash-set! completed-work job-id (herbie-do-server-job command job-id))]
            ['translate
             (match-define (translate-job fpcore to-language) (server-action-associated-type action))
@@ -318,6 +334,23 @@
         (match (server-action-action-type action)
           ; Check if the work has been completed already if not assign the work.
           ['herbie-command ; Check herbie jobs
+           (match-define (herbie-command command test seed pcontext profile? timeline-disabled?)
+             (server-action-associated-type action))
+           (match command
+             ['errors-hash
+              (when (hash-has-key? completed-work pcontext)
+                (set! action
+                      (server-action 'herbie-command
+                                     (herbie-command
+                                      'errors
+                                      test
+                                      seed
+                                      (json->pcontext (hash-ref (hash-ref completed-work pcontext)
+                                                                'points)
+                                                      (test-context test))
+                                      profile?
+                                      timeline-disabled?))))]
+             [_ empty])
            (if (hash-has-key? completed-work job-id)
                (place-channel-put self (list 'send job-id (hash-ref completed-work job-id)))
                (place-channel-put self (list 'queue self job-id action)))]

@@ -61,6 +61,7 @@
                   [("api" "sample") #:method "post" sample-endpoint]
                   [("api" "explanations") #:method "post" explanations-endpoint]
                   [("api" "analyze") #:method "post" analyze-endpoint]
+                  [("api" "analyze-hashed") #:method "post" analyze-hashed-endpoint]
                   [("api" "exacts") #:method "post" exacts-endpoint]
                   [("api" "calculate") #:method "post" calculate-endpoint]
                   [("api" "localerror") #:method "post" local-error-endpoint]
@@ -446,6 +447,15 @@
 ; The name get-seed is taken.
 (define (parse-seed post-data)
   (hash-ref post-data 'seed #f))
+
+(define-endpoint ([analyze-hashed-endpoint start-analyze-hashed-endpoint] post-data)
+                 (_create-job0 'herbie-command
+                               (create-job 'errors-hash
+                                           (get-test post-data)
+                                           #:seed (parse-seed post-data)
+                                           #:pcontext (hash-ref post-data 'sample_hash)
+                                           #:profile? #f
+                                           #:timeline-disabled? #t)))
 
 (define (get-pcontext post-data)
   (define test (get-test post-data))
