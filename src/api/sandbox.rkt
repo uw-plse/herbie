@@ -143,7 +143,7 @@
 
   (define-values (train-pcontext test-pcontext) (partition-pcontext pcontext))
   (*pcontext* test-pcontext)
-  (local-error-as-tree test (*context*)))
+  (local-error-as-tree (test-input test) (*context*)))
 
 (define (get-explanations test pcontext)
   (unless pcontext

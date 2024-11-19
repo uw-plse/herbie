@@ -15,7 +15,6 @@
          "egg-herbie.rkt")
 
 (provide prelude
-         egglog-expr->expr
          egglog-add-exprs
          run-egglog-process
          (struct-out egglog-program)
@@ -33,8 +32,10 @@
 (define op-string-names
   (hash '+ 'Add '- 'Sub '* 'Mul '/ 'Div '== 'Eq '!= 'Neq '> 'Gt '< 'Lt '>= 'Gte '<= 'Lte))
 
-(define id->egglog (make-hash))
-(define egglog->id (make-hash))
+(define id->e1 (make-hash))
+(define e1->id (make-hash))
+(define id->e2 (make-hash))
+(define e2->id (make-hash))
 
 ;; [Copied from egg-herbie.rkt] Returns all representatations (and their types) in the current platform.
 (define (all-repr-names [pform (*active-platform*)])
@@ -194,14 +195,14 @@
 (define (prelude #:mixed-egraph? [mixed-egraph? #t])
   (load-herbie-builtins)
   (define pform (*active-platform*))
+  (define prelude-exprs '())
   (define spec-egraph
     `(datatype M
-               (Num Rational :cost 4294967295)
+               (Num BigRat :cost 4294967295)
                (Var String :cost 4294967295)
                (If M M M :cost 4294967295)
-               (Approx M M :cost 4294967295)
-               ,@(platform-spec-nodes)
-               ,@(platform-untyped-nodes pform)))
+               ,@(platform-spec-nodes)))
+  (set! prelude-exprs (append prelude-exprs (list spec-egraph)))
   (define typed-graph
     `(datatype MTy
                ,@(num-typed-nodes pform)
@@ -213,91 +214,101 @@
                      ,(match (platform-impl-cost pform 'if)
                         [`(max ,n) n] ; Not quite right (copied from egg-herbie.rkt)
                         [`(sum ,n) n]))
-                (ApproxTy M MTy :cost 0)
-               ,@(platform-typed-nodes pform)))
-  (hash-set! id->egglog 'if 'If)
-  (hash-set! egglog->id 'IfTy 'if)
-  (hash-set! id->egglog 'approx 'Approx)
-  (hash-set! egglog->id 'ApproxTy 'approx)
-  (define proj-fn `(function typed-id (M String) MTy))
-  (define impl-rules (impl-proj-rules pform))
-  (define num-rules (num-proj-rules))
-  (define if-rules (if-proj-rules))
-  (printf "~s\n" spec-egraph)
-  (printf "~s\n" typed-graph)
-  (printf "~s\n" proj-fn)
-  (for ([rule (in-list impl-rules)])
-    (printf "~s\n" rule))
-  (for ([rule (in-list num-rules)])
-    (printf "~s\n" rule))
-  (for ([rule (in-list if-rules)])
-    (printf "~s\n" rule))
-
-  (define rules (append (*fp-safe-simplify-rules*) (real-rules (*simplify-rules*))))
-  (define rewrite-rules (egglog-rewrite-rules rules))
-  (for ([rule (in-list rewrite-rules)])
-    (printf "~s\n" rule)))
+               (Approx M MTy :cost 0)
+               ,@(platform-impl-nodes pform)))
+  (set! prelude-exprs (append prelude-exprs (list typed-graph)))
+  (define lower-fn `(function lower (M String) MTy))
+  (set! prelude-exprs (append prelude-exprs (list lower-fn)))
+  (define lift-fn `(function lift (MTy) M :unextractable))
+  (set! prelude-exprs (append prelude-exprs (list lift-fn)))
+  (set! prelude-exprs
+        (append prelude-exprs
+                (list `(ruleset lowering) `(ruleset lifting) `(ruleset math) `(ruleset fp-safe))))
+  (define impl-lowering (impl-lowering-rules pform))
+  (set! prelude-exprs (append prelude-exprs impl-lowering))
+  (define impl-lifting (impl-lifting-rules pform))
+  (set! prelude-exprs (append prelude-exprs impl-lifting))
+  (define num-lowering (num-lowering-rules))
+  (set! prelude-exprs (append prelude-exprs num-lowering))
+  (define num-lifting (num-lifting-rules))
+  (set! prelude-exprs (append prelude-exprs num-lifting))
+  (define if-lowering (if-lowering-rules))
+  (set! prelude-exprs (append prelude-exprs if-lowering))
+  (define if-lifting (if-lifting-rule))
+  (set! prelude-exprs (append prelude-exprs (list if-lifting)))
+  (define approx-lifting (approx-lifting-rule))
+  (set! prelude-exprs (append prelude-exprs (list approx-lifting)))
+  (define math-rules (egglog-rewrite-rules (real-rules (*simplify-rules*)) #t))
+  (set! prelude-exprs (append prelude-exprs math-rules))
+  (define fp-rules (egglog-rewrite-rules (*fp-safe-simplify-rules*) #f))
+  (set! prelude-exprs (append prelude-exprs fp-rules))
+  prelude-exprs)
 
 (define (platform-spec-nodes)
   (for/list ([op (in-list (all-operators))])
-    (hash-set! id->egglog op (serialize-op op))
+    (hash-set! id->e1 op (serialize-op op))
+    (hash-set! e1->id (serialize-op op) op)
     (define arity (length (operator-info op 'itype)))
     `(,(serialize-op op) ,@(for/list ([i (in-range arity)])
                              'M)
                          :cost
                          4294967295)))
 
-(define (platform-untyped-nodes pform)
-  (for/list ([impl (in-list (platform-impls pform))]
-             #:when (string-contains? (symbol->string impl) "."))
-    (define arity (length (impl-info impl 'itype)))
-    (hash-set! id->egglog impl (serialize-impl impl))
-    `(,(serialize-impl impl) ,@(for/list ([i (in-range arity)])
-                                 'M)
-                             :cost
-                             4294967295)))
-
-(define (platform-typed-nodes pform)
+(define (platform-impl-nodes pform)
   (for/list ([impl (in-list (platform-impls pform))])
     (define arity (length (impl-info impl 'itype)))
     (define typed-name (string->symbol (string-append (symbol->string (serialize-impl impl)) "Ty")))
-    (hash-set! egglog->id typed-name impl)
+    (hash-set! id->e2 impl typed-name)
+    (hash-set! e2->id typed-name impl)
     `(,typed-name ,@(for/list ([i (in-range arity)])
                       'MTy)
                   :cost
                   ,(platform-impl-cost pform impl))))
 
+(define (typed-num-id repr-name)
+  (string->symbol (string-append "Num" (symbol->string repr-name))))
+
+(define (typed-var-id repr-name)
+  (string->symbol (string-append "Var" (symbol->string repr-name))))
+
 (define (num-typed-nodes pform)
   (for/list ([repr (in-list (all-repr-names))]
              #:when (not (eq? repr 'bool)))
-    `(,(string->symbol (string-append "Num" (symbol->string repr)))
-      Rational
-      :cost
-      ,(platform-repr-cost pform (get-representation repr)))))
+    `(,(typed-num-id repr) BigRat :cost ,(platform-repr-cost pform (get-representation repr)))))
 
 (define (var-typed-nodes pform)
   (for/list ([repr (in-list (all-repr-names))])
-    `(,(string->symbol (string-append "Var" (symbol->string repr)))
-      String
-      :cost
-      ,(platform-repr-cost pform (get-representation repr)))))
+    `(,(typed-var-id repr) String :cost ,(platform-repr-cost pform (get-representation repr)))))
 
-(define (num-proj-rules)
+(define (num-lowering-rules)
   (for/list ([repr (in-list (all-repr-names))]
              #:when (not (eq? repr 'bool)))
     `(rule ((= e (Num n)))
            ((let tx ,(symbol->string repr)
               )
-            (let etx (,(string->symbol (string-append "Num" (symbol->string repr)))
+            (let etx (,(typed-num-id repr)
                       n)
               )
-            (union (typed-id e tx) etx)))))
+            (union (lower e tx) etx))
+           :ruleset
+           lowering)))
 
-(define (if-proj-rules)
+(define (num-lifting-rules)
+  (for/list ([repr (in-list (all-repr-names))]
+             #:when (not (eq? repr 'bool)))
+    `(rule ((= e (,(typed-num-id repr) n)))
+           ((let se (Num
+                     n)
+              )
+            (union (lift e) se))
+           :ruleset
+           lifting)))
+
+(define (if-lowering-rules)
   (for/list ([repr (in-list (all-repr-names))])
-    `(rule ((= e (If ifc ift iff)) (= tifc (typed-id ifc "bool"))
-                                   (= tift (typed-id ift ,(symbol->string repr)))
-                                   (= tiff (typed-id iff ,(symbol->string repr))))
+    `(rule ((= e (If ifc ift iff)) (= tifc (lower ifc "bool"))
+                                   (= tift (lower ift ,(symbol->string repr)))
+                                   (= tiff (lower iff ,(symbol->string repr))))
            ((let t0 ,(symbol->string repr)
               )
             (let et0 (IfTy
@@ -305,34 +316,69 @@
                       tift
                       tiff)
               )
-            (union (typed-id e t0) et0)))))
+            (union (lower e t0) et0))
+           :ruleset
+           lowering)))
 
-(define (approx-proj-rules)
-  (for/list ([repr (in-list (all-repr-names))])
-    `(rule ((= e (Approx spec impl)) (= timpl (typed-id impl ,(symbol->string repr))))
-           ((let t0 ,(symbol->string repr)
-              )
-            (let et0 (ApproxTy
-                      spec
-                      timpl)
-              )
-            (union (typed-id e t0) et0)))))
+(define (if-lifting-rule)
+  `(rule ((= e (IfTy ifc ift iff)) (= sifc (lift ifc)) (= sift (lift ift)) (= siff (lift iff)))
+         ((let se (If
+                   sifc
+                   sift
+                   siff)
+            )
+          (union (lift e) se))
+         :ruleset
+         lifting))
 
-(define (impl-proj-rules pform)
+(define (approx-lifting-rule)
+  `(rule ((= e (Approx spec impl))) ((union (lift e) spec)) :ruleset lifting))
+
+(define (impl-lowering-rules pform)
   (for/list ([impl (in-list (platform-impls pform))])
+    (define spec-expr (impl-info impl 'spec))
     (define arity (length (impl-info impl 'itype)))
-    `(rule ((= e (,(serialize-impl impl) ,@(impl-info impl 'vars)))
+    `(rule ((= e ,(expr->egglog-spec-serialized spec-expr ""))
             ,@(for/list ([v (in-list (impl-info impl 'vars))]
                          [vt (in-list (impl-info impl 'itype))])
                 `(= ,(string->symbol (string-append "t" (symbol->string v)))
-                    (typed-id ,v ,(symbol->string (representation-name vt))))))
+                    (lower ,v ,(symbol->string (representation-name vt))))))
            ((let t0 ,(symbol->string (representation-name (impl-info impl 'otype)))
               )
             (let et0 (,(string->symbol (string-append (symbol->string (serialize-impl impl)) "Ty"))
                       ,@(for/list ([v (in-list (impl-info impl 'vars))])
                           (string->symbol (string-append "t" (symbol->string v)))))
               )
-            (union (typed-id e t0) et0)))))
+            (union (lower e t0) et0))
+           :ruleset
+           lowering)))
+
+(define (impl-lifting-rules pform)
+  (for/list ([impl (in-list (platform-impls pform))])
+    (define spec-expr (impl-info impl 'spec))
+    (define op (string->symbol (car (string-split (symbol->string impl) "."))))
+    (define arity (length (impl-info impl 'itype)))
+    `(rule ((= e
+               (,(string->symbol (string-append (symbol->string (serialize-impl impl)) "Ty"))
+                ,@(impl-info impl 'vars)))
+            ,@(for/list ([v (in-list (impl-info impl 'vars))]
+                         [vt (in-list (impl-info impl 'itype))])
+                `(= ,(string->symbol (string-append "s" (symbol->string v))) (lift ,v))))
+           ((let se ,(expr->egglog-spec-serialized spec-expr "s")
+              )
+            (union (lift e) se))
+           :ruleset
+           lifting)))
+
+(define (expr->egglog-spec-serialized expr s)
+  (let loop ([expr expr])
+    (match expr
+      [(? number?)
+       `(Num (bigrat (from-string ,(number->string (numerator expr)))
+                     (from-string ,(number->string (denominator expr)))))]
+      [(? symbol?) (string->symbol (string-append s (symbol->string expr)))]
+      [(list op args ...)
+       `(,(hash-ref (if (hash-has-key? id->e1 op) id->e1 id->e2) op) ,@(map loop args))])))
 
 (define (serialize-op op)
   (if (hash-has-key? op-string-names op)
@@ -348,28 +394,59 @@
         ""))
   (string->symbol (string-append (symbol->string (serialize-op op)) type)))
 
-(define (rule->egglog-rule ru)
-  `(rewrite ,(expr->egglog-pattern (rule-input ru)) ,(expr->egglog-pattern (rule-output ru)))) ; TODO
+(define (expr->e2-pattern expr repr)
+  (let loop ([expr expr]
+             [repr repr])
+    (match expr
+      [(? literal?)
+       `(,(typed-num-id (representation-name repr))
+         (bigrat (from-string ,(number->string (numerator (literal-value expr))))
+                 (from-string ,(number->string (denominator (literal-value expr))))))]
+      [(? symbol?) `(,(typed-var-id (representation-name repr)) ,expr)]
+      [`(if ,cond ,ift ,iff) `(IfTy ,(loop cond repr) ,(loop ift repr) ,(loop iff repr))]
+      [(list op args ...)
+       `(,(hash-ref id->e2 op) ,@(for/list ([arg (in-list args)]
+                                            [itype (in-list (impl-info op 'itype))])
+                                   (loop arg itype)))])))
 
-(define (expr->egglog-pattern expr)
+(define (expr->e1-pattern expr)
   (let loop ([expr expr])
     (match expr
-      [(? number?) `(Num (rational ,(numerator expr) ,(denominator expr)))]
-      [(? literal?)
-       `(Num (rational ,(numerator (literal-value expr)) ,(denominator (literal-value expr))))]
+      [(? number?)
+       `(Num (bigrat (from-string ,(number->string (numerator expr)))
+                     (from-string ,(number->string (denominator expr)))))]
       [(? symbol?) `(Var ,expr)]
-      [(list op args ...) `(,(hash-ref id->egglog op) ,@(map loop args))])))
+      [`(if ,cond ,ift ,iff) `(If ,(loop cond) ,(loop ift) ,(loop iff))]
+      [(list op args ...) `(,(hash-ref id->e1 op) ,@(map loop args))])))
 
-(define (egglog-rewrite-rules rules)
+(define (egglog-rewrite-rules rules spec?)
   (for/list ([rule (in-list rules)])
-    `(rewrite ,(expr->egglog-pattern (rule-input rule)) ,(expr->egglog-pattern (rule-output rule)))))
+    (if spec?
+        `(rewrite ,(expr->e1-pattern (rule-input rule))
+                  ,(expr->e1-pattern (rule-output rule))
+                  :ruleset
+                  math)
+        `(rewrite ,(expr->e2-pattern (rule-input rule) (rule-otype rule))
+                  ,(expr->e2-pattern (rule-output rule) (rule-otype rule))
+                  :ruleset
+                  fp-safe))))
+        `(rewrite ,(expr->e1-pattern (rule-input rule)) ,(expr->e1-pattern (rule-output rule)))
+        `(rewrite ,(expr->e2-pattern (rule-input rule) (rule-otype rule))
+                  ,(expr->e2-pattern (rule-output rule) (rule-otype rule))))))
 
 (define (egglog-add-exprs batch ctx)
+  (define egglog-exprs '())
   (define insert-batch (batch-remove-zombie batch (batch-roots batch)))
   (define mappings (build-vector (batch-length insert-batch) values))
   (define bindings (make-hash))
-  (define (remap x)
-    (vector-ref mappings x))
+  (define vars (make-hash))
+  (define (remap x spec?)
+    (cond
+      [(hash-has-key? vars x)
+       (if spec?
+           (string->symbol (format "?~a" (hash-ref vars x)))
+           (string->symbol (format "?t~a" (hash-ref vars x))))]
+      [else (vector-ref mappings x)]))
 
   ; node -> egglog node binding
   ; inserts an expression into the e-graph, returning binding variable.
@@ -384,58 +461,120 @@
   (define root-bindings '())
   ; Inserting nodes bottom-up
   (define root-mask (make-vector (batch-length insert-batch) #f))
+  (define spec-mask (make-vector (batch-length insert-batch) #f))
+  (define (spec-tag n spec?)
+    (when (not (vector-ref spec-mask n))
+      (match (vector-ref (batch-nodes insert-batch) n)
+        [`(if ,cond ,ift ,iff)
+         (when (vector-ref spec-mask cond)
+           (vector-set! spec-mask n #t)
+           (spec-tag cond #t)
+           (spec-tag ift #t)
+           (spec-tag iff #t))]
+        [(approx spec impl)
+         (vector-set! spec-mask n #t)
+         (spec-tag spec #t)]
+        [(list impl args ...)
+         (when (hash-has-key? id->e1 impl)
+           (vector-set! spec-mask n #t)
+           (for ([arg (in-list args)])
+             (spec-tag arg #t)))]
+        [_
+         (when spec?
+           (vector-set! spec-mask n #t))])))
+
+  (for ([n (in-range (batch-length insert-batch))])
+    (spec-tag n #f))
   (for ([root (in-vector (batch-roots insert-batch))])
     (vector-set! root-mask root #t))
   (for ([node (in-vector (batch-nodes insert-batch))]
         [root? (in-vector root-mask)]
+        [spec? (in-vector spec-mask)]
         [n (in-naturals)])
     (define node*
       (match node
-        [(literal v _) `(Num (rational ,(numerator v) ,(denominator v)))]
-        [(? number?) `(Num (rational ,(numerator node) ,(denominator node)))]
-        [(? symbol?) `(Var ,(symbol->string node))]
-        [(approx spec impl) `(Approx ,(symbol->string 'APRROXTEST))]
-        [(list impl args ...) `(,(hash-ref id->egglog impl) ,@(map remap args))]))
-      (vector-set! mappings n (insert-node! node* n root?))
+        [(literal v repr)
+         `(,(typed-num-id repr) (bigrat (from-string ,(number->string (numerator v)))
+                                        (from-string ,(number->string (denominator v)))))]
+        [(? number?)
+         `(Num (bigrat (from-string ,(number->string (numerator node)))
+                       (from-string ,(number->string (denominator node)))))]
+        [(? symbol?) #f]
+        [`(if ,cond ,ift ,iff)
+         `(,(if spec? 'If 'IfTy) ,(remap cond spec?) ,(remap ift spec?) ,(remap iff spec?))]
+        [(approx spec impl) `(Approx ,(remap spec spec?) ,(remap impl spec?))]
+        [(list impl args ...)
+         `(,(hash-ref (if spec? id->e1 id->e2) impl) ,@(for/list ([arg (in-list args)])
+                                                         (remap arg spec?)))]))
 
+    (if node*
+        (vector-set! mappings n (insert-node! node* n root?))
+        (hash-set! vars n node))
     (when root?
       (set! root-bindings (cons (vector-ref mappings n) root-bindings))))
 
+  ; Var rules
+  (define var-lowering-rules
+    (for/list ([var (in-list (context-vars ctx))]
+               [repr (in-list (context-var-reprs ctx))])
+      `(rule ((= e (Var ,(symbol->string var))))
+             ((let ty ,(symbol->string (representation-name repr))
+                )
+              (let ety (,(typed-var-id (representation-name repr))
+                        ,(symbol->string var))
+                )
+              (union (lower e ty) ety))
+             :ruleset
+             lowering)))
+              (union (lower e ty) ety)))))
+
+  (set! egglog-exprs (append egglog-exprs var-lowering-rules))
+
+  (define var-lifting-rules
+    (for/list ([var (in-list (context-vars ctx))]
+               [repr (in-list (context-var-reprs ctx))])
+      `(rule ((= e (,(typed-var-id (representation-name repr)) ,(symbol->string var))))
+             ((let se (Var
+                       ,(symbol->string var))
+                )
+              (union (lift e) se))
+             :ruleset
+             lifting)))
+
+  (set! egglog-exprs (append egglog-exprs var-lifting-rules))
+
+  (define var-spec-bindings
+    (for/list ([var (in-list (context-vars ctx))])
+      `(let ,(string->symbol (format "?~a" var)) (Var ,(symbol->string var)))))
+
+  (set! egglog-exprs (append egglog-exprs var-spec-bindings))
+
+  (define var-typed-bindings
+    (for/list ([var (in-list (context-vars ctx))]
+               [repr (in-list (context-var-reprs ctx))])
+      `(let ,(string->symbol (format "?t~a" var))
+         (,(typed-var-id (representation-name repr)) ,(symbol->string var)))))
+  (set! egglog-exprs (append egglog-exprs var-typed-bindings))
+
   (define binding-exprs
     (for/list ([root? (in-vector root-mask)]
-               [n (in-naturals)])
+               [n (in-naturals)]
+               #:when (not (hash-has-key? vars n)))
       (define binding
         (if root?
             (string->symbol (format "?r~a" n))
             (string->symbol (format "?b~a" n))))
       `(let ,binding ,(hash-ref bindings binding))))
 
-  (for ([binding-expr (in-list binding-exprs)])
-    (printf "~s\n" binding-expr))
-
-  ; Var rules
-  (define var-rules
-    (for/list ([var (in-list (context-vars ctx))]
-               [repr (in-list (context-var-reprs ctx))])
-      `(rule ((= e (Var ,(symbol->string var))))
-             ((let ty ,(symbol->string (representation-name repr))
-                )
-              (let ety (,(string->symbol (string-append "Var" (symbol->string (representation-name repr))))
-                ,(symbol->string var)))
-              (union (typed-id e ty) ety)))))
-
-  (for ([var-rule (in-list var-rules)])
-    (printf "~s\n" var-rule))
-
-  (printf "~s\n" `(run 10))
+  (set! egglog-exprs (append egglog-exprs binding-exprs))
+  (set! egglog-exprs (append egglog-exprs '((run 10))))
 
   (define extract-exprs
     (for/list ([root (in-list root-bindings)])
-      `(extract (typed-id ,root ,(symbol->string (representation-name (context-repr ctx)))))))
+      `(extract (lower (lift ,root) ,(symbol->string (representation-name (context-repr ctx)))))))
 
-  (for ([extract-expr (in-list extract-exprs)])
-    (printf "~s\n" extract-expr))
-  (void))
+  (set! egglog-exprs (append egglog-exprs extract-exprs))
+  egglog-exprs)
 
 (define (egglog-num? id)
   (string-prefix? (symbol->string id) "Num"))
@@ -452,10 +591,26 @@
     [(? variable?) #t]
     [`(,impl ,args ...) (and (not (eq? impl 'typed-id)) (andmap egglog-expr-typed? args))]))
 
-(define (egglog-expr->expr expr)
+(define (e1->expr expr)
   (let loop ([expr expr])
     (match expr
-      [`(,(? egglog-num? num) (rational ,n 1)) (literal n (egglog-num-repr num))]
+      [`(,(? egglog-num? num) (bigrat (from-string ,n) (from-string ,d)))
+       (/ (string->number n) (string->number d))]
       [`(,(? egglog-var? var) ,v) (string->symbol v)]
-      [`() (approx)]
-      [`(,impl ,args ...) `(,(hash-ref egglog->id impl) ,@(map loop args))])))
+      [`(If ,cond ,ift ,iff)
+       `(if ,(loop cond)
+            ,(loop ift)
+            ,(loop iff))]
+      [`(,op ,args ...) `(,(hash-ref e1->id op) ,@(map loop args))])))
+
+(define (e2->expr expr)
+  (let loop ([expr expr])
+    (match expr
+      [`(,(? egglog-num? num) (bigrat (from-string ,n) (from-string ,d)))
+       (/ (string->number n) (string->number d))]
+      [`(,(? egglog-var? var) ,v) (string->symbol v)]
+      [`(IfTy ,cond ,ift ,iff)
+       `(if ,(loop cond)
+            ,(loop ift)
+            ,(loop iff))]
+      [`(,impl ,args ...) `(,(hash-ref e2->id impl) ,@(map loop args))])))

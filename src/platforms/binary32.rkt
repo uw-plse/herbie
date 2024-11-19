@@ -46,14 +46,13 @@
   (begin
     (define-libm-impls/binary32* (itype ... otype) name ...) ...))
 
-(define-operator-impl
- (neg.f32 [x : binary32])
- binary32
- #:spec (neg x)
- #:fpcore (! :precision binary32 (- x))
- #:fl fl32-
- #:identities (#:exact (neg.f32 x)
-                       [distribute-lft-neg-in (neg.f32 (*.f32 a b)) (*.f32 (neg.f32 a) b)]
+(define-operator-impl (neg.f32 [x : binary32])
+                      binary32
+                      #:spec (neg x)
+                      #:fpcore (! :precision binary32 (- x))
+                      #:fl fl32-
+                      #:identities
+                      ([distribute-lft-neg-in (neg.f32 (*.f32 a b)) (*.f32 (neg.f32 a) b)]
                        [distribute-rgt-neg-in (neg.f32 (*.f32 a b)) (*.f32 a (neg.f32 b))]
                        [distribute-neg-in (neg.f32 (+.f32 a b)) (+.f32 (neg.f32 a) (neg.f32 b))]
                        [distribute-neg-frac (neg.f32 (/.f32 a b)) (/.f32 (neg.f32 a) b)]
@@ -82,8 +81,8 @@
                       #:identities
                       ([cancel-sign-sub (-.f32 a (*.f32 (neg.f32 b) c)) (+.f32 a (*.f32 b c))]
                        [cancel-sign-sub-inv (-.f32 a (*.f32 b c)) (+.f32 a (*.f32 (neg.f32 b) c))]
-                       #:exact (-.f32 a a)
-                       #:exact (-.f32 a 0)
+                       [sub-cancel (-.f32 a a) 0]
+                       [sub-fold (-.f32 a 0) a]
                        [sub0-neg (-.f32 0 a) (neg.f32 a)]
                        [sub-neg (-.f32 a b) (+.f32 a (neg.f32 b))]))
 

@@ -186,7 +186,10 @@
                  #:when true
                  [(cost-diff expr) (in-dict loc-costs)]
                  [_ (in-range (*localize-expressions-limit*))])
-        (timeline-push! 'locations (~a expr) "cost-diff" cost-diff)
+        (timeline-push! 'locations
+                        (~a expr)
+                        "cost-diff"
+                        (if (infinite? cost-diff) "Infinite" cost-diff))
         expr))
     (set! localized-exprs (remove-duplicates (append localized-exprs cost-localized))))
 

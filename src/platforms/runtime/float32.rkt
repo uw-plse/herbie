@@ -4,8 +4,8 @@
 ;; Racket CS only has double-precision numbers but can do
 ;; single-precision rounding, so we need to provide some additional emulation
 
-(require math/flonum
-         math/bigfloat)
+(require math/bigfloat
+         math/flonum)
 (provide float32?
          ->float32
          bigfloat->float32

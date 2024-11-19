@@ -370,10 +370,9 @@
                (list (header #"X-Job-Count" (string->bytes/utf-8 (~a (job-count))))
                      (header #"Access-Control-Allow-Origin" (string->bytes/utf-8 "*")))
                (λ (out)
-                 (display (apply string-append
-                                 (for/list ([entry timeline])
-                                   (format "Doing ~a\n" (hash-ref entry 'type))))
-                          out)))]))
+                 (when timeline
+                   (for ([entry timeline])
+                     (fprintf out "Doing ~a\n" (hash-ref entry 'type))))))]))
 
 (define (check-up req)
   (response/full (if (is-server-up) 200 500)
@@ -556,8 +555,6 @@
   (*demo-output* output)
   (*demo-prefix* prefix)
   (*demo-log* log)
-  (unless threads
-    (set! threads (processor-count)))
   (start-job-server threads)
 
   (unless quiet?

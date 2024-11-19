@@ -10,11 +10,11 @@
                  #:literal [bool 1]
                  #:default-cost 1
                  #:if-cost 1
-                 TRUE
-                 FALSE
-                 not
-                 and
-                 or)
+                 TRUE.bool
+                 FALSE.bool
+                 not.bool
+                 and.bool
+                 or.bool)
 
 ;; machine floating-point operations
 (define-platform machine-platform

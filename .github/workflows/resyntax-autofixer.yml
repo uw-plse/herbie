@@ -29,7 +29,7 @@ jobs:
       - name: "Install dependencies"
         run: make install
       - name: Create a Resyntax pull request
-        uses: jackfirth/create-resyntax-pull-request@v0.4.1
+        uses: jackfirth/create-resyntax-pull-request@v0.4.2
         with:
           private-key: ${{ secrets.RESYNTAX_APP_PRIVATE_KEY }}
           max-fixes: '5'

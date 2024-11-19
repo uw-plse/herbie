@@ -16,22 +16,6 @@
 (provide make-graph
          dummy-graph)
 
-(define/contract (regime-info altn)
-  (-> alt? (or/c (listof sp?) #f))
-  (let loop ([altn altn])
-    (match altn
-      [(alt _ `(regimes ,splitpoints) prevs _) splitpoints]
-      [(alt _ _ (list) _) #f]
-      [(alt _ _ (list prev _ ...) _) (loop prev)])))
-
-(define (alt->tex alt ctx)
-  (core->tex (core-cse (program->fpcore (alt-expr alt) ctx))))
-
-(define (at-least-two-ops? expr)
-  (match expr
-    [(list op args ...) (ormap list? args)]
-    [_ #f]))
-
 (define (dummy-graph command)
   `(html (head (meta ([charset "utf-8"]))
                (title "Result page for the " ,(~a command) " command is not available right now.")
@@ -54,13 +38,11 @@
   (define identifier (test-identifier test))
 
   (define preprocessing (hash-ref backend 'preprocessing))
-  (define pctxs (hash-ref backend 'pctxs))
-  (define start (hash-ref backend 'start))
+  (match-define (alt-analysis start-alt _ start-error) (hash-ref backend 'start))
   (define targets (hash-ref backend 'target))
   (define end (hash-ref backend 'end))
   (define bogosity (hash-ref backend 'bogosity))
 
-  (match-define (alt-analysis start-alt _ start-error) start)
   (define start-cost (alt-cost start-alt repr))
 
   (define list-target-error

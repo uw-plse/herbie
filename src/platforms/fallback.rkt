@@ -24,7 +24,7 @@
 (define-syntax (define-fallback-operator stx)
   (syntax-case stx (real fl)
     [(_ (name tsig ...) fields ...)
-     (let ([name #'name])
+     (let ([name (syntax-e #'name)])
        (with-syntax ([name (string->symbol (format "~a.rkt" name))])
          #'(define-operator-impl (name tsig ...) binary64 fields ...)))]))
 

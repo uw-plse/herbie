@@ -46,14 +46,13 @@
   (begin
     (define-libm-impls/binary64* (itype ... otype) name ...) ...))
 
-(define-operator-impl
- (neg.f64 [x : binary64])
- binary64
- #:spec (neg x)
- #:fpcore (! :precision binary64 (- x))
- #:fl -
- #:identities (#:exact (neg.f64 a)
-                       [distribute-lft-neg-in (neg.f64 (*.f64 a b)) (*.f64 (neg.f64 a) b)]
+(define-operator-impl (neg.f64 [x : binary64])
+                      binary64
+                      #:spec (neg x)
+                      #:fpcore (! :precision binary64 (- x))
+                      #:fl -
+                      #:identities
+                      ([distribute-lft-neg-in (neg.f64 (*.f64 a b)) (*.f64 (neg.f64 a) b)]
                        [distribute-rgt-neg-in (neg.f64 (*.f64 a b)) (*.f64 a (neg.f64 b))]
                        [distribute-neg-in (neg.f64 (+.f64 a b)) (+.f64 (neg.f64 a) (neg.f64 b))]
                        [distribute-neg-frac (neg.f64 (/.f64 a b)) (/.f64 (neg.f64 a) b)]
@@ -80,8 +79,8 @@
                       #:identities
                       ([cancel-sign-sub (-.f64 a (*.f64 (neg.f64 b) c)) (+.f64 a (*.f64 b c))]
                        [cancel-sign-sub-inv (-.f64 a (*.f64 b c)) (+.f64 a (*.f64 (neg.f64 b) c))]
-                       #:exact (-.f64 a a)
-                       #:exact (-.f64 a 0)
+                       [sub-cancel (-.f64 a a) 0]
+                       [sub-fold (-.f64 a 0) a]
                        [sub0-neg (-.f64 0 a) (neg.f64 a)]
                        [sub-neg (-.f64 a b) (+.f64 a (neg.f64 b))]))
 (define-operator-impl

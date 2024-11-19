@@ -267,7 +267,10 @@
          (match expr
            [(list '! props ... (list op _ ...))
             ; rounding context updated parent context
-            (define prop-dict* (apply dict-set prop-dict props))
+            (define prop-dict*
+              (if (not (null? props))
+                  (apply dict-set prop-dict props)
+                  prop-dict))
             (get-fpcore-impl op prop-dict* (impl-info impl 'itype))]
            ; rounding context inherited from parent context
            [(list op _ ...) (get-fpcore-impl op prop-dict (impl-info impl 'itype))]))

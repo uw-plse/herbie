@@ -10,7 +10,6 @@
          "../reports/common.rkt"
          "../syntax/types.rkt"
          "../syntax/read.rkt"
-         "../syntax/sugar.rkt"
          "../syntax/load-plugin.rkt"
          "../utils/alternative.rkt"
          "../utils/common.rkt"
@@ -85,62 +84,58 @@
 
 ; Returns #f is now job exsist for the given job-id
 (define (get-results-for job-id)
-  (define-values (a b) (place-channel))
-  (place-channel-put manager (list 'result job-id b))
   (log "Getting result for job: ~a.\n" job-id)
-  (place-channel-get a))
+  (manager-ask 'result job-id))
 
 (define (get-timeline-for job-id)
-  (define-values (a b) (place-channel))
-  (place-channel-put manager (list 'timeline job-id b))
   (log "Getting timeline for job: ~a.\n" job-id)
-  (place-channel-get a))
+  (manager-ask 'timeline job-id))
 
 ; Returns #f if there is no job returns the job-id if there is a completed job.
 (define (server-check-on job-id)
-  (define-values (a b) (place-channel))
-  (place-channel-put manager (list 'check job-id b))
   (log "Checking on: ~a.\n" job-id)
-  (place-channel-get a))
+  (manager-ask 'check job-id))
 
 (define (get-improve-table-data)
-  (define-values (a b) (place-channel))
-  (place-channel-put manager (list 'improve b))
   (log "Getting improve results.\n")
-  (place-channel-get a))
+  (manager-ask 'improve))
 
 (define (job-count)
-  (define-values (a b) (place-channel))
-  (place-channel-put manager (list 'count b))
-  (define job-list (place-channel-get a))
-  (log "Currently ~a jobs in progress, ~a jobs in queue." (first job-list) (second job-list))
+  (define job-list (manager-ask 'count))
+  (log "Currently ~a jobs in progress, ~a jobs in queue.\n" (first job-list) (second job-list))
   (apply + job-list))
 
 ;; Starts a job for a given command object|
 (define (start-job command)
   (define job-id (compute-job-id command))
-  (place-channel-put manager (list 'start manager command job-id))
+  (manager-tell 'start manager command job-id)
   (log "Job ~a, Qed up for program: ~a\n" job-id (test-name (herbie-command-test command)))
   job-id)
 
 (define (wait-for-job job-id)
-  (define-values (a b) (place-channel))
-  (place-channel-put manager (list 'wait manager job-id b))
-  (define finished-result (place-channel-get a))
+  (define finished-result (manager-ask 'wait manager job-id))
   (log "Done waiting for: ~a\n" job-id)
   finished-result)
 
-; TODO refactor using this helper.
+(define (manager-tell msg . args)
+  (log "Telling manager: ~a, ~a.\n" msg args)
+  (place-channel-put manager (list* msg args)))
+
 (define (manager-ask msg . args)
-  (define-values (a b) (place-channel))
-  (place-channel-put manager (cons msg b args))
   (log "Asking manager: ~a, ~a.\n" msg args)
+  (manager-ask-with-callback msg args))
+
+(define (manager-ask-with-callback msg args)
+  (define-values (a b) (place-channel))
+  (place-channel-put manager (list* msg b args))
   (place-channel-get a))
 
 (define (is-server-up)
   (not (sync/timeout 0 manager-dead-event)))
 
 (define (start-job-server job-cap)
+  (unless job-cap
+    (set! job-cap (processor-count)))
   (define r (make-manager job-cap))
   (set! manager-dead-event (place-dead-evt r))
   (set! manager r))
@@ -260,7 +255,7 @@
         (log "waiting job ~a completed\n" job-id)
         (place-channel-put self (list 'send job-id result))
         (place-channel-put self (list 'assign self))]
-       [(list 'wait self job-id handler)
+       [(list 'wait handler self job-id)
         (log "Waiting for job: ~a\n" job-id)
         ; first we add the handler to the wait list.
         (hash-update! waiting job-id (curry append (list handler)) '())
@@ -276,8 +271,8 @@
           (place-channel-put handle result))
         (hash-remove! waiting job-id)]
        ; Get the result for the given id, return false if no work found.
-       [(list 'result job-id handler) (place-channel-put handler (hash-ref completed-work job-id #f))]
-       [(list 'timeline job-id handler)
+       [(list 'result handler job-id) (place-channel-put handler (hash-ref completed-work job-id #f))]
+       [(list 'timeline handler job-id)
         (define wid (hash-ref current-jobs job-id #f))
         (cond
           [wid
@@ -289,7 +284,7 @@
           [else
            (log "Job complete, no timeline, send result.\n")
            (place-channel-put handler (hash-ref completed-work job-id #f))])]
-       [(list 'check job-id handler)
+       [(list 'check handler job-id)
         (place-channel-put handler (if (hash-has-key? completed-work job-id) job-id #f))]
        ; Returns the current count of working workers.
        [(list 'count handler)

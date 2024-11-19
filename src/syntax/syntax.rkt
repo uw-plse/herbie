@@ -2,9 +2,9 @@
 
 (require math/bigfloat)
 
-(require "../utils/common.rkt"
+(require "../core/rival.rkt"
+         "../utils/common.rkt"
          "../utils/errors.rkt"
-         "../core/rival.rkt"
          "matcher.rkt"
          "types.rkt")
 
@@ -356,15 +356,15 @@
             (error 'register-operator-impl! "~a: umatched property in ~a" name fpcore))
           (unless (symbol? op)
             (error 'register-operator-impl! "~a: expected symbol `~a`" name op))
-          (for ([arg (in-list args)])
-            (unless (or (symbol? arg) (number? arg))
-              (error 'register-operator-impl! "~a: expected terminal `~a`" name arg)))]
+          (for ([arg (in-list args)]
+                #:unless (or (symbol? arg) (number? arg)))
+            (error 'register-operator-impl! "~a: expected terminal `~a`" name arg))]
          [`(,op ,args ...)
           (unless (symbol? op)
             (error 'register-operator-impl! "~a: expected symbol `~a`" name op))
-          (for ([arg (in-list args)])
-            (unless (or (symbol? arg) (number? arg))
-              (error 'register-operator-impl! "~a: expected terminal `~a`" name arg)))]
+          (for ([arg (in-list args)]
+                #:unless (or (symbol? arg) (number? arg)))
+            (error 'register-operator-impl! "~a: expected terminal `~a`" name arg))]
          [_ (error 'register-operator-impl! "Invalid fpcore for ~a: ~a" name fpcore)])
        fpcore]
       [else ; not provided => need to generate it
@@ -458,9 +458,9 @@
            [fields #'(fields ...)])
        (unless (identifier? id)
          (oops! "expected identifier" id))
-       (for ([var (in-list vars)])
-         (unless (identifier? var)
-           (oops! "expected identifier" var)))
+       (for ([var (in-list vars)]
+             #:unless (identifier? var))
+         (oops! "expected identifier" var))
        (define commutes? #f)
        (define spec #f)
        (define core #f)
