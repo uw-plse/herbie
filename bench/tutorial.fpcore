@@ -2,12 +2,20 @@
 
 (FPCore (x)
  :name "Cancel like terms"
+  :precision binary32
  (- (+ 1 x) x))
 
 (FPCore (x)
  :name "Expanding a square"
+  :precision binary32
  (- (* (+ x 1) (+ x 1)) 1))
 
 (FPCore (x y z)
  :name "Commute and associate"
+  :precision binary32
  (- (+ (+ x y) z) (+ x (+ y z))))
+
+ (FPCore (a b c d )
+ :precision binary32
+ :name "test"
+(+ (* a b) (* c d)))

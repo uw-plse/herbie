@@ -4,6 +4,7 @@
 ;;; C/C++ on Linux with a full libm
 
 (require "../plugin.rkt")
+(require "runtime/utils.rkt")
 
 ; universal boolean opertaions
 (define-platform boolean-platform

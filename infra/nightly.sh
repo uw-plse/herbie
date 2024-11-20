@@ -35,7 +35,7 @@ RECURSE=1 LOG=1 \
     --profile \
     --seed "$SEED" \
     --threads "$CORES" \
-    --platform "hardware"
+    --platform "hardware-accelerators"
     $FLAGS
 
 RECURSE=1 LOG=1 \
@@ -44,7 +44,6 @@ RECURSE=1 LOG=1 \
     --profile \
     --seed "$SEED" \
     --threads "$CORES" \
-    --platform "arith"
     $FLAGS
 
 # upload
