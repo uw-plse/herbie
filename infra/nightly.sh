@@ -31,10 +31,20 @@ fi
 # run
 RECURSE=1 LOG=1 \
   bash "$INFRA_DIR"/run.sh \
-    "$BENCH_DIR" "$OUT_DIR" \
+    "$BENCH_DIR" "$OUT_DIR/2/" \
     --profile \
     --seed "$SEED" \
     --threads "$CORES" \
+    --platform "hardware"
+    $FLAGS
+
+RECURSE=1 LOG=1 \
+  bash "$INFRA_DIR"/run.sh \
+    "$BENCH_DIR" "$OUT_DIR/1/" \
+    --profile \
+    --seed "$SEED" \
+    --threads "$CORES" \
+    --platform "arith"
     $FLAGS
 
 # upload
