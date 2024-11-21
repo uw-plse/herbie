@@ -138,7 +138,7 @@
 (define *use-improve-cache* (make-parameter #t))
 
 ;; If `:precision` is unspecified, which representation should we use?
-(define *default-precision* (make-parameter 'binary64))
+(define *default-precision* (make-parameter 'binary32))
 
 ;; The platform that Herbie will evaluate with.
 (define *platform-name* (make-parameter 'default))

@@ -20,6 +20,8 @@
 (define-runtime-module-path default-platform "../platforms/default.rkt")
 (define-runtime-module-path math-platform "../platforms/math.rkt")
 (define-runtime-module-path hardware-accelerators-platform "../platforms/hardware-accelerators.rkt")
+(define-runtime-module-path arith-platform "../platforms/arith.rkt")
+
 
 ; Automatically loads default representations and platforms
 (define (load-herbie-builtins)
@@ -34,6 +36,7 @@
   (dynamic-require default-platform #f)
   (dynamic-require math-platform #f)
   (dynamic-require hardware-accelerators-platform #f)
+  (dynamic-require arith-platform #f)
   ; activate the required platform
   (*active-platform* (get-platform (*platform-name*)))
   (activate-platform! (*active-platform*)))

@@ -22,13 +22,13 @@
 (define-operator-impl (sumofsquares.f32 [a : binary32] [b : binary32])
                       binary32
                       #:spec (+ (* a a) (* b b))
-                      #:fpcore (! :precision binary32 (square1p a b)))   
+                      #:fpcore (! :precision binary32 (sumofsquares a b)))   
 
 
 (define-operator-impl (fma.f32 [a : binary32] [b : binary32] [c : binary32])
                       binary32
                       #:spec (+ (* a b) c)
-                      #:fpcore (! :precision binary32 (square1p a b)))  
+                      #:fpcore (! :precision binary32 (fma a b c)))  
 ; universal boolean operations
 ; universal boolean opertaions
 (define-platform boolean-platform
@@ -41,32 +41,34 @@
                  and
                  or)
 
+(define compare-cost 0.1506329114)
 (define-platform hardware-accelerators-platform
-                 #:literal [binary32 32]
-                 [PI.f32 32]
-                 [E.f32 32]
-                 [INFINITY.f32 32]
-                 [NAN.f32 32]
-                 [neg.f32 64]
-                 [+.f32 64]
-                 [-.f32 64]
-                 [*.f32 128]
-                 [/.f32 320]
-                 [==.f32 128]
-                 [!=.f32 128]
-                 [>.f32 128]
-                 [<.f32 128]
-                 [>=.f32 128]
-                 [<=.f32 128]
-            
-                [sqrt.f32 0.38716720000000004]
-                [dotprod.f32 0.1]
-                [add3.f32 0.1]
-                [square1p.f32 0.1]
-                [sumofsquares.f32 0.1]
-                [fma.f32 0.1])
+                 #:literal [binary32 0]
+                 [PI.f32 0]
+                 [E.f32 0]
+                 [INFINITY.f32 0]
+                 [NAN.f32 0]
+                 [==.f32 compare-cost]
+                 [!=.f32 compare-cost]
+                 [>.f32 compare-cost]
+                 [<.f32 compare-cost]
+                 [>=.f32 compare-cost]
+                 [<=.f32 compare-cost]
+                ;;;  [fabs.f32 64]
+                ;;;  [fmax.f32 3200]
+                ;;;  [fmin.f32 3200]
+                 [sqrt.f32 1.93164557]
+                 [neg.f32 0.7556962025]
+                 [+.f32 1]
+                 [-.f32 0.7556962025]
+                 [*.f32 3.191139241]
+                 [/.f32 4.729113924]
 
-
+                 [dotprod.f32 3.582278481]
+                 [add3.f32 1.33164557]
+                ;;;  [square1p.f32 0.1]
+                ;;;  [sumofsquares.f32 0.1]
+                 [fma.f32 3.960759494])
 
 (define hardware-accelerators-platform-2 (platform-union boolean-platform hardware-accelerators-platform))
 
