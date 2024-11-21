@@ -43,11 +43,11 @@
 
 (define compare-cost 0.1506329114)
 (define-platform hardware-accelerators-platform
-                 #:literal [binary32 0]
-                 [PI.f32 0]
-                 [E.f32 0]
-                 [INFINITY.f32 0]
-                 [NAN.f32 0]
+                 #:literal [binary32 1]
+                 [PI.f32 1]
+                 [E.f32 1]
+                 [INFINITY.f32 1]
+                 [NAN.f32 1]
                  [==.f32 compare-cost]
                  [!=.f32 compare-cost]
                  [>.f32 compare-cost]
@@ -68,7 +68,8 @@
                  [add3.f32 1.33164557]
                 ;;;  [square1p.f32 0.1]
                 ;;;  [sumofsquares.f32 0.1]
-                 [fma.f32 3.960759494])
+                 [fma.f32 3.960759494]
+)
 
 (define hardware-accelerators-platform-2 (platform-union boolean-platform hardware-accelerators-platform))
 
