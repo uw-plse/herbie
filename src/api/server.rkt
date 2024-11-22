@@ -16,6 +16,7 @@
          "../utils/errors.rkt"
          "../utils/float.rkt"
          "../reports/pages.rkt"
+         "../reports/core2mathjs.rkt"
          "datafile.rkt"
          (submod "../utils/timeline.rkt" debug))
 
@@ -33,19 +34,32 @@
          start-job-server
          write-results-to-disk
          *demo?*
-         *demo-output*)
+         *demo-output*
+         _create-job0
+         translate-job)
 
 (define *demo?* (make-parameter false))
 (define *demo-output* (make-parameter false))
 
 ; verbose logging for debugging
-(define verbose #f) ; Maybe change to log-level and use 'verbose?
+(define verbose #t) ; Maybe change to log-level and use 'verbose?
 (define (log msg . args)
   (when verbose
     (apply eprintf msg args)))
 
 ;; Job object, What herbie excepts as input for a new job.
 (struct herbie-command (command test seed pcontext profile? timeline-disabled?) #:prefab)
+
+; action-type 'herbie-command or 'translation
+(struct server-action (action-type associated-type) #:prefab)
+
+(struct translate-job (fpcore to-language) #:prefab)
+
+(define (_create-job0 server-action-type associated-type)
+  (match server-action-type
+    ['herbie-command (eprintf "creating herbie command\n")]
+    ['translate (eprintf "creating translation\n")])
+  (server-action server-action-type associated-type))
 
 ;; Creates a command object to be passed to start-job server.
 ;; TODO contract?
@@ -87,6 +101,7 @@
   (log "Getting result for job: ~a.\n" job-id)
   (manager-ask 'result job-id))
 
+; Invlaid to ask for timeline of a 'translate job.
 (define (get-timeline-for job-id)
   (log "Getting timeline for job: ~a.\n" job-id)
   (manager-ask 'timeline job-id))
@@ -106,11 +121,23 @@
   (apply + job-list))
 
 ;; Starts a job for a given command object|
-(define (start-job command)
-  (define job-id (compute-job-id command))
-  (manager-tell 'start manager command job-id)
-  (log "Job ~a, Qed up for program: ~a\n" job-id (test-name (herbie-command-test command)))
-  job-id)
+(define (start-job action)
+  (match (server-action-action-type action)
+    ['herbie-command
+     (define command (server-action-associated-type action))
+     (define job-id (compute-job-id command))
+     (manager-tell 'start manager action job-id)
+     (log "Qed up herbie command ~a for job ~a program: ~a\n"
+          (herbie-command-command command)
+          job-id
+          (test-name (herbie-command-test command)))
+     job-id]
+    ['translate
+     (match-define (translate-job fpcore to-language) (server-action-associated-type action))
+     (log "Qed up translation Job: ~a to ~a.\n" fpcore to-language)
+     (define job-hash (compute-job-id (translate-job fpcore to-language)))
+     (manager-tell 'start manager action job-hash)
+     job-hash]))
 
 (define (wait-for-job job-id)
   (define finished-result (manager-ask 'wait manager job-id))
@@ -121,17 +148,52 @@
   (log "Telling manager: ~a, ~a.\n" msg args)
   (if manager
       (place-channel-put manager (list* msg args))
-      (match msg
-        ['start
-         (match-define (list hash-false command job-id) args)
-         (hash-set! completed-work job-id (herbie-do-server-job command job-id))])))
+      (match (list* msg args)
+        [(list 'start hash-false action job-id)
+         (match (server-action-action-type action)
+           ['herbie-command
+            (define command (server-action-associated-type action))
+            (hash-set! completed-work job-id (herbie-do-server-job command job-id))]
+           ['translate
+            (match-define (translate-job fpcore to-language) (server-action-associated-type action))
+            (define result (do-translation->json fpcore to-language))
+            (log "Converted Expression: \n~a...\n" result)
+            (hash-set! completed-translations job-id result)])])))
+
+; Translate and return the expected Odyssey json format.
+(define (do-translation->json formula to-language)
+  (eprintf "formual: ~a\n" formula)
+  (define input (read (open-input-string formula)))
+  (match to-language
+    ['mathjs (hasheq 'mathjs (core->mathjs input))]
+    ["python" (hasheq 'result (core->python input "expr") 'language to-language)]
+    ["c" (hasheq 'result (core->c input "expr") 'language to-language)]
+    ["fortran" (hasheq 'result (core->fortran input "expr") 'language to-language)]
+    ["java" (hasheq 'result (core->java input "expr") 'language to-language)]
+    ["julia" (hasheq 'result (core->julia input "expr") 'language to-language)]
+    ["matlab" (hasheq 'result (core->matlab input "expr") 'language to-language)]
+    ["wls" (hasheq 'result (core->wls input "expr") 'language to-language)]
+    ["tex" (hasheq 'result (core->tex input "expr") 'language to-language)]
+    ["js" (hasheq 'result (core->js input "expr") 'language to-language)]
+    [_ (error "Unsupported target language:" to-language)]))
 
 (define (manager-ask msg . args)
   (log "Asking manager: ~a, ~a.\n" msg args)
   (if manager
       (manager-ask-with-callback msg args)
       (match (list* msg args) ; public commands
-        [(list 'wait hash-false job-id) (hash-ref completed-work job-id)]
+        [(list 'wait hash-false job-id)
+         (define result (hash-ref completed-work job-id #f))
+         (match result
+           [#f
+            (match (hash-ref completed-translations job-id #f)
+              [#f (log "Job ~a not complete\n" job-id)]
+              [t
+               (log "Done waiting for translation: ~a\n" job-id)
+               t])]
+           [result
+            (log "Done waiting for job: ~a\n" job-id)
+            result])]
         [(list 'result job-id) (hash-ref completed-work job-id #f)]
         [(list 'timeline job-id) (hash-ref completed-work job-id #f)]
         [(list 'check job-id) (if (hash-ref completed-work job-id #f) job-id #f)]
@@ -158,7 +220,9 @@
       [_ (error 'compute-result "unknown command ~a" kind)]))
   out-result)
 
+;; These are split for the 'improve call.
 (define completed-work (make-hash))
+(define completed-translations (make-hash))
 
 (define (manager-ask-with-callback msg args)
   (define-values (a b) (place-channel))
@@ -223,8 +287,6 @@
                           (parameterize ([params fresh] ...)
                             body ...))))]))
 
-(struct work-item (command id))
-
 (define (make-manager worker-count)
   (place/context*
    ch
@@ -252,25 +314,32 @@
    (for ([i (in-naturals)])
      ;  (eprintf "manager msg ~a handled\n" i)
      (match (place-channel-get ch)
-       [(list 'start self command job-id)
-        ; Check if the work has been completed already if not assign the work.
-        (if (hash-has-key? completed-work job-id)
-            (place-channel-put self (list 'send job-id (hash-ref completed-work job-id)))
-            (place-channel-put self (list 'queue self job-id command)))]
-       [(list 'queue self job-id command)
-        (set! job-queue (append job-queue (list (work-item command job-id))))
+       [(list 'start self action job-id)
+        (match (server-action-action-type action)
+          ; Check if the work has been completed already if not assign the work.
+          ['herbie-command ; Check herbie jobs
+           (if (hash-has-key? completed-work job-id)
+               (place-channel-put self (list 'send job-id (hash-ref completed-work job-id)))
+               (place-channel-put self (list 'queue self job-id action)))]
+          ['translate ; Check translations
+           (if (hash-has-key? completed-translations job-id)
+               (place-channel-put self (list 'send job-id (hash-ref completed-translations job-id)))
+               (place-channel-put self (list 'queue self job-id action)))])]
+       [(list 'queue self job-id action)
+        (log "Queuing: ~a\n" job-id)
+        (set! job-queue (append job-queue (list (list action job-id))))
         (place-channel-put self (list 'assign self))]
        [(list 'assign self)
+        (log "Assigning work\n")
         (define reassigned (make-hash))
         (for ([(wid worker) (in-hash waiting-workers)]
-              [job (in-list job-queue)])
-          (log "Starting worker [~a] on [~a].\n"
-               (work-item-id job)
-               (test-name (herbie-command-test (work-item-command job))))
+              [work (in-list job-queue)])
+          (match-define (list action job-id) work)
+          (log "Starting worker ~a\n" job-id)
           ; Check if the job is already in progress.
-          (unless (hash-has-key? current-jobs (work-item-id job))
-            (hash-set! current-jobs (work-item-id job) wid)
-            (place-channel-put worker (list 'apply self (work-item-command job) (work-item-id job)))
+          (unless (hash-has-key? current-jobs job-id)
+            (hash-set! current-jobs job-id wid)
+            (place-channel-put worker (list 'apply self action job-id))
             (hash-set! reassigned wid worker)
             (hash-set! busy-workers wid worker)))
         ; remove X many jobs from the Q and update waiting-workers
@@ -278,9 +347,11 @@
           (hash-remove! waiting-workers wid)
           (set! job-queue (cdr job-queue)))]
        ; Job is finished save work and free worker. Move work to 'send state.
-       [(list 'finished self wid job-id result)
+       [(list 'finished self wid job-id type result)
         (log "Job ~a finished, saving result.\n" job-id)
-        (hash-set! completed-work job-id result)
+        (match type
+          ['herbie-command (hash-set! completed-work job-id result)]
+          ['translate (hash-set! completed-translations job-id result)])
 
         ; move worker to waiting list
         (hash-remove! current-jobs job-id)
@@ -296,10 +367,17 @@
         (hash-update! waiting job-id (curry append (list handler)) '())
         (define result (hash-ref completed-work job-id #f))
         ; check if the job is completed or not.
-        (unless (false? result)
-          (log "Done waiting for job: ~a\n" job-id)
-          ; we have a result to send.
-          (place-channel-put self (list 'send job-id result)))]
+        (match result
+          [#f
+           (match (hash-ref completed-translations job-id #f)
+             [#f (log "Translation not found\n")]
+             [t
+              (log "Done waiting for translation job: ~a\n" job-id)
+              (place-channel-put self (list 'send job-id t))])]
+          [result
+           (log "Done waiting for job: ~a\n" job-id)
+           ; we have a result to send.
+           (place-channel-put self (list 'send job-id result))])]
        [(list 'send job-id result)
         (log "Sending result for ~a.\n" job-id)
         (for ([handle (hash-ref waiting job-id '())])
@@ -357,23 +435,44 @@
    (define current-job-id #f)
    (for ([_ (in-naturals)])
      (match (place-channel-get ch)
-       [(list 'apply manager command job-id)
-        (set! timeline (*timeline*))
+       [(list 'apply manager action job-id)
         (set! current-job-id job-id)
-        (log "[~a] working on [~a].\n" job-id (test-name (herbie-command-test command)))
-        (thread-send worker-thread (work manager worker-id job-id command))]
-       [(list 'timeline handler)
+        (match (server-action-action-type action)
+          ['herbie-command
+           (define command (server-action-associated-type action))
+           (set! timeline (*timeline*))
+           (log "[~a] working on [~a].\n" job-id (test-name (herbie-command-test command)))
+           (thread-send worker-thread (work manager worker-id job-id action))]
+          ['translate
+           (log "[~a] translating...\n" job-id)
+           (thread-send worker-thread (work manager worker-id job-id action))])]
+       [(list 'timeline handler) ;; Ignore timelines for Translations?
         (log "Timeline requested from worker[~a] for job ~a\n" worker-id current-job-id)
         (place-channel-put handler (reverse (unbox timeline)))]))))
 
 (struct work (manager worker-id job-id job))
 
 (define (run-job job-info)
-  (match-define (work manager worker-id job-id command) job-info)
-  (log "run-job: ~a, ~a\n" worker-id job-id)
-  (define out-result (herbie-do-server-job command job-id))
-  (log "Job: ~a finished, returning work to manager\n" job-id)
-  (place-channel-put manager (list 'finished manager worker-id job-id out-result)))
+  (match-define (work manager worker-id job-id action) job-info)
+  (match (server-action-action-type action)
+    ['herbie-command
+     (define command (server-action-associated-type action))
+     (log "run-job: ~a, ~a\n" worker-id job-id)
+     (define out-result (herbie-do-server-job command job-id))
+     (log "Job: ~a finished, returning work to manager\n" job-id)
+     (place-channel-put
+      manager
+      (list 'finished manager worker-id job-id (server-action-action-type action) out-result))]
+    ['translate
+     (match-define (translate-job fpcore to-language) (server-action-associated-type action))
+     (log "Translate Job: ~a finished, returning work to manager\n" job-id)
+     (place-channel-put manager
+                        (list 'finished
+                              manager
+                              worker-id
+                              job-id
+                              (server-action-action-type action)
+                              (do-translation->json fpcore to-language)))]))
 
 (define (make-explanation-result herbie-result job-id)
   (define explanations (job-result-backend herbie-result))
