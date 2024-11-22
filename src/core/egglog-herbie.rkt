@@ -32,10 +32,10 @@
 (define op-string-names
   (hash '+ 'Add '- 'Sub '* 'Mul '/ 'Div '== 'Eq '!= 'Neq '> 'Gt '< 'Lt '>= 'Gte '<= 'Lte))
 
-(define id->e1 (make-hash))
-(define e1->id (make-hash))
-(define id->e2 (make-hash))
-(define e2->id (make-hash))
+(define id->e1 (make-hasheq))
+(define e1->id (make-hasheq))
+(define id->e2 (make-hasheq))
+(define e2->id (make-hasheq))
 
 ;; [Copied from egg-herbie.rkt] Returns all representatations (and their types) in the current platform.
 (define (all-repr-names [pform (*active-platform*)])
@@ -273,10 +273,6 @@
   (set! prelude-exprs (append prelude-exprs (list if-lifting)))
   (define approx-lifting (approx-lifting-rule))
   (set! prelude-exprs (append prelude-exprs (list approx-lifting)))
-  (define math-rules (egglog-rewrite-rules (real-rules (*simplify-rules*)) #t))
-  (set! prelude-exprs (append prelude-exprs math-rules))
-  (define fp-rules (egglog-rewrite-rules (*fp-safe-simplify-rules*) #f))
-  (set! prelude-exprs (append prelude-exprs fp-rules))
   prelude-exprs)
 
 (define (platform-spec-nodes)
@@ -454,20 +450,17 @@
       [`(if ,cond ,ift ,iff) `(If ,(loop cond) ,(loop ift) ,(loop iff))]
       [(list op args ...) `(,(hash-ref id->e1 op) ,@(map loop args))])))
 
-(define (egglog-rewrite-rules rules spec?)
+(define (egglog-rewrite-rules rules tag)
   (for/list ([rule (in-list rules)])
     (if spec?
         `(rewrite ,(expr->e1-pattern (rule-input rule))
                   ,(expr->e1-pattern (rule-output rule))
                   :ruleset
-                  math)
+                  ,tag)
         `(rewrite ,(expr->e2-pattern (rule-input rule) (rule-otype rule))
                   ,(expr->e2-pattern (rule-output rule) (rule-otype rule))
                   :ruleset
-                  fp-safe))))
-        `(rewrite ,(expr->e1-pattern (rule-input rule)) ,(expr->e1-pattern (rule-output rule)))
-        `(rewrite ,(expr->e2-pattern (rule-input rule) (rule-otype rule))
-                  ,(expr->e2-pattern (rule-output rule) (rule-otype rule))))))
+                  ,tag))))
 
 (define (egglog-add-exprs batch ctx)
   (define egglog-exprs '())
@@ -558,10 +551,7 @@
               (let ety (,(typed-var-id (representation-name repr))
                         ,(symbol->string var))
                 )
-              (union (lower e ty) ety))
-             :ruleset
-             lowering))
-              (union (lower e ty) ety))
+              (union (lower e ty) ety)) :ruleset lowering)))
 
   (set! egglog-exprs (append egglog-exprs var-lowering-rules))
 
@@ -572,9 +562,7 @@
              ((let se (Var
                        ,(symbol->string var))
                 )
-              (union (lift e) se))
-             :ruleset
-             lifting)))
+              (union (lift e) se)) :ruleset lifting)))
 
   (set! egglog-exprs (append egglog-exprs var-lifting-rules))
 
@@ -602,13 +590,7 @@
       `(let ,binding ,(hash-ref bindings binding))))
 
   (set! egglog-exprs (append egglog-exprs binding-exprs))
-  (set! egglog-exprs (append egglog-exprs '((run 10))))
 
-  (define extract-exprs
-    (for/list ([root (in-list root-bindings)])
-      `(extract (lower (lift ,root) ,(symbol->string (representation-name (context-repr ctx)))))))
-
-  (set! egglog-exprs (append egglog-exprs extract-exprs))
   egglog-exprs)
 
 (define (egglog-num? id)
