@@ -35,10 +35,9 @@
   (define schedule
     (if (flag-set? 'generate 'simplify)
         ; if simplify enabled, 2-phases for real rewrites and implementation selection
-        `((,rules . ((node . ,(*node-limit*))))
-          (,lowering-rules . ((iteration . 1) (scheduler . simple))))
+        `((,rules . ((node . ,(*node-limit*)))) ('lower . ((iteration . 1) (scheduler . simple))))
         ; if disabled, only implementation selection
-        `((,lowering-rules . ((iteration . 1) (scheduler . simple))))))
+        `(('lower . ((iteration . 1) (scheduler . simple))))))
 
   (define roots
     (for/vector ([approx (in-list approxs)])
@@ -143,9 +142,9 @@
 
   ; egg schedule (3-phases for mathematical rewrites and implementation selection)
   (define schedule
-    `((,lifting-rules . ((iteration . 1) (scheduler . simple)))
+    `(('lift . ((iteration . 1) (scheduler . simple)))
       (,rules . ((node . ,(*node-limit*))))
-      (,lowering-rules . ((iteration . 1) (scheduler . simple)))))
+      ('lower . ((iteration . 1) (scheduler . simple)))))
 
   ; run egg
   (define exprs (map (compose debatchref alt-expr) altns))

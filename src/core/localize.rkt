@@ -87,13 +87,8 @@
     (make-egg-runner batch
                      (batch-roots batch)
                      reprs
-                      `((,lifting-rules . ((iteration . 1) (scheduler . simple)))
-                        (,rules . ((node . ,(*node-limit*))))
-                        (,lowering-rules . ((iteration . 1) (scheduler . simple))))))
-
-                    ;  `((lift . ((iteration . 1) (scheduler . simple)))
-                    ;    (,rules . ((node . ,(*node-limit*))))
-                    ;    (lower . ((iteration . 1) (scheduler . simple))))))
+                     `((lift . ((iteration . 1))) (,rules . ((node . ,(*node-limit*))))
+                                                  (lower . ((iteration . 1))))))
 
   ; run egg
   (define simplified

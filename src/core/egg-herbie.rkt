@@ -1171,7 +1171,7 @@
       ; run rules in the egraph
       (define egg-rules (expand-rules rules))
 
-      ; OTOD : (define egg-rules 
+      ; OTOD : (define egg-rules
       ;   (expand-rules
       ;     (match rules
       ;       [`lift (platform-lifting-rules)]
@@ -1229,7 +1229,9 @@
       [(cons rules params)
        ;; `run` instruction
 
-       (unless (or (eq? rules `lift) (eq? rules `lower) (and (list? rules) (andmap rule? rules)))
+       (unless (or (equal? `(quote lift) rules)
+                   (equal? `(quote lower) rules)
+                   (and (list? rules) (andmap rule? rules)))
          (oops! "expected list of rules: `~a`" rules))
 
        (for ([param (in-list params)])

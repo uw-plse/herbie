@@ -141,9 +141,8 @@
   (define curr-batch (egg-runner-batch runner)) ; to do switch to egglog
 
   ;; 1. make the program
-
   ;; requires prelude -> list of exprs (only based on platform)
-  (define prelude-exprs (prelude #:mixed-egraph? #t))
+  ; (define prelude-exprs (prelude #:mixed-egraph? #t))
 
   ;; eglog has ssyntax for which ruleset a rule belongs to
 
@@ -152,46 +151,76 @@
   ;; run-schedule
 
   ;; need to translate all rules of runner
-  (define additional-rules (map cons (egg-runner-schedule runner)))
+  ; (define additional-rules (map cons (egg-runner-schedule runner)))
 
-  (define program (append prelude-exprs additional-rules))
+  ; (define program (append prelude-exprs additional-rules))
 
   ;; egglog-add-exprs : batch ctx -> listof exprs
-  (egglog-add-exprs curr-batch (egglog-runner-ctx))
+  ; (egglog-add-exprs curr-batch (egglog-runner-ctx))
 
   ;; 3. Construct the schedule
-  ;; For now, assume rules from `runner` belong to the same ruleset
-  (define ruleset (map runner-rule->expr additional-rules)) ; Convert to Egglog rules
-  (define scheduling-params
-    (list (cons 'node 1000)          ; Node limit
-          (cons 'iteration 10)      ; Iteration limit
-          (cons 'const-fold? #t)    ; Enable constant folding
-          (cons 'scheduler 'backoff))) ; Use backoff scheduler
 
-  ;; Combine rules and scheduling params
-  ; (define schedule (list (list ruleset scheduling-params)))
-  (define schedule
-    (map (lambda (rule-group)
-           (list rule-group scheduling-params))
-         additional-rules))
+  ; (ruleset math)
+  ; (ruleset fp-safe)
+  ; (egglog-rewrite-rules)
 
   ; lift and lower is already in prelude
   ; all other rules have to be translated and appended
 
   ; Have to translate rules with ruleset, tag and params???
-  ; expressions to extract -> iterate over roots 
+  ; expressions to extract -> iterate over roots
 
   ;; 2. Call process-egglog
 
   ;; 3. Parse output
 
-
   ;; Structure -> Genrate separately and append one after the other
+  (define program '())
+
   ;; 1. Prelude
+  (set! program (append program (prelude #:mixed-egraph? #t)))
+
+  ; (ruleset math)
+  ; (ruleset fp-safe)
   ;; 2. User Rules which comes from schedule (need to be translated)
-  ;; 3. Inserting expressions
+  (define schedule
+    (for/list ([i (in-naturals 1)] ; Start index `i` from 1
+               [element (in-list (egg-runner-schedule runner))])
+      (match (car element)
+        ['lift (void)] ; lift and lower in prelude
+        ['lower (void)]
+        [_
+         ((egglog-rewrite-rules (car element) (string-append "?tag" (number->string i)))
+          . (cdr element))])))
+
+  (set! program (append program (map cons schedule)))
+
+  ;; 3. Inserting expressions -> (egglog-add-exprs curr-batch (egglog-runner-ctx))
+  (set! program (append program (egglog-add-exprs curr-batch (egglog-runner-ctx))))
+
   ;; 4. Running the schedule
-  ;; 5. Extraction -> should just need 
+  ;; TODO:
+
+  ; `((run-schedule (saturate lifting) (saturate math) (saturate lowering) ))
+  (set! program
+        (append program
+                '((cons 'run-schedule
+                        (cons (saturate 'lifting)
+                              (cons (saturate 'math)
+                                    (cons (saturate 'lowering)
+                                          (for/list ([i (in-range 1 (length schedule))])
+                                            (saturate (string-append "?tag"
+                                                                     (number->string i)))))))))))
+
+  ;; 5. Extraction -> should just need root ids
+  (for ([root (egg-runner-roots runner)])
+    (set! program
+          (append program
+                  '((extract (lower (lift (string-append "?r" (number->string root)) "binary64")))))))
+
+  ;; 6. Call process-egglog
+
+  ;; 7. Parse output
 
   ;; (Listof (Listof batchref))
   (define out
@@ -451,8 +480,19 @@
       [(list op args ...) `(,(hash-ref id->e1 op) ,@(map loop args))])))
 
 (define (egglog-rewrite-rules rules tag)
-  (for/list ([rule (in-list rules)])
-    (if spec?
+  (printf "before-rules ~a\n" rules)
+
+  (define actual-rules
+    (match rules
+      [`(quote lift) (platform-lifting-rules)]
+      [`(quote lower) (platform-lowering-rules)]
+      [_ rules]))
+
+  (printf "after-rules ~a\n\n" actual-rules)
+
+  (for/list ([rule (in-list actual-rules)])
+    (printf "other-rule ~a\n" rule)
+    (if (eqv? 'real (rule-otype rule))
         `(rewrite ,(expr->e1-pattern (rule-input rule))
                   ,(expr->e1-pattern (rule-output rule))
                   :ruleset
@@ -551,7 +591,9 @@
               (let ety (,(typed-var-id (representation-name repr))
                         ,(symbol->string var))
                 )
-              (union (lower e ty) ety)) :ruleset lowering)))
+              (union (lower e ty) ety))
+             :ruleset
+             lowering)))
 
   (set! egglog-exprs (append egglog-exprs var-lowering-rules))
 
@@ -562,7 +604,9 @@
              ((let se (Var
                        ,(symbol->string var))
                 )
-              (union (lift e) se)) :ruleset lifting)))
+              (union (lift e) se))
+             :ruleset
+             lifting)))
 
   (set! egglog-exprs (append egglog-exprs var-lifting-rules))
 
