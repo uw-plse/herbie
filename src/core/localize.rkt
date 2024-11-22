@@ -79,15 +79,21 @@
   (define lifting-rules (platform-lifting-rules))
   (define lowering-rules (platform-lowering-rules))
 
+  ; BIG TODO: LIFTINGULES REPLACE
+
   ; egg runner (2-phases for real rewrites and implementation selection)
   (define batch (progs->batch progs))
   (define runner
     (make-egg-runner batch
                      (batch-roots batch)
                      reprs
-                     `((,lifting-rules . ((iteration . 1) (scheduler . simple)))
-                       (,rules . ((node . ,(*node-limit*))))
-                       (,lowering-rules . ((iteration . 1) (scheduler . simple))))))
+                      `((,lifting-rules . ((iteration . 1) (scheduler . simple)))
+                        (,rules . ((node . ,(*node-limit*))))
+                        (,lowering-rules . ((iteration . 1) (scheduler . simple))))))
+
+                    ;  `((lift . ((iteration . 1) (scheduler . simple)))
+                    ;    (,rules . ((node . ,(*node-limit*))))
+                    ;    (lower . ((iteration . 1) (scheduler . simple))))))
 
   ; run egg
   (define simplified

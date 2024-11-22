@@ -117,10 +117,10 @@
          (oops! "expected list of rules: `~a`" rules))
        (for ([param (in-list params)])
          (match param
-           [(cons 'node (? nonnegative-integer?)) (void)]
-           [(cons 'iteration (? nonnegative-integer?)) (void)]
-           [(cons 'const-fold? (? boolean?)) (void)]
-           [(cons 'scheduler mode)
+           [(cons 'node (? nonnegative-integer?)) (void)] ; exists
+           [(cons 'iteration (? nonnegative-integer?)) (void)] ; exists (run 5)
+           [(cons 'const-fold? (? boolean?)) (void)] ; AVOID
+           [(cons 'scheduler mode) ; AVOID
             (unless (set-member? '(simple backoff) mode)
               (oops! "in instruction `~a`, unknown scheduler `~a`" instr mode))]
            [_ (oops! "in instruction `~a`, unknown parameter `~a`" instr param)]))]
@@ -138,11 +138,12 @@
 
 ;; TODO : Need to run egglog to get the actual ids per
 (define (run-egglog-single-extractor runner extractor) ; single expression extraction
-  (define curr-batch (egg-runner-batch runner))
+  (define curr-batch (egg-runner-batch runner)) ; to do switch to egglog
 
   ;; 1. make the program
 
   ;; requires prelude -> list of exprs (only based on platform)
+  (define prelude-exprs (prelude #:mixed-egraph? #t))
 
   ;; eglog has ssyntax for which ruleset a rule belongs to
 
@@ -151,12 +152,46 @@
   ;; run-schedule
 
   ;; need to translate all rules of runner
+  (define additional-rules (map cons (egg-runner-schedule runner)))
+
+  (define program (append prelude-exprs additional-rules))
 
   ;; egglog-add-exprs : batch ctx -> listof exprs
+  (egglog-add-exprs curr-batch (egglog-runner-ctx))
+
+  ;; 3. Construct the schedule
+  ;; For now, assume rules from `runner` belong to the same ruleset
+  (define ruleset (map runner-rule->expr additional-rules)) ; Convert to Egglog rules
+  (define scheduling-params
+    (list (cons 'node 1000)          ; Node limit
+          (cons 'iteration 10)      ; Iteration limit
+          (cons 'const-fold? #t)    ; Enable constant folding
+          (cons 'scheduler 'backoff))) ; Use backoff scheduler
+
+  ;; Combine rules and scheduling params
+  ; (define schedule (list (list ruleset scheduling-params)))
+  (define schedule
+    (map (lambda (rule-group)
+           (list rule-group scheduling-params))
+         additional-rules))
+
+  ; lift and lower is already in prelude
+  ; all other rules have to be translated and appended
+
+  ; Have to translate rules with ruleset, tag and params???
+  ; expressions to extract -> iterate over roots 
 
   ;; 2. Call process-egglog
 
   ;; 3. Parse output
+
+
+  ;; Structure -> Genrate separately and append one after the other
+  ;; 1. Prelude
+  ;; 2. User Rules which comes from schedule (need to be translated)
+  ;; 3. Inserting expressions
+  ;; 4. Running the schedule
+  ;; 5. Extraction -> should just need 
 
   ;; (Listof (Listof batchref))
   (define out
@@ -525,8 +560,8 @@
                 )
               (union (lower e ty) ety))
              :ruleset
-             lowering)))
-              (union (lower e ty) ety)))))
+             lowering))
+              (union (lower e ty) ety))
 
   (set! egglog-exprs (append egglog-exprs var-lowering-rules))
 
