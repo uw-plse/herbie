@@ -1229,8 +1229,8 @@
       [(cons rules params)
        ;; `run` instruction
 
-       (unless (or (equal? `(quote lift) rules)
-                   (equal? `(quote lower) rules)
+       (unless (or (equal? `lift rules)
+                   (equal? `lower rules)
                    (and (list? rules) (andmap rule? rules)))
          (oops! "expected list of rules: `~a`" rules))
 

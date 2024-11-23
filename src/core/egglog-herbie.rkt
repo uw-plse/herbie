@@ -180,18 +180,24 @@
   ;; 1. Prelude
   (set! program (append program (prelude #:mixed-egraph? #t)))
 
+  ; (printf "schedule ~a\n" (egg-runner-schedule runner))
+
   ; (ruleset math)
   ; (ruleset fp-safe)
   ;; 2. User Rules which comes from schedule (need to be translated)
   (define schedule
     (for/list ([i (in-naturals 1)] ; Start index `i` from 1
                [element (in-list (egg-runner-schedule runner))])
+      (printf "element : ~a\n" element)
+      (printf "car element : ~a\n\n" (car element))
       (match (car element)
         ['lift (void)] ; lift and lower in prelude
         ['lower (void)]
         [_
          ((egglog-rewrite-rules (car element) (string-append "?tag" (number->string i)))
           . (cdr element))])))
+
+  (printf "finished schedule \n")
 
   (set! program (append program (map cons schedule)))
 
@@ -480,7 +486,7 @@
       [(list op args ...) `(,(hash-ref id->e1 op) ,@(map loop args))])))
 
 (define (egglog-rewrite-rules rules tag)
-  (printf "before-rules ~a\n" rules)
+  ; (printf "before-rules ~a\n" rules)
 
   (define actual-rules
     (match rules
@@ -488,19 +494,24 @@
       [`(quote lower) (platform-lowering-rules)]
       [_ rules]))
 
-  (printf "after-rules ~a\n\n" actual-rules)
+  ; (printf "after-rules ~a\n\n" actual-rules)
 
-  (for/list ([rule (in-list actual-rules)])
-    (printf "other-rule ~a\n" rule)
-    (if (eqv? 'real (rule-otype rule))
-        `(rewrite ,(expr->e1-pattern (rule-input rule))
-                  ,(expr->e1-pattern (rule-output rule))
-                  :ruleset
-                  ,tag)
-        `(rewrite ,(expr->e2-pattern (rule-input rule) (rule-otype rule))
-                  ,(expr->e2-pattern (rule-output rule) (rule-otype rule))
-                  :ruleset
-                  ,tag))))
+  (define return-list
+    (for/list ([rule (in-list actual-rules)])
+      ; (printf "other-rule ~a\n" rule)
+      (if (not (representation? (rule-output rule)))
+          `(rewrite ,(expr->e1-pattern (rule-input rule))
+                    ,(expr->e1-pattern (rule-output rule))
+                    :ruleset
+                    ,tag)
+          `(rewrite ,(expr->e2-pattern (rule-input rule) (rule-otype rule))
+                    ,(expr->e2-pattern (rule-output rule) (rule-otype rule))
+                    :ruleset
+                    ,tag))))
+
+  (printf "finished for loop \n")
+                  
+  return-list)
 
 (define (egglog-add-exprs batch ctx)
   (define egglog-exprs '())
