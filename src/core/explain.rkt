@@ -125,12 +125,9 @@
       (define exacts-val (hash-ref exacts-hash subexpr))
       ((representation-repr->bf (hash-ref repr-hash subexpr)) exacts-val))
 
-    (define lfs
-      (vector-map (lambda (x)
-                    (if (logfloat? x)
-                        (lf-normalize x)
-                        x))
-                  (apply subexprs-lf (map lf pt))))
+    (define lfs (vector-map (lambda (x) (if (logfloat? x)
+                                            (lf-normalize x)
+                                            x)) (apply subexprs-lf (map lf pt))))
     (define lfs-hash (make-immutable-hash (map cons subexprs-list (vector->list lfs))))
     (define (lfs-ref subexpr)
       (hash-ref lfs-hash subexpr))
@@ -164,6 +161,7 @@
          (update-flow-hash uflow-hash bfzero? x-ex)]
         [_ #f])
 
+
       (when (list? subexpr)
         (let* ([op (first subexpr)]
                [op (symbol->string op)]
@@ -185,12 +183,9 @@
          (define x.eps (+ 127 (bigfloat-exponent x)))
          (define y.eps (+ 127 (bigfloat-exponent y)))
 
-         (match-define (logfloat _ _ _ xe1 xe2) x.dl)
-         (match-define (logfloat _ _ _ ye1 ye2) y.dl)
-
          (cond
-           [(dd> (dd- xe1 xe2 ye1 ye2) 100) (silence y-ex)]
-           [(dd> (dd- ye1 ye2 xe1 xe2) 100) (silence x-ex)])
+           [(> (- x.eps y.eps) 100) (silence y-ex)]
+           [(> (- y.eps x.eps) 100) (silence x-ex)])
 
          (if (or (lfover/underflowed? x.dl) (lfover/underflowed? y.dl))
              (cond
@@ -225,18 +220,9 @@
          (define x.eps (+ 127 (bigfloat-exponent x)))
          (define y.eps (+ 127 (bigfloat-exponent y)))
 
-         (match-define (logfloat _ _ _ xe1 xe2) x.dl)
-         (match-define (logfloat _ _ _ ye1 ye2) y.dl)
-
-         (eprintf "~a ~a ~a ~a ~a ~a\n" x.eps y.eps xe1 xe2 ye1 ye2)
-
          (cond
-           [(dd> (dd- xe1 xe2 ye1 ye2) 100) (silence y-ex)]
-           [(dd> (dd- ye1 ye2 xe1 xe2) 100) (silence x-ex)])
-
-         #;(cond
-             [(> (- x.eps y.eps) 100) (silence y-ex)]
-             [(> (- y.eps x.eps) 100) (silence x-ex)])
+           [(> (- x.eps y.eps) 100) (silence y-ex)]
+           [(> (- y.eps x.eps) 100) (silence x-ex)])
 
          (if (or (lfover/underflowed? x.dl) (lfover/underflowed? y.dl))
              (cond
@@ -284,20 +270,21 @@
              (when (lfoverflow? x.lf)
                (mark-erroneous! subexpr 'oflow-rescue))
 
-             (cond
-               [(and (lf> cond.lf condthres.dl #f) (lf> (lfabs x.lf) condthres.dl #f))
-                (mark-erroneous! subexpr 'sensitivity)]
 
-               [(and (lf> cond.lf condthres.dl #f) (lf> cot.lf condthres.dl #f))
-                (mark-erroneous! subexpr 'cancelation)]
+               (cond
+                   [(and (lf> cond.lf condthres.dl #f) (lf> (lfabs x.lf) condthres.dl #f))
+                    (mark-erroneous! subexpr 'sensitivity)]
 
-               [(and (lf> cond.lf maybethres.dl #f) (lf> (lfabs x.lf) maybethres.dl #f))
-                (mark-maybe! subexpr 'sensitivity)]
+                   [(and (lf> cond.lf condthres.dl #f) (lf> cot.lf condthres.dl #f))
+                    (mark-erroneous! subexpr 'cancelation)]
 
-               [(and (lf> cond.lf maybethres.dl #f) (lf> cot.lf maybethres.dl #f))
-                (mark-maybe! subexpr 'cancellation)]
+                   [(and (lf> cond.lf maybethres.dl #f) (lf> (lfabs x.lf) maybethres.dl #f))
+                    (mark-maybe! subexpr 'sensitivity)]
 
-               [else #f]))]
+                   [(and (lf> cond.lf maybethres.dl #f) (lf> cot.lf maybethres.dl #f))
+                    (mark-maybe! subexpr 'cancellation)]
+
+                   [else #f]))]
 
         [(list (or 'cos.f64 'cos.f32) x-ex)
          #:when (list? x-ex)
@@ -379,8 +366,7 @@
         [(list (or 'sqrt.f64 'sqrt.f32) x-ex)
          #:when (list? x-ex)
          (define x.lf (lfs-ref x-ex))
-         (when (lf< x.lf (lf 0.0) #f)
-           (eprintf "~a, ~a, ~a\n" subexpr pt x.lf))
+
 
          (cond
            ;; Underflow rescue:
@@ -406,6 +392,9 @@
 
         [(list (or '/.f64 '/.f32) x-ex y-ex)
          #:when (or (list? x-ex) (list? y-ex))
+         (define x (exacts-ref x-ex))
+         (define y (exacts-ref y-ex))
+
          (define x.lf (lfs-ref x-ex))
          (define y.lf (lfs-ref y-ex))
 
@@ -416,7 +405,8 @@
              [(and (lfunderflow? x.lf) (lfunderflow? y.lf) (not (lfnan? z.dl)))
               (mark-erroneous! subexpr 'u/u)]
              ;; - is small enough, 0 underflow could be rescued
-             [(and (lfunderflow? x.lf) (not (lfunderflow? z.dl))) (mark-erroneous! subexpr 'u/n)]
+             [(and (lfunderflow? x.lf) (not (lfunderflow? z.dl)))
+              (mark-erroneous! subexpr 'u/n)]
              ;; - overflows, no rescue is possible
 
              ;; if the numerator overflows and the denominator:
@@ -424,19 +414,25 @@
              [(and (lfoverflow? x.lf) (lfoverflow? y.lf) (not (lfnan? z.dl)))
               (mark-erroneous! subexpr 'o/o)]
              ;; - is large enough, inf overflow can be rescued
-             [(and (lfoverflow? x.lf) (not (lfoverflow? z.dl))) (mark-erroneous! subexpr 'o/n)]
+             [(and (lfoverflow? x.lf) (not (lfoverflow? z.dl)))
+              (mark-erroneous! subexpr 'o/n)]
              ;; - underflow, no rescue is possible
 
              ;; if the numerator is normal and the denominator:
              ;; - overflows, then a rescue is possible
-             [(and (lfoverflow? y.lf) (not (lfunderflow? z.dl))) (mark-erroneous! subexpr 'n/o)]
+             [(and (lfoverflow? y.lf) (not (lfunderflow? z.dl)))
+              (mark-erroneous! subexpr 'n/o)]
              ;; - underflows, then a rescue is possible
-             [(and (lfunderflow? y.lf) (not (lfoverflow? z.dl))) (mark-erroneous! subexpr 'n/u)]
+             [(and (lfunderflow? y.lf) (not (lfoverflow? z.dl)))
+              (mark-erroneous! subexpr 'n/u)]
              ;; - is normal, then no rescue is possible
              [else #f]))]
 
         [(list (or '*.f64 '*.f32) x-ex y-ex)
          #:when (or (list? x-ex) [list? y-ex])
+         (define x (exacts-ref x-ex))
+         (define y (exacts-ref y-ex))
+
          (define x.lf (lfs-ref x-ex))
          (define y.lf (lfs-ref y-ex))
 

@@ -108,7 +108,9 @@
         [(list op a) (list (lambda (x) (lf-normalize ((lfop op) x))) a)]
         [(list op a b) (list (lambda (x y) (lf-normalize ((lfop op) x y))) a b)]
         [(list op a b c) (list (lambda (x y z) (lf-normalize ((lfop op) x y z))) a b c)]
-        #;[(list op args ...) (cons (lambda ()) (lfop op) args)])))
+        #;[(list op args ...) (cons
+                             (lambda () )
+                             (lfop op) args)])))
 
   (make-progs-interpreter (batch-vars batch) instructions (batch-roots batch)))
 

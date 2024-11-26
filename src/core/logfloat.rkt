@@ -30,15 +30,13 @@
                 [(e1 e2) (ddlog2 e1 e2)])
     (logfloat x1 x2 (dd>= x1 x2 0.0 0.0) e1 e2)))
 
-(define (max.lf)
-  (if (= (lf-precision) 64)
-      (logfloat +max.0 0.0 #true 1024.0 0.0)
-      (logfloat 3.40282347E+38 0.0 #true 128.0 0.0)))
+(define (max.lf) (if (= (lf-precision) 64)
+                     (logfloat +max.0 0.0 #true 1024.0 0.0)
+                     (logfloat 3.40282347E+38 0.0 #true 128.0 0.0)))
 
-(define (min.lf)
-  (if (= (lf-precision) 64)
-      (logfloat +min.0 0.0 #true -1074.0 0.0)
-      (logfloat 1.17549435e-38 0.0 #true -126.0 0.0)))
+(define (min.lf) (if (= (lf-precision) 64)
+                     (logfloat +min.0 0.0 #true -1074.0 0.0)
+                     (logfloat 1.17549435e-38 0.0 #true -126.0 0.0)))
 
 (define +max.lf (logfloat +max.0 0.0 #true 1024.0 0.0))
 (define +min.lf (logfloat +min.0 0.0 #true -1074.0 0.0))
@@ -55,7 +53,8 @@
      (if s
          (logfloat l1 l2 s e1 e2)
          (logfloat n1 n2 s e1 e2))]
-    [(or (ddnan? e1 e2) (ddzero? e1 e2) (ddinfinite? e1 e2)) (logfloat x1 x2 ns ne1 ne2)]
+    [(or (ddnan? e1 e2) (ddzero? e1 e2) (ddinfinite? e1 e2))
+     (logfloat x1 x2 ns ne1 ne2)]
     [else x]))
 
 (define/contract (lfzero? x)

@@ -32,29 +32,35 @@
 
 (define-qd c_rem_pio2 (_fun _double _pointer -> _int))
 
-(define-dd-binary c_dd_add c_dd_sub c_dd_mul c_dd_div c_dd_atan2)
+(define-dd-binary
+  c_dd_add
+  c_dd_sub
+  c_dd_mul
+  c_dd_div
+  c_dd_atan2)
 
-(define-dd-unary c_dd_sqrt
-                 c_dd_sqr
-                 c_dd_abs
-                 c_dd_exp
-                 c_dd_log
-                 c_dd_log10
-                 c_dd_sin
-                 c_dd_cos
-                 c_dd_tan
-                 c_dd_aint
-                 c_dd_floor
-                 c_dd_ceil
-                 c_dd_asin
-                 c_dd_acos
-                 c_dd_atan
-                 c_dd_sinh
-                 c_dd_cosh
-                 c_dd_tanh
-                 c_dd_asinh
-                 c_dd_acosh
-                 c_dd_atanh)
+(define-dd-unary
+  c_dd_sqrt
+  c_dd_sqr
+  c_dd_abs
+  c_dd_exp
+  c_dd_log
+  c_dd_log10
+  c_dd_sin
+  c_dd_cos
+  c_dd_tan
+  c_dd_aint
+  c_dd_floor
+  c_dd_ceil
+  c_dd_asin
+  c_dd_acos
+  c_dd_atan
+  c_dd_sinh
+  c_dd_cosh
+  c_dd_tanh
+  c_dd_asinh
+  c_dd_acosh
+  c_dd_atanh)
 
 (define x 2.456e+150)
 
@@ -286,7 +292,8 @@
     [(ddint? y1 y2)
      ;; ignore the low part
      (let*-values ([(e1 _) (ddaint y1 y2)]
-                   [(mod2) (or (and (even? y1) (even? y2)) (and (odd? y1) (odd? y2)))]
+                   [(mod2) (or (and (even? y1) (even? y2))
+                               (and (odd? y1) (odd? y2)))]
                    [(a1 a2) (ddabs x1 x2)]
                    [(a1 a2) (ddlog a1 a2)]
                    [(a1 a2) (dd* y1 y2 a1 a2)]
@@ -357,20 +364,21 @@
          (name2 (f64vector->cpointer a) (f64vector->cpointer b))
          (apply values (f64vector->list b))) ...)]))
 
-(define-dd-unary-fn [ddabs c_dd_abs]
-                    [ddsin c_dd_sin]
-                    [ddcos c_dd_cos]
-                    [ddtan c_dd_tan]
-                    [ddaint c_dd_aint]
-                    [ddexp c_dd_exp]
-                    [ddfloor c_dd_floor]
-                    [ddceil c_dd_ceil]
-                    [ddasin c_dd_asin]
-                    [ddacos c_dd_acos]
-                    [ddatan c_dd_atan]
-                    [ddsinh c_dd_sinh]
-                    [ddcosh c_dd_cosh]
-                    [ddtanh c_dd_tanh]
-                    [ddasinh c_dd_asinh]
-                    [ddacosh c_dd_acosh]
-                    [ddatanh c_dd_atanh])
+(define-dd-unary-fn
+  [ddabs c_dd_abs]
+  [ddsin c_dd_sin]
+  [ddcos c_dd_cos]
+  [ddtan c_dd_tan]
+  [ddaint c_dd_aint]
+  [ddexp c_dd_exp]
+  [ddfloor c_dd_floor]
+  [ddceil c_dd_ceil]
+  [ddasin c_dd_asin]
+  [ddacos c_dd_acos]
+  [ddatan c_dd_atan]
+  [ddsinh c_dd_sinh]
+  [ddcosh c_dd_cosh]
+  [ddtanh c_dd_tanh]
+  [ddasinh c_dd_asinh]
+  [ddacosh c_dd_acosh]
+  [ddatanh c_dd_atanh])
