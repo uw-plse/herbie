@@ -231,6 +231,7 @@
 (define-timeline total-confusion #:custom (λ (x y) (list (map + (car x) (car y)))))
 (define-timeline maybe-confusion #:custom (λ (x y) (list (map + (car x) (car y)))))
 (define-timeline freqs [key false] [val +])
+(define-timeline expl-stats [timings +] [len +])
 
 (define (timeline-merge . timelines)
   ;; The timelines in this case are JSON objects, as above

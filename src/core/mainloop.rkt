@@ -325,7 +325,8 @@
                   confusion-matrix
                   maybe-confusion-matrix
                   total-confusion-matrix
-                  freqs)
+                  freqs
+                  timings)
     (explain expr context pcontext))
 
   (for ([fperror (in-list fperrors)])
@@ -342,7 +343,8 @@
 
   (timeline-push! 'total-confusion total-confusion-matrix)
   (for ([(key val) (in-dict freqs)])
-    (timeline-push! 'freqs key val)))
+    (timeline-push! 'freqs key val))
+  (timeline-push! 'expl-stats (apply + timings) (length timings)))
 
 (define (make-regime! alts)
   (define ctx (*context*))

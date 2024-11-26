@@ -500,13 +500,14 @@
 
            [else #f])]
         [_ #f])))
-  (eprintf "Time Taken: ~a\n" (apply + timings))
-  (eprintf "Avg Time:   ~a\n" (mean timings))
-  (values error-count-hash expls->points maybe-expls->points oflow-hash uflow-hash))
+  ;(eprintf "Time Taken: ~a\n" (apply + timings))
+  ;(eprintf "Avg Time:   ~a\n" (mean timings))
+  (values error-count-hash expls->points maybe-expls->points oflow-hash uflow-hash timings))
 
 (define (generate-timelines expr
                             ctx
                             pctx
+                            timings
                             error-count-hash
                             expls->points
                             maybe-expls->points
@@ -605,16 +606,18 @@
           confusion-matrix
           maybe-confusion-matrix
           total-confusion-matrix
-          freqs))
+          freqs
+          timings))
 
 (define (explain expr ctx pctx)
   (define-values (subexprs-list repr-hash subexprs-fn) (compile-expr expr ctx))
 
-  (define-values (error-count-hash expls->points maybe-expls->points oflow-hash uflow-hash)
+  (define-values (error-count-hash expls->points maybe-expls->points oflow-hash uflow-hash timings)
     (predict-errors ctx pctx subexprs-list repr-hash subexprs-fn))
   (generate-timelines expr
                       ctx
                       pctx
+                      timings
                       error-count-hash
                       expls->points
                       maybe-expls->points
