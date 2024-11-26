@@ -182,6 +182,10 @@
 
          (define x.eps (+ 127 (bigfloat-exponent x)))
          (define y.eps (+ 127 (bigfloat-exponent y)))
+         (match-define (logfloat _ _ _ xe1 xe2) x.dl)
+         (match-define (logfloat _ _ _ ye1 ye2) y.dl)
+
+         ;(eprintf "~a ~a ~a ~a ~a ~a\n" x.eps y.eps xe1 xe2 ye1 ye2)
 
          (cond
            [(> (- x.eps y.eps) 100) (silence y-ex)]
@@ -219,6 +223,11 @@
 
          (define x.eps (+ 127 (bigfloat-exponent x)))
          (define y.eps (+ 127 (bigfloat-exponent y)))
+
+         (match-define (logfloat _ _ _ xe1 xe2) x.dl)
+         (match-define (logfloat _ _ _ ye1 ye2) y.dl)
+
+         ;(eprintf "~a ~a ~a ~a ~a ~a\n" subexpr pt (bigfloat->flonum x) (bigfloat->flonum y) x.dl y.dl)
 
          (cond
            [(> (- x.eps y.eps) 100) (silence y-ex)]
