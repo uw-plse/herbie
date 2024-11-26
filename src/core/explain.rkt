@@ -1,15 +1,20 @@
 #lang racket
 
 (require racket/set
+         math/bigfloat
          racket/hash)
 (require "points.rkt"
          "../syntax/types.rkt"
          "localize.rkt"
          "../utils/common.rkt"
+         "sampling.rkt"
+         "../syntax/sugar.rkt"
          "programs.rkt"
          "../utils/float.rkt"
+         "../config.rkt"
          "logfloat.rkt"
-         "compiler.rkt")
+         "compiler.rkt"
+         "dd.rkt")
 
 (provide explain)
 
@@ -62,15 +67,32 @@
   (for/hash ([group (in-list (group-by car pt-worst-subexpr))])
     (let ([key (caar group)]) (values key (map cdr group)))))
 
+(define (same-sign? a b)
+  (or (and (bfpositive? a) (bfpositive? b)) (and (bfnegative? a) (bfnegative? b))))
+
 (define all-explanations (list 'uflow-rescue 'u/u 'u/n 'o/o 'n/o 'o*u 'u*o 'n*u 'cancellation))
+(define cond-thres (bf 100))
+(define maybe-cond-thres (bf 32))
 
 (define (compile-expr expr ctx)
   (define subexprs (all-subexpressions expr #:reverse? #t))
+  (define spec-list (map prog->spec subexprs))
+  (define ctxs
+    (for/list ([subexpr (in-list subexprs)])
+      (struct-copy context ctx [repr (repr-of subexpr ctx)])))
+
+  (define repr-hash
+    (make-immutable-hash (map (lambda (e ctx) (cons e (context-repr ctx))) subexprs ctxs)))
+
+  (define subexprs-fn
+    (parameterize ([*max-mpfr-prec* 128])
+      (eval-progs-real spec-list ctxs)))
+
   (define subexprs-lf (compile-lfs (map expr->lf subexprs) ctx))
 
-  (values subexprs subexprs-lf))
+  (values subexprs repr-hash subexprs-fn subexprs-lf))
 
-(define (predict-errors pctx subexprs-list subexprs-lf)
+(define (predict-errors ctx pctx subexprs-list repr-hash subexprs-fn subexprs-lf)
   (define error-count-hash (make-hash (map (lambda (x) (cons x '())) subexprs-list)))
   (define uflow-hash (make-hash))
   (define oflow-hash (make-hash))
@@ -97,6 +119,12 @@
     (define (mark-maybe! expr [expl 'sensitivity])
       (hash-update! maybe-expls->points (cons expr expl) (lambda (x) (set-add x pt)) '()))
 
+    (define exacts (apply subexprs-fn pt))
+    (define exacts-hash (make-immutable-hash (map cons subexprs-list exacts)))
+    (define (exacts-ref subexpr)
+      (define exacts-val (hash-ref exacts-hash subexpr))
+      ((representation-repr->bf (hash-ref repr-hash subexpr)) exacts-val))
+
     (define lfs
       (vector-map (lambda (x)
                     (if (logfloat? x)
@@ -108,6 +136,7 @@
       (hash-ref lfs-hash subexpr))
 
     (for/list ([subexpr (in-list subexprs-list)])
+      (define subexpr-val (exacts-ref subexpr))
       (define z.dl (lfs-ref subexpr))
 
       (define (update-flow-hash flow-hash pred? . children)
@@ -118,21 +147,21 @@
         (define parent-set (hash-ref flow-hash subexpr (make-immutable-hash)))
         (define parent+child-set (hash-union parent-set child-set #:combine (lambda (_ v) v)))
         (define new-parent-set
-          (if (and (logfloat? z.dl) (pred? z.dl))
+          (if (and (bigfloat? subexpr-val) (pred? subexpr-val))
               (hash-update parent+child-set subexpr (lambda (x) (+ x 1)) 0)
               parent+child-set))
         (hash-set! flow-hash subexpr new-parent-set))
 
       (match subexpr
         [(list _ x-ex y-ex z-ex)
-         (update-flow-hash oflow-hash lfoverflow? x-ex y-ex z-ex)
-         (update-flow-hash uflow-hash lfunderflow? x-ex y-ex z-ex)]
+         (update-flow-hash oflow-hash bfinfinite? x-ex y-ex z-ex)
+         (update-flow-hash uflow-hash bfzero? x-ex y-ex z-ex)]
         [(list _ x-ex y-ex)
-         (update-flow-hash oflow-hash lfoverflow? x-ex y-ex)
-         (update-flow-hash uflow-hash lfunderflow? x-ex y-ex)]
+         (update-flow-hash oflow-hash bfinfinite? x-ex y-ex)
+         (update-flow-hash uflow-hash bfzero? x-ex y-ex)]
         [(list _ x-ex)
-         (update-flow-hash oflow-hash lfoverflow? x-ex)
-         (update-flow-hash uflow-hash lfunderflow? x-ex)]
+         (update-flow-hash oflow-hash bfinfinite? x-ex)
+         (update-flow-hash uflow-hash bfzero? x-ex)]
         [_ #f])
 
       (when (list? subexpr)
@@ -145,17 +174,23 @@
       (match subexpr
         [(list (or '+.f64 '+.f32) x-ex y-ex)
          #:when (or (list? x-ex) (list? y-ex))
+         (define x (exacts-ref x-ex))
+         (define y (exacts-ref y-ex))
+
          (define x.dl (lfs-ref x-ex))
          (define y.dl (lfs-ref y-ex))
          (define condx.dl (lfabs (lf/ x.dl z.dl)))
          (define condy.dl (lfabs (lf/ x.dl z.dl)))
 
-         (match-define (logfloat _ _ _ xe1 _) x.dl)
-         (match-define (logfloat _ _ _ ye1 _) y.dl)
+         (define x.eps (+ 127 (bigfloat-exponent x)))
+         (define y.eps (+ 127 (bigfloat-exponent y)))
+
+         (match-define (logfloat _ _ _ xe1 xe2) x.dl)
+         (match-define (logfloat _ _ _ ye1 ye2) y.dl)
 
          (cond
-           [(> (- xe1 ye1) 100) (silence y-ex)]
-           [(> (- ye1 xe1) 100) (silence x-ex)])
+           [(dd> (dd- xe1 xe2 ye1 ye2) 100) (silence y-ex)]
+           [(dd> (dd- ye1 ye2 xe1 xe2) 100) (silence x-ex)])
 
          (if (or (lfover/underflowed? x.dl) (lfover/underflowed? y.dl))
              (cond
@@ -179,20 +214,25 @@
 
         [(list (or '-.f64 '-.f32) x-ex y-ex)
          #:when (or (list? x-ex) (list? y-ex))
+         (define x (exacts-ref x-ex))
+         (define y (exacts-ref y-ex))
 
          (define x.dl (lfs-ref x-ex))
          (define y.dl (lfs-ref y-ex))
          (define condx.dl (lfabs (lf/ x.dl z.dl)))
          (define condy.dl (lfabs (lf/ x.dl z.dl)))
 
-         (match-define (logfloat _ _ _ xe1 _) x.dl)
-         (match-define (logfloat _ _ _ ye1 _) y.dl)
+         (define x.eps (+ 127 (bigfloat-exponent x)))
+         (define y.eps (+ 127 (bigfloat-exponent y)))
 
-         ;(eprintf "~a ~a ~a ~a ~a ~a\n" x.eps y.eps xe1 xe2 ye1 ye2)
+         (match-define (logfloat _ _ _ xe1 xe2) x.dl)
+         (match-define (logfloat _ _ _ ye1 ye2) y.dl)
+
+         (eprintf "~a ~a ~a ~a ~a ~a\n" x.eps y.eps xe1 xe2 ye1 ye2)
 
          (cond
-           [(> (- xe1 ye1) 100) (silence y-ex)]
-           [(> (- ye1 xe1) 100) (silence x-ex)])
+           [(dd> (dd- xe1 xe2 ye1 ye2) 100) (silence y-ex)]
+           [(dd> (dd- ye1 ye2 xe1 xe2) 100) (silence x-ex)])
 
          #;(cond
              [(> (- x.eps y.eps) 100) (silence y-ex)]
@@ -221,6 +261,18 @@
         [(list (or 'sin.f64 'sin.f32) x-ex)
          #:when (list? x-ex)
          (define x.lf (lfs-ref x-ex))
+         (match-define (logfloat x r_x _ _ _) x.lf)
+         (define-values (z r_z) (ddrsin x 0.0))
+         (define-values (cond1 cond2)
+           (let*-values ([(t1 t2) (ddrtan x r_x)]
+                         [(c1 c2) (dd/ 1.0 0.0 t1 t2)]
+                         [(c1 c2) (dd* x r_x c1 c2)])
+             (ddabs c1 c2)))
+         (define re (abs (/ r_x x)))
+         (define mu (abs (/ r_z z)))
+
+         (define-values (ae1 ae2) (dd* cond1 cond2 re))
+
          (define cot.lf (lfabs (lf/ (lf 1.0) (lftan x.lf))))
          (define cond.lf (lf* (lfabs x.lf) cot.lf))
 
@@ -493,30 +545,29 @@
 
         [(list (or 'acos.f64 'acos.f32) x-ex)
          #:when (list? x-ex)
-         (define x.dl (lfs-ref x-ex))
-         (define cond-x.lf (lfabs (lf/ x.dl (lf* (lfsqrt (lf- (lf 1.0) (lf* x.dl x.dl))) z.dl))))
-         ; Condition number hallucinations:
-         ; acos(1) == 0
-         ;; [(and (bf= x 1.bf) (bfzero? subexpr-val)) #f]
+         (define x (exacts-ref x-ex))
+         (define cond-x (bfabs (bf/ x (bf* (bfsqrt (bf- 1.bf (bf* x x))) subexpr-val))))
 
-         ; acos(-1) == pi
-         ;; [(bf= x -1.bf)  #f]
+         (cond
+           ; Condition number hallucinations:
+           ; acos(1) == 0
+           ;; [(and (bf= x 1.bf) (bfzero? subexpr-val)) #f]
 
-         ; High Condition Number:
-         ; CN(acos, x) = |x / (√(1 - x^2)acos(x))|
-         (when (not (lfover/underflowed? x.dl))
+           ; acos(-1) == pi
+           ;; [(bf= x -1.bf)  #f]
 
-           (cond
-             [(lf> cond-x.lf condthres.dl #f) (mark-erroneous! subexpr 'sensitivity)]
+           ; High Condition Number:
+           ; CN(acos, x) = |x / (√(1 - x^2)acos(x))|
+           [(bf> cond-x cond-thres) (mark-erroneous! subexpr 'sensitivity)]
 
-             [(lf> cond-x.lf maybethres.dl #f) (mark-maybe! subexpr 'sensitivity)]
+           [(bf> cond-x maybe-cond-thres) (mark-maybe! subexpr 'sensitivity)]
 
-             [else #f]))]
+           [else #f])]
 
         [(list (or 'asin.f64 'asin.f32) x-ex)
          #:when (list? x-ex)
-         (define x.dl (lfs-ref x-ex))
-         (define cond-x.lf (lfabs (lf/ x.dl (lf* (lfsqrt (lf- (lf 1.0) (lf* x.dl x.dl))) z.dl))))
+         (define x (exacts-ref x-ex))
+         (define cond-x (bfabs (bf/ x (bf* (bfsqrt (bf- 1.bf (bf* x x))) subexpr-val))))
 
          (cond
            ; Condition Number hallucinations:
@@ -525,9 +576,9 @@
            ;; [(and (bfzero? x) (bfzero? subexpr-val)) #f]
            ; High Condition Number:
            ; CN(acos, x) = |x / (√(1 - x^2)asin(x))|
-           [(lf> cond-x.lf condthres.dl #f) (mark-erroneous! subexpr 'sensitivity)]
+           [(bf> cond-x cond-thres) (mark-erroneous! subexpr 'sensitivity)]
 
-           [(lf> cond-x.lf maybethres.dl #f) (mark-maybe! subexpr 'sensitivity)]
+           [(bf> cond-x maybe-cond-thres) (mark-maybe! subexpr 'sensitivity)]
 
            [else #f])]
         [_ #f])))
@@ -637,10 +688,10 @@
           freqs))
 
 (define (explain expr ctx pctx)
-  (define-values (subexprs-list subexprs-lf) (compile-expr expr ctx))
+  (define-values (subexprs-list repr-hash subexprs-fn subexprs-lf) (compile-expr expr ctx))
 
   (define-values (error-count-hash expls->points maybe-expls->points oflow-hash uflow-hash)
-    (predict-errors pctx subexprs-list subexprs-lf))
+    (predict-errors ctx pctx subexprs-list repr-hash subexprs-fn subexprs-lf))
 
   (generate-timelines expr
                       ctx
