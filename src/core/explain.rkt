@@ -2,14 +2,14 @@
 
 (require racket/set
          math/bigfloat
-         racket/hash)
+         racket/hash
+         math/statistics)
 (require "points.rkt"
          "../syntax/types.rkt"
          "localize.rkt"
          "../utils/common.rkt"
          "sampling.rkt"
          "../syntax/sugar.rkt"
-         "../utils/alternative.rkt"
          "programs.rkt"
          "../utils/float.rkt"
          "../config.rkt")
@@ -87,6 +87,8 @@
   (define expls->points (make-hash))
   (define maybe-expls->points (make-hash))
 
+  (define timings (list))
+
   (for ([(pt _) (in-pcontext pctx)])
     (define (silence expr)
       (define subexprs (all-subexpressions expr #:reverse? #t))
@@ -106,7 +108,11 @@
     (define (mark-maybe! expr [expl 'sensitivity])
       (hash-update! maybe-expls->points (cons expr expl) (lambda (x) (set-add x pt)) '()))
 
+    (define time-start (current-inexact-milliseconds))
     (define exacts (apply subexprs-fn pt))
+    (define time-end (current-inexact-milliseconds))
+    (define time-taken (- time-end time-start))
+    (set! timings (cons time-taken timings))
 
     (define exacts-hash (make-immutable-hash (map cons subexprs-list exacts)))
     (define (exacts-ref subexpr)
@@ -494,6 +500,8 @@
 
            [else #f])]
         [_ #f])))
+  (eprintf "Time Taken: ~a\n" (apply + timings))
+  (eprintf "Avg Time:   ~a\n" (mean timings))
   (values error-count-hash expls->points maybe-expls->points oflow-hash uflow-hash))
 
 (define (generate-timelines expr
