@@ -34,11 +34,9 @@ RECURSE=1 LOG=1 \
     "$BENCH_DIR" "$OUT_DIR" \
     --profile \
     --seed "$SEED" \
-    --threads "$CORES" \
     $FLAGS
 
 # upload
 if [ "$?" -eq 0 ]; then
   bash $INFRA_DIR/publish.sh upload "$OUT_DIR"
 fi
-
