@@ -102,7 +102,7 @@
 (define *num-points* (make-parameter 256))
 
 ;; Number of iterations of the core loop for improving program accuracy
-(define *num-iterations* (make-parameter 4))
+(define *num-iterations* (make-parameter 0))
 
 ;; The maximum depth for splitting the space when searching for valid areas of points.
 (define *max-find-range-depth* (make-parameter 12))
@@ -150,7 +150,7 @@
 (define *loose-plugins* (make-parameter '()))
 
 ;; Sets the number of total points for Herbie to sample.
-(define *reeval-pts* (make-parameter 8000))
+(define *reeval-pts* (make-parameter 4))
 
 ;; Time out for a given run. 2.5 minutes currently.
 (define *timeout* (make-parameter (* 1000 60 5/2)))
