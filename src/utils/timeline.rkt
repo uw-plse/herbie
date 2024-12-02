@@ -191,6 +191,22 @@
       [(l1* '()) (cons rec (loop l1* (list (list (+ n2 1) t2))))]
       [(l1* l2*) (cons rec (loop l1* l2*))])))
 
+(define (merge-prcurve l1 l2)
+  (eprintf "~a \n ~a \n\n" l1 l2)
+  (match-define (list (list a1 b1)) l1)
+  (match-define (list (list a2 b2)) l2)
+  (define a (hash-union a1 a2 #:combine
+                        (lambda (h1 h2)
+                          (hash-union h1 h2 #:combine
+                                       (lambda (l1 l2)
+                                         (map + l1 l2))))))
+  (define b (hash-union b1 b2 #:combine
+                        (lambda (h1 h2)
+                          (hash-union h1 h2 #:combine
+                                       (lambda (l1 l2)
+                                         (map + l1 l2))))))
+  (list (list a b)))
+
 (define-timeline type #:custom (λ (a b) a))
 (define-timeline time #:custom +)
 
@@ -230,6 +246,7 @@
 (define-timeline confusion #:custom (λ (x y) (list (map + (car x) (car y)))))
 (define-timeline total-confusion #:custom (λ (x y) (list (map + (car x) (car y)))))
 (define-timeline maybe-confusion #:custom (λ (x y) (list (map + (car x) (car y)))))
+(define-timeline prcurve #:custom merge-prcurve)
 (define-timeline freqs [key false] [val +])
 (define-timeline expl-stats [timings +] [len +])
 

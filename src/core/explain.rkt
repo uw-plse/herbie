@@ -14,7 +14,7 @@
          "../utils/float.rkt"
          "../config.rkt")
 
-(provide explain)
+(provide explain *condthres* *maybethres* *exbfprec*)
 
 (define *top-3* (make-parameter #f))
 
@@ -61,8 +61,13 @@
   (or (and (bfpositive? a) (bfpositive? b)) (and (bfnegative? a) (bfnegative? b))))
 
 (define all-explanations (list 'uflow-rescue 'u/u 'u/n 'o/o 'n/o 'o*u 'u*o 'n*u 'cancellation))
-(define cond-thres (bf 100))
-(define maybe-cond-thres (bf 32))
+
+(define *condthres* (make-parameter (bf 128)))
+(define *maybethres* (make-parameter (bf 32)))
+(define *exbfprec* (make-parameter (bf 128)))
+
+;(define (*condthres*) (bf 100))
+;(define (*maybethres*) (bf 32))
 
 (define (compile-expr expr ctx)
   (define subexprs (all-subexpressions expr #:reverse? #t))
@@ -185,11 +190,11 @@
 
            ; High condition number:
            ; CN(+, x, y) = |x / x + y|
-           [(or (bf> cond-x cond-thres) (bf> cond-y cond-thres))
+           [(or (bf> cond-x (*condthres*)) (bf> cond-y (*condthres*)))
             (mark-erroneous! subexpr 'cancellation)]
 
            ; Maybe
-           [(or (bf> cond-x maybe-cond-thres) (bf> cond-y maybe-cond-thres))
+           [(or (bf> cond-x (*maybethres*)) (bf> cond-y (*maybethres*)))
             (mark-maybe! subexpr 'cancellation)]
            [else #f])]
 
@@ -229,11 +234,11 @@
 
            ; High condition number:
            ; CN(+, x, y) = |x / x - y|
-           [(or (bf> cond-x cond-thres) (bf> cond-y cond-thres))
+           [(or (bf> cond-x (*condthres*)) (bf> cond-y (*condthres*)))
             (mark-erroneous! subexpr 'cancellation)]
 
            ; Maybe
-           [(or (bf> cond-x maybe-cond-thres) (bf> cond-y maybe-cond-thres))
+           [(or (bf> cond-x (*maybethres*)) (bf> cond-y (*maybethres*)))
             (mark-maybe! subexpr 'cancellation)]
            [else #f])]
 
@@ -244,14 +249,14 @@
          (define cond-no (bf* (bfabs x) cot-x))
          (cond
            [(and (bfinfinite? x) (not (bfnan? subexpr-val))) (mark-erroneous! subexpr 'oflow-rescue)]
-           [(and (bf> cond-no cond-thres) (bf> (bfabs x) cond-thres))
+           [(and (bf> cond-no (*condthres*)) (bf> (bfabs x) (*condthres*)))
             (mark-erroneous! subexpr 'sensitivity)]
-           [(and (bf> cond-no cond-thres) (bf> cot-x cond-thres))
+           [(and (bf> cond-no (*condthres*)) (bf> cot-x (*condthres*)))
             (mark-erroneous! subexpr 'cancellation)]
 
-           [(and (bf> cond-no maybe-cond-thres) (bf> (bfabs x) maybe-cond-thres))
+           [(and (bf> cond-no (*maybethres*)) (bf> (bfabs x) (*maybethres*)))
             (mark-maybe! subexpr 'sensitivity)]
-           [(and (bf> cond-no maybe-cond-thres) (bf> cot-x maybe-cond-thres))
+           [(and (bf> cond-no (*maybethres*)) (bf> cot-x (*maybethres*)))
             (mark-maybe! subexpr 'cancellation)]
            [else #f])]
 
@@ -262,8 +267,8 @@
 
          (cond
            [(and (bfinfinite? x) (not (bfnan? subexpr-val))) (mark-erroneous! subexpr 'oflow-rescue)]
-           [(bf> cond-no cond-thres) (mark-erroneous! subexpr 'sensitivity)]
-           [(bf> cond-no maybe-cond-thres) (mark-maybe! subexpr 'sensitivity)]
+           [(bf> cond-no (*condthres*)) (mark-erroneous! subexpr 'sensitivity)]
+           [(bf> cond-no (*maybethres*)) (mark-maybe! subexpr 'sensitivity)]
            [else #f])]
 
         [(list (or 'tan.f64 'tan.f32) x-ex)
@@ -274,14 +279,14 @@
 
          (cond
            [(and (bfinfinite? x) (not (bfnan? subexpr-val))) (mark-erroneous! subexpr 'oflow-rescue)]
-           [(and (bf> cond-no cond-thres) (bf> (bfabs x) cond-thres))
+           [(and (bf> cond-no (*condthres*)) (bf> (bfabs x) (*condthres*)))
             (mark-erroneous! subexpr 'sensitivity)]
-           [(and (bf> cond-no cond-thres) (bf> tot-x cond-thres))
+           [(and (bf> cond-no (*condthres*)) (bf> tot-x (*condthres*)))
             (mark-erroneous! subexpr 'cancellation)]
 
-           [(and (bf> cond-no maybe-cond-thres) (bf> (bfabs x) maybe-cond-thres))
+           [(and (bf> cond-no (*maybethres*)) (bf> (bfabs x) (*maybethres*)))
             (mark-maybe! subexpr 'sensitivity)]
-           [(and (bf> cond-no maybe-cond-thres) (bf> tot-x maybe-cond-thres))
+           [(and (bf> cond-no (*maybethres*)) (bf> tot-x (*maybethres*)))
             (mark-maybe! subexpr 'cancellation)]
            [else #f])]
 
@@ -378,9 +383,9 @@
 
            ; High Condition Number:
            ; CN(log, x) = |1 / log(x)|
-           [(bf> cond-num cond-thres) (mark-erroneous! subexpr 'sensitivity)]
+           [(bf> cond-num (*condthres*)) (mark-erroneous! subexpr 'sensitivity)]
 
-           [(bf> cond-num maybe-cond-thres) (mark-maybe! subexpr 'sensitivity)]
+           [(bf> cond-num (*maybethres*)) (mark-maybe! subexpr 'sensitivity)]
 
            [else #f])]
 
@@ -402,9 +407,9 @@
 
            ; High Condition Number:
            ; CN(exp, x) = |x|
-           [(bf> (bfabs x) cond-thres) (mark-erroneous! subexpr 'sensitivity)]
+           [(bf> (bfabs x) (*condthres*)) (mark-erroneous! subexpr 'sensitivity)]
 
-           [(bf> (bfabs x) maybe-cond-thres) (mark-maybe! subexpr 'sensitivity)]
+           [(bf> (bfabs x) (*maybethres*)) (mark-maybe! subexpr 'sensitivity)]
 
            [else #f])]
 
@@ -452,10 +457,10 @@
 
            [(and (bfinfinite? x) (not (bf= subexpr-val x))) (mark-erroneous! subexpr 'oflow-rescue)]
 
-           [(and (or (bf> cond-x cond-thres) (bf> cond-y cond-thres)) (not (constant? y-ex)))
+           [(and (or (bf> cond-x (*condthres*)) (bf> cond-y (*condthres*))) (not (constant? y-ex)))
             (mark-erroneous! subexpr 'sensitivity)]
 
-           [(and (or (bf> cond-x maybe-cond-thres) (bf> cond-y maybe-cond-thres))
+           [(and (or (bf> cond-x (*maybethres*)) (bf> cond-y (*maybethres*)))
                  (not (constant? y-ex)))
             (mark-maybe! subexpr 'sensitivity)]
 
@@ -476,9 +481,9 @@
 
            ; High Condition Number:
            ; CN(acos, x) = |x / (√(1 - x^2)acos(x))|
-           [(bf> cond-x cond-thres) (mark-erroneous! subexpr 'sensitivity)]
+           [(bf> cond-x (*condthres*)) (mark-erroneous! subexpr 'sensitivity)]
 
-           [(bf> cond-x maybe-cond-thres) (mark-maybe! subexpr 'sensitivity)]
+           [(bf> cond-x (*maybethres*)) (mark-maybe! subexpr 'sensitivity)]
 
            [else #f])]
 
@@ -494,9 +499,9 @@
            ;; [(and (bfzero? x) (bfzero? subexpr-val)) #f]
            ; High Condition Number:
            ; CN(acos, x) = |x / (√(1 - x^2)asin(x))|
-           [(bf> cond-x cond-thres) (mark-erroneous! subexpr 'sensitivity)]
+           [(bf> cond-x (*condthres*)) (mark-erroneous! subexpr 'sensitivity)]
 
-           [(bf> cond-x maybe-cond-thres) (mark-maybe! subexpr 'sensitivity)]
+           [(bf> cond-x (*maybethres*)) (mark-maybe! subexpr 'sensitivity)]
 
            [else #f])]
         [_ #f])))

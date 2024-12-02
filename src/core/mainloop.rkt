@@ -1,5 +1,6 @@
 #lang racket
 
+(require math/bigfloat)
 (require "rules.rkt"
          "../syntax/syntax.rkt"
          "../syntax/types.rkt"
@@ -344,7 +345,34 @@
   (timeline-push! 'total-confusion total-confusion-matrix)
   (for ([(key val) (in-dict freqs)])
     (timeline-push! 'freqs key val))
-  (timeline-push! 'expl-stats (apply + timings) (length timings)))
+  (timeline-push! 'expl-stats (apply + timings) (length timings))
+
+  (define preclist (list 64 128 512 4096))
+  (define conf-hash-mega (make-hash))
+  (define maybe-hash-mega (make-hash))
+
+  (for ([j (in-list preclist)])
+    (define conf-hash (make-hash))
+    (define maybe-hash (make-hash))
+    (for [(i (in-inclusive-range 0 10))]
+      (parameterize ([*maybethres* (bf (exact->inexact (expt 2 i)))]
+                     [*condthres* (bf (exact->inexact (* 4 (expt 2 i))))]
+                     [*exbfprec* j])
+      (define-values (fperror
+                      explanations-table
+                      confusion-matrix
+                      maybe-confusion-matrix
+                      total-confusion-matrix
+                      freqs
+                      timings)
+        (explain expr context pcontext))
+      (define key (string->symbol (~a i)))
+      (hash-set! conf-hash key confusion-matrix)
+      (hash-set! maybe-hash key maybe-confusion-matrix)))
+    (define key (string->symbol (~a j)))
+    (hash-set! conf-hash-mega key conf-hash)
+    (hash-set! maybe-hash-mega key maybe-hash))
+  (timeline-push! 'prcurve conf-hash-mega maybe-hash-mega))
 
 (define (make-regime! alts)
   (define ctx (*context*))
