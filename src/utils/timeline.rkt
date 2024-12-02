@@ -192,7 +192,6 @@
       [(l1* l2*) (cons rec (loop l1* l2*))])))
 
 (define (merge-prcurve l1 l2)
-  (eprintf "~a \n ~a \n\n" l1 l2)
   (match-define (list (list a1 b1)) l1)
   (match-define (list (list a2 b2)) l2)
   (define a (hash-union a1 a2 #:combine
