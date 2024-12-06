@@ -2,7 +2,7 @@
 
 (require "../plugin.rkt"
          math/flonum)
-; universal boolean operations
+
 (define (fl2dotprod a b c d)
 (define-values (x1 x2) (fl2* a 0.0 b 0.0))
 (define-values (y1 y2) (fl2* c 0.0 d 0.0))
@@ -19,8 +19,7 @@ y1)
 (define-values (y1 y2) (fl2+ x1 x2 c 0.0))
 y1)
 
- (define (square a) (* a a))
-
+(define (square a) (* a a))
 
 (define-operator-impl (dotprod.f32 [a : binary32] [b : binary32] [c : binary32] [d : binary32])
                       binary32
@@ -34,16 +33,16 @@ y1)
                       #:fpcore (! :precision binary32 (add3 a b c))
                       #:fl fl2add3)
 
-(define-operator-impl (square1p.f32 [a : binary32])
-                      binary32
-                      #:spec (+ (* a a) 1)
-                      #:fpcore (! :precision binary32 (square1p a)))
-                      ;fma
+;;; (define-operator-impl (square1p.f32 [a : binary32])
+;;;                       binary32
+;;;                       #:spec (+ (* a a) 1)
+;;;                       #:fpcore (! :precision binary32 (square1p a)))
+;;;                       ;fma
 
-(define-operator-impl (sumofsquares.f32 [a : binary32] [b : binary32])
-                      binary32
-                      #:spec (+ (* a a) (* b b))
-                      #:fpcore (! :precision binary32 (sumofsquares a b)))   
+;;; (define-operator-impl (sumofsquares.f32 [a : binary32] [b : binary32])
+;;;                       binary32
+;;;                       #:spec (+ (* a a) (* b b))
+;;;                       #:fpcore (! :precision binary32 (sumofsquares a b)))   
 
 
 (define-operator-impl (fma.f32 [a : binary32] [b : binary32] [c : binary32])
@@ -91,11 +90,10 @@ y1)
                  [-.f32 0.7556962025]
                  [*.f32 3.191139241]
                  [/.f32 4.729113924]
-
                  [dotprod.f32 3.582278481]
                  [add3.f32 1.33164557]
-                ;;;  [square1p.f32 0.1]
-                ;;;  [sumofsquares.f32 0.1]
+                 ;;;  [square1p.f32 0.1]
+                 ;;;  [sumofsquares.f32 0.1]
                  [fma.f32 3.960759494]
                  [square.f32 1.82278481]
 )
