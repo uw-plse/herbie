@@ -61,6 +61,7 @@
 
 (require "../core/programs.rkt"
          "../utils/common.rkt"
+         "../utils/errors.rkt"
          "matcher.rkt"
          "syntax.rkt"
          "types.rkt")
@@ -147,11 +148,19 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FPCore -> LImpl
 
+(define (assert-fpcore-impl op prop-dict ireprs)
+  (or (get-fpcore-impl op prop-dict ireprs)
+      (raise-herbie-missing-error
+       "No implementation for `~a` under rounding context `~a` with types `~a`"
+       op
+       prop-dict
+       (string-join (map (λ (r) (format "<~a>" (representation-name r))) ireprs) " "))))
+
 ;; Translates an FPCore operator application into
 ;; an LImpl operator application.
 (define (fpcore->impl-app op prop-dict args ctx)
   (define ireprs (map (lambda (arg) (repr-of arg ctx)) args))
-  (define impl (get-fpcore-impl op prop-dict ireprs))
+  (define impl (assert-fpcore-impl op prop-dict ireprs))
   (define vars (impl-info impl 'vars))
   (define pattern
     (match (impl-info impl 'fpcore)
@@ -267,10 +276,13 @@
          (match expr
            [(list '! props ... (list op _ ...))
             ; rounding context updated parent context
-            (define prop-dict* (apply dict-set prop-dict props))
-            (get-fpcore-impl op prop-dict* (impl-info impl 'itype))]
+            (define prop-dict*
+              (if (not (null? props))
+                  (apply dict-set prop-dict props)
+                  prop-dict))
+            (assert-fpcore-impl op prop-dict* (impl-info impl 'itype))]
            ; rounding context inherited from parent context
-           [(list op _ ...) (get-fpcore-impl op prop-dict (impl-info impl 'itype))]))
+           [(list op _ ...) (assert-fpcore-impl op prop-dict (impl-info impl 'itype))]))
        (cond
          [(equal? impl impl*) ; inlining is safe
           (define expr* (loop expr prop-dict))

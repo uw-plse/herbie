@@ -1,9 +1,9 @@
 #lang racket
-(require "datafile.rkt"
-         "thread-pool.rkt"
-         "../syntax/read.rkt"
+(require "../syntax/read.rkt"
          "../utils/common.rkt"
-         "sandbox.rkt")
+         "datafile.rkt"
+         "sandbox.rkt"
+         "server.rkt")
 (provide run-improve)
 
 (define (print-outputs tests results p #:seed [seed #f])
@@ -33,7 +33,15 @@
 (define (run-improve input output #:threads [threads #f])
   (define seed (get-seed))
   (define tests (load-tests input))
-  (define results (get-test-results tests #:threads threads #:seed seed #:profile #f #:dir #f))
+  (start-job-server threads)
+  (define ids
+    (for/list ([test (in-list tests)])
+      (define command
+        (create-job 'improve test #:seed seed #:pcontext #f #:profile? #f #:timeline-disabled? #f))
+      (start-job command)))
+  (define results
+    (for/list ([id ids])
+      (get-table-data-from-hash (wait-for-job id) "")))
 
   (if (equal? output "-")
       (print-outputs tests results (current-output-port) #:seed seed)

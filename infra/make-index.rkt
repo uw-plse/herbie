@@ -1,9 +1,10 @@
 #lang racket
 
-(require (only-in xml write-xexpr)
-         json)
-(require racket/date
-         "../src/utils/common.rkt"
+(require file/gunzip
+         json
+         racket/date
+         (only-in xml write-xexpr))
+(require "../src/utils/common.rkt"
          "../src/api/datafile.rkt")
 (provide directory-jsons)
 
@@ -12,8 +13,8 @@
         (let loop ([dir dir])
           (cond
             [(file-exists? (build-path dir "results.json")) (sow dir)]
-            [(file-exists? (build-path dir "results.json.gz"))
-             (raise-user-error 'directory-jsons "Cannot read ~a, results file is compressed" dir)]
+            ;; .gz files are auto-gunzipped
+            [(file-exists? (build-path dir "results.json.gz")) (sow dir)]
             [(directory-exists? dir) (for-each loop (directory-list dir #:build? true))]))))
 
 (define (month->string i)
@@ -60,9 +61,21 @@
                                #:first-order
                                (λ (x) (and (hash-has-key? x key) (valid? (hash-ref x key))))))))
 
+(define (call-with-report-json folder fn)
+  (cond
+    [(file-exists? (build-path folder "results.json"))
+     (call-with-input-file (build-path folder "results.json") fn)]
+    [(file-exists? (build-path folder "results.json.gz"))
+     (define-values (pipe-in pipe-out) (make-pipe))
+     (call-with-input-file (build-path folder "results.json.gz")
+                           (lambda (port)
+                             (gunzip-through-ports port pipe-out)
+                             (close-output-port pipe-out)
+                             (fn pipe-in)))]))
+
 (define/contract (compute-row folder)
   (-> path? cache-row?)
-  (define info (read-datafile (build-path folder "results.json")))
+  (define info (call-with-report-json folder read-datafile))
   (match-define (report-info date
                              commit
                              branch

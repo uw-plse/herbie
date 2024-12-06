@@ -65,7 +65,9 @@ else
   dirs=""
   for bench in $BENCH/*; do
     name=$(basename "$bench" .fpcore)
+    date
     run "$bench" "$name" $ARGS
+    date
     if [ "$?" -eq 0 ]; then
       dirs="$dirs $name";
     fi
@@ -73,5 +75,7 @@ else
 
   # merge reports
   echo "merging $dirs"
+  date
   racket -y infra/merge.rkt --name "$(basename $BENCH .fpcore)" "$OUTDIR" $dirs
+  date
 fi

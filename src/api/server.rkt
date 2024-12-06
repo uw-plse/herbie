@@ -10,7 +10,6 @@
          "../reports/common.rkt"
          "../syntax/types.rkt"
          "../syntax/read.rkt"
-         "../syntax/sugar.rkt"
          "../syntax/load-plugin.rkt"
          "../utils/alternative.rkt"
          "../utils/common.rkt"
@@ -39,10 +38,9 @@
 (define *demo?* (make-parameter false))
 (define *demo-output* (make-parameter false))
 
-; verbose logging for debugging
-(define verbose #f) ; Maybe change to log-level and use 'verbose?
+(define log-level #f)
 (define (log msg . args)
-  (when verbose
+  (when log-level
     (apply eprintf msg args)))
 
 ;; Job object, What herbie excepts as input for a new job.
@@ -71,7 +69,7 @@
   (define html-file (build-path (*demo-output*) "index.html"))
   (define info
     (if (file-exists? data-file)
-        (let ([info (read-datafile data-file)])
+        (let ([info (call-with-input-file data-file read-datafile)])
           (struct-copy report-info info [tests (cons data (report-info-tests info))]))
         (make-report-info (list data) #:seed (get-seed) #:note (if (*demo?*) "Web demo results" ""))))
   (define tmp-file (build-path (*demo-output*) "results.tmp"))
@@ -85,65 +83,102 @@
 
 ; Returns #f is now job exsist for the given job-id
 (define (get-results-for job-id)
-  (define-values (a b) (place-channel))
-  (place-channel-put manager (list 'result job-id b))
   (log "Getting result for job: ~a.\n" job-id)
-  (place-channel-get a))
+  (manager-ask 'result job-id))
 
 (define (get-timeline-for job-id)
-  (define-values (a b) (place-channel))
-  (place-channel-put manager (list 'timeline job-id b))
   (log "Getting timeline for job: ~a.\n" job-id)
-  (place-channel-get a))
+  (manager-ask 'timeline job-id))
 
 ; Returns #f if there is no job returns the job-id if there is a completed job.
 (define (server-check-on job-id)
-  (define-values (a b) (place-channel))
-  (place-channel-put manager (list 'check job-id b))
   (log "Checking on: ~a.\n" job-id)
-  (place-channel-get a))
+  (manager-ask 'check job-id))
 
 (define (get-improve-table-data)
-  (define-values (a b) (place-channel))
-  (place-channel-put manager (list 'improve b))
   (log "Getting improve results.\n")
-  (place-channel-get a))
+  (manager-ask 'improve))
 
 (define (job-count)
-  (define-values (a b) (place-channel))
-  (place-channel-put manager (list 'count b))
-  (define job-list (place-channel-get a))
-  (log "Currently ~a jobs in progress, ~a jobs in queue." (first job-list) (second job-list))
+  (define job-list (manager-ask 'count))
+  (log "Currently ~a jobs in progress, ~a jobs in queue.\n" (first job-list) (second job-list))
   (apply + job-list))
 
 ;; Starts a job for a given command object|
 (define (start-job command)
   (define job-id (compute-job-id command))
-  (place-channel-put manager (list 'start manager command job-id))
+  (manager-tell 'start manager command job-id)
   (log "Job ~a, Qed up for program: ~a\n" job-id (test-name (herbie-command-test command)))
   job-id)
 
 (define (wait-for-job job-id)
-  (define-values (a b) (place-channel))
-  (place-channel-put manager (list 'wait manager job-id b))
-  (define finished-result (place-channel-get a))
+  (define finished-result (manager-ask 'wait manager job-id))
   (log "Done waiting for: ~a\n" job-id)
   finished-result)
 
-; TODO refactor using this helper.
+(define (manager-tell msg . args)
+  (log "Telling manager: ~a, ~a.\n" msg args)
+  (if manager
+      (place-channel-put manager (list* msg args))
+      (match msg
+        ['start
+         (match-define (list hash-false command job-id) args)
+         (hash-set! completed-work job-id (herbie-do-server-job command job-id))])))
+
 (define (manager-ask msg . args)
-  (define-values (a b) (place-channel))
-  (place-channel-put manager (cons msg b args))
   (log "Asking manager: ~a, ~a.\n" msg args)
+  (if manager
+      (manager-ask-with-callback msg args)
+      (match (list* msg args) ; public commands
+        [(list 'wait hash-false job-id) (hash-ref completed-work job-id)]
+        [(list 'result job-id) (hash-ref completed-work job-id #f)]
+        [(list 'timeline job-id) (hash-ref completed-work job-id #f)]
+        [(list 'check job-id) (and (hash-ref completed-work job-id #f) job-id)]
+        [(list 'count) (list 0 0)]
+        [(list 'improve)
+         (for/list ([(job-id result) (in-hash completed-work)]
+                    #:when (equal? (hash-ref result 'command) "improve"))
+           (get-table-data-from-hash result (make-path job-id)))])))
+
+(define (herbie-do-server-job command job-id)
+  (define herbie-result (wrapper-run-herbie command job-id))
+  (match-define (job-result kind test status time _ _ backend) herbie-result)
+  (match kind
+    ['alternatives (make-alternatives-result herbie-result test job-id)]
+    ['evaluate (make-calculate-result herbie-result job-id)]
+    ['cost (make-cost-result herbie-result job-id)]
+    ['errors (make-error-result herbie-result job-id)]
+    ['exacts (make-exacts-result herbie-result job-id)]
+    ['improve (make-improve-result herbie-result test job-id)]
+    ['local-error (make-local-error-result herbie-result job-id)]
+    ['explanations (make-explanation-result herbie-result job-id)]
+    ['sample (make-sample-result herbie-result test job-id)]
+    [_ (error 'compute-result "unknown command ~a" kind)]))
+
+(define completed-work (make-hash))
+
+(define (manager-ask-with-callback msg args)
+  (define-values (a b) (place-channel))
+  (place-channel-put manager (list* msg b args))
   (place-channel-get a))
 
 (define (is-server-up)
-  (not (sync/timeout 0 manager-dead-event)))
+  (if manager
+      (not (sync/timeout 0 manager-dead-event))
+      #t))
 
-(define (start-job-server job-cap)
-  (define r (make-manager job-cap))
-  (set! manager-dead-event (place-dead-evt r))
-  (set! manager r))
+;; Start the job server
+;; worker-cap: `false` or `no` to not use Racket `place` best used for
+;; debugging, specific yes to use the number of cores on your system as the
+;; worker cap or specif the number of workers you would like to use
+;; logging: Set to #f as default. Set to #t to print what the server is doing
+;; to standard error.
+(define (start-job-server worker-cap #:logging [set-logging #f])
+  (set! log-level set-logging)
+  (when worker-cap
+    (define r (make-manager worker-cap))
+    (set! manager-dead-event (place-dead-evt r))
+    (set! manager r)))
 
 (define manager #f)
 (define manager-dead-event #f)
@@ -165,7 +200,7 @@
                 #:pcontext (herbie-command-pcontext cmd)
                 #:profile? (herbie-command-profile? cmd)
                 #:timeline-disabled? (herbie-command-timeline-disabled? cmd)))
-  (eprintf "Herbie completed job: ~a\n" job-id)
+  (log "Herbie completed job: ~a\n" job-id)
   result)
 
 (define (print-job-message command job-id job-str)
@@ -181,7 +216,7 @@
       ['explanations "Explanations"]
       ['sample "Sampling"]
       [_ (error 'compute-result "unknown command ~a" command)]))
-  (eprintf "~a Job ~a started:\n  ~a ~a...\n" job-label (symbol->string command) job-id job-str))
+  (log "~a Job ~a started:\n  ~a ~a...\n" job-label (symbol->string command) job-id job-str))
 
 (define-syntax (place/context* stx)
   (syntax-case stx ()
@@ -209,10 +244,11 @@
    (parameterize ([current-error-port (open-output-nowhere)]) ; hide output
      (load-herbie-plugins))
    ; not sure if the above code is actaully needed.
-   (define completed-work (make-hash))
    (define busy-workers (make-hash))
    (define waiting-workers (make-hash))
    (define current-jobs (make-hash))
+   (when (eq? worker-count #t)
+     (set! worker-count (processor-count)))
    (for ([i (in-range worker-count)])
      (hash-set! waiting-workers i (make-worker i)))
    (log "~a workers ready.\n" (hash-count waiting-workers))
@@ -220,7 +256,6 @@
    (define job-queue (list))
    (log "Manager waiting to assign work.\n")
    (for ([i (in-naturals)])
-     ;  (eprintf "manager msg ~a handled\n" i)
      (match (place-channel-get ch)
        [(list 'start self command job-id)
         ; Check if the work has been completed already if not assign the work.
@@ -260,7 +295,7 @@
         (log "waiting job ~a completed\n" job-id)
         (place-channel-put self (list 'send job-id result))
         (place-channel-put self (list 'assign self))]
-       [(list 'wait self job-id handler)
+       [(list 'wait handler self job-id)
         (log "Waiting for job: ~a\n" job-id)
         ; first we add the handler to the wait list.
         (hash-update! waiting job-id (curry append (list handler)) '())
@@ -276,8 +311,8 @@
           (place-channel-put handle result))
         (hash-remove! waiting job-id)]
        ; Get the result for the given id, return false if no work found.
-       [(list 'result job-id handler) (place-channel-put handler (hash-ref completed-work job-id #f))]
-       [(list 'timeline job-id handler)
+       [(list 'result handler job-id) (place-channel-put handler (hash-ref completed-work job-id #f))]
+       [(list 'timeline handler job-id)
         (define wid (hash-ref current-jobs job-id #f))
         (cond
           [wid
@@ -289,8 +324,8 @@
           [else
            (log "Job complete, no timeline, send result.\n")
            (place-channel-put handler (hash-ref completed-work job-id #f))])]
-       [(list 'check job-id handler)
-        (place-channel-put handler (if (hash-has-key? completed-work job-id) job-id #f))]
+       [(list 'check handler job-id)
+        (place-channel-put handler (and (hash-has-key? completed-work job-id) job-id))]
        ; Returns the current count of working workers.
        [(list 'count handler)
         (log "Count requested\n")
@@ -341,20 +376,7 @@
 (define (run-job job-info)
   (match-define (work manager worker-id job-id command) job-info)
   (log "run-job: ~a, ~a\n" worker-id job-id)
-  (define herbie-result (wrapper-run-herbie command job-id))
-  (match-define (job-result kind test status time _ _ backend) herbie-result)
-  (define out-result
-    (match kind
-      ['alternatives (make-alternatives-result herbie-result test job-id)]
-      ['evaluate (make-calculate-result herbie-result job-id)]
-      ['cost (make-cost-result herbie-result job-id)]
-      ['errors (make-error-result herbie-result job-id)]
-      ['exacts (make-exacts-result herbie-result job-id)]
-      ['improve (make-improve-result herbie-result test job-id)]
-      ['local-error (make-local-error-result herbie-result job-id)]
-      ['explanations (make-explanation-result herbie-result job-id)]
-      ['sample (make-sample-result herbie-result test job-id)]
-      [_ (error 'compute-result "unknown command ~a" kind)]))
+  (define out-result (herbie-do-server-job command job-id))
   (log "Job: ~a finished, returning work to manager\n" job-id)
   (place-channel-put manager (list 'finished manager worker-id job-id out-result)))
 
@@ -544,12 +566,12 @@
 
   (define histories
     (for/list ([altn altns])
-      (let ([os (open-output-string)])
-        (parameterize ([current-output-port os])
-          (write-xexpr
-           `(div ([id "history"])
-                 (ol ,@(render-history altn processed-pcontext test-pcontext (test-context test)))))
-          (get-output-string os)))))
+      (define os (open-output-string))
+      (parameterize ([current-output-port os])
+        (write-xexpr
+         `(div ([id "history"])
+               (ol ,@(render-history altn processed-pcontext test-pcontext (test-context test)))))
+        (get-output-string os))))
   (define derivations
     (for/list ([altn altns])
       (render-json altn processed-pcontext test-pcontext (test-context test))))

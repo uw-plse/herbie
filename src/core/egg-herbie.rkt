@@ -461,7 +461,7 @@
 (module+ test
   (check-equal? (sequential-product `((1 2) (3 4 5) (6))) `((1 3 6) (2 3 6) (2 4 6) (2 5 6)))
 
-  (expand-proof-term '(Explanation (+ x y) (+ y x)) (box 10)))
+  (check-equal? (expand-proof-term '(Explanation (+ x y) (+ y x)) (box 10)) '((+ x y))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Rule expansion
@@ -490,7 +490,8 @@
              (cons op vars)
              (replace-expression (rule-output ru) input (cons op vars))
              (map cons vars itypes)
-             (rule-otype ru)))]
+             (rule-otype ru)
+             (rule-tags ru)))]
     ; non-expansive rule
     [else (list (rule->egg-rule ru))]))
 

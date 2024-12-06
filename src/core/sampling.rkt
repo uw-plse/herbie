@@ -15,7 +15,6 @@
 
 (provide batch-prepare-points
          eval-progs-real
-         make-sampler
          sample-points)
 
 ;; Part 1: use FPBench's condition->range-table to create initial hyperrects
@@ -190,8 +189,8 @@
              (loop (+ 1 sampled) 0 (cons pt points) (cons exs exactss)))]
         [else
          (when (>= skipped (*max-skipped-points*))
-           (raise-herbie-error "Cannot sample enough valid points."
-                               #:url "faq.html#sample-valid-points"))
+           (raise-herbie-sampling-error "Cannot sample enough valid points."
+                                        #:url "faq.html#sample-valid-points"))
          (loop sampled (+ 1 skipped) points exactss)])))
   (cons outcomes (cons points (flip-lists exactss))))
 

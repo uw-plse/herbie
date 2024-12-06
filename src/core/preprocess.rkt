@@ -21,15 +21,11 @@
          remove-unnecessary-preprocessing)
 
 (define (has-fabs-neg-impls? repr)
-  (with-handlers ([exn:fail:user:herbie? (const #f)])
-    (get-fpcore-impl '- (repr->prop repr) (list repr))
-    (get-fpcore-impl 'fabs (repr->prop repr) (list repr))
-    #t))
+  (and (get-fpcore-impl '- (repr->prop repr) (list repr))
+       (get-fpcore-impl 'fabs (repr->prop repr) (list repr))))
 
 (define (has-copysign-impl? repr)
-  (with-handlers ([exn:fail:user:herbie? (const #f)])
-    (get-fpcore-impl 'copysign (repr->prop repr) (list repr repr))
-    #t))
+  (get-fpcore-impl 'copysign (repr->prop repr) (list repr repr)))
 
 ;; The even identities: f(x) = f(-x)
 ;; Requires `neg` and `fabs` operator implementations.
@@ -56,7 +52,7 @@
 
 ;; Initial simplify
 (define (initial-simplify expr ctx)
-  (define rules (real-rules (*simplify-rules*)))
+  (define rules (*simplify-rules*))
   (define lifting-rules (platform-lifting-rules))
   (define lowering-rules (platform-lowering-rules))
 
@@ -103,7 +99,7 @@
         [(list 'swap _ spec) spec])))
 
   ;; make egg runner
-  (define rules (real-rules (*simplify-rules*)))
+  (define rules (*simplify-rules*))
 
   (define batch (progs->batch specs))
   (define runner

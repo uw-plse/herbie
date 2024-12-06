@@ -282,6 +282,7 @@
 
 (define (make-multiplication-node term)
   (match (cons (car term) (make-multiplication-subnode (cdr term)))
+    [`(NAN . ,e) '(NAN)]
     [`(0 . ,e) 0]
     [`(1 . ()) 1]
     [`(1 . ,e) e]

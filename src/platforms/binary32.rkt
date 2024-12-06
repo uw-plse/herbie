@@ -1,8 +1,8 @@
 #lang racket
 
-;; Builtin single-precision plugin (:precision binary32)
-
-(require math/bigfloat)
+;; A 32-bit float is emulated in Racket as a 64-bit float,
+(require math/bigfloat
+         math/flonum)
 (require "runtime/float32.rkt"
          "runtime/utils.rkt"
          "runtime/libm.rkt")
@@ -12,8 +12,7 @@
   )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; representation ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(define-representation (binary32 real float32?)
+(define-representation (binary32 real flonum?)
                        bigfloat->float32
                        bf
                        (shift 31 ordinal->float32)
@@ -24,10 +23,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; constants ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-constants binary32
-                  [PI PI.f32 (->float32 pi)]
-                  [E E.f32 (->float32 (exp 1.0))]
-                  [INFINITY INFINITY.f32 (->float32 +inf.0)]
-                  [NAN NAN.f32 (->float32 +nan.0)])
+                  [PI PI.f32 (flsingle pi)]
+                  [E E.f32 (flsingle (exp 1.0))]
+                  [INFINITY INFINITY.f32 +inf.0]
+                  [NAN NAN.f32 +nan.0])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; operators ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -256,7 +255,7 @@
                       binary32
                       #:spec x
                       #:fpcore (! :precision binary32 (cast x))
-                      #:fl (curryr ->float32))
+                      #:fl flsingle)
 
 (define-operator-impl (binary32->binary64 [x : binary32])
                       binary64

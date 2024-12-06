@@ -27,7 +27,7 @@
       (repr-of (debatchref (alt-expr prev)) (*context*))))
 
   ; generate real rules
-  (define rules (real-rules (*simplify-rules*)))
+  (define rules (*simplify-rules*))
   (define lowering-rules (platform-lowering-rules))
 
   ; egg runner
@@ -103,14 +103,10 @@
                 #:when (member var fv)) ; check whether var exists in expr at all
             (for ([i (in-range (*taylor-order-limit*))])
               (define gen (genexpr))
-              (unless (spec-has-nan? gen)
-                (define idx (mutable-batch-munge! global-batch-mutable gen)) ; Munge gen
-                (sow (alt (batchref global-batch idx) `(taylor ,name ,var) (list altn) '())))))
+              (define idx (mutable-batch-munge! global-batch-mutable gen)) ; Munge gen
+              (sow (alt (batchref global-batch idx) `(taylor ,name ,var) (list altn) '()))))
           (timeline-stop!))
         (batch-copy-mutable-nodes! global-batch global-batch-mutable))) ; Update global-batch
-
-(define (spec-has-nan? expr)
-  (expr-contains? expr (lambda (term) (eq? term 'NAN))))
 
 (define (run-taylor starting-exprs altns global-batch)
   (timeline-event! 'series)
@@ -131,7 +127,7 @@
   (timeline-event! 'rewrite)
 
   ; generate required rules
-  (define rules (real-rules (*rules*)))
+  (define rules (*rules*))
   (define lifting-rules (platform-lifting-rules))
   (define lowering-rules (platform-lowering-rules))
 
@@ -152,7 +148,7 @@
   (define reprs (map (curryr repr-of (*context*)) exprs))
   (timeline-push! 'inputs (map ~a exprs))
 
-  (define runner (make-egg-runner global-batch roots reprs schedule #:context (*context*)))
+  (define runner (make-egg-runner global-batch roots reprs schedule))
   ; batchrefss is a (listof (listof batchref))
   (define batchrefss (run-egg runner `(multi . ,extractor)))
 

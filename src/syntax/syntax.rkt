@@ -2,19 +2,17 @@
 
 (require math/bigfloat)
 
-(require "../utils/common.rkt"
+(require "../core/rival.rkt"
+         "../utils/common.rkt"
          "../utils/errors.rkt"
-         "../core/rival.rkt"
          "matcher.rkt"
          "types.rkt")
 
-(provide (rename-out [operator-or-impl? operator?])
-         (struct-out literal)
+(provide (struct-out literal)
          (struct-out approx)
          variable?
          constant-operator?
          operator-exists?
-         operator-deprecated?
          operator-info
          all-operators
          all-constants
@@ -27,8 +25,6 @@
          *functions*
          register-function!
          get-fpcore-impl
-         get-cast-impl
-         generate-cast-impl
          cast-impl?)
 
 (module+ internals
@@ -54,8 +50,7 @@
 ;; A real operator requires
 ;;  - a (unique) name
 ;;  - input and output types
-;;  - optionally a deprecated? flag [#f by default]
-(struct operator (name itype otype deprecated))
+(struct operator (name itype otype))
 
 ;; All real operators
 (define operators (make-hasheq))
@@ -63,10 +58,6 @@
 ;; Checks if an operator has been registered.
 (define (operator-exists? op)
   (hash-has-key? operators op))
-
-;; Checks if an operator has been registered as deprecated.
-(define (operator-deprecated? op)
-  (operator-deprecated (hash-ref operators op)))
 
 ;; Returns all operators.
 (define (all-operators)
@@ -90,32 +81,19 @@
     [(itype) (operator-itype info)]
     [(otype) (operator-otype info)]))
 
-;; Registers an operator with an attribute mapping.
-;; Panics if an operator with name `name` has already been registered.
-;; By default, the input types are specified by `itypes`, the output type
-;; is specified by `otype`, and the operator is not deprecated; but
-;; `attrib-dict` can override these properties.
-(define (register-operator! name itypes otype attrib-dict)
+;; Registers an operator. Panics if the operator already exists.
+(define (register-operator! name itypes otype)
   (when (hash-has-key? operators name)
     (error 'register-operator! "operator already registered: ~a" name))
-  ; extract relevant fields and update tables
-  (define itypes* (dict-ref attrib-dict 'itype itypes))
-  (define otype* (dict-ref attrib-dict 'otype otype))
-  (define deprecated? (dict-ref attrib-dict 'deprecated #f))
-  (define info (operator name itypes* otype* deprecated?))
-  (hash-set! operators name info))
+  (hash-set! operators name (operator name itypes otype)))
 
 ;; Syntactic form for `register-operator!`
 (define-syntax (define-operator stx)
-  (define (bad! why [what #f])
-    (raise-syntax-error 'define-operator why stx what))
   (syntax-case stx ()
-    [(_ (id itype ...) otype [key val] ...)
-     (let ([id #'id])
-       (unless (identifier? id)
-         (bad! "expected identifier" id))
-       (with-syntax ([id id])
-         #'(register-operator! 'id '(itype ...) 'otype (list (cons 'key val) ...))))]))
+    [(_ (id itype ...) otype _ ...) ; The _ ... is for backwards-compatibility
+     (unless (identifier? #'id)
+       (raise-syntax-error 'define-operator stx "expected identifier" #'id))
+     #'(register-operator! 'id '(itype ...) 'otype)]))
 
 (define-syntax define-operators
   (syntax-rules (: ->)
@@ -356,15 +334,15 @@
             (error 'register-operator-impl! "~a: umatched property in ~a" name fpcore))
           (unless (symbol? op)
             (error 'register-operator-impl! "~a: expected symbol `~a`" name op))
-          (for ([arg (in-list args)])
-            (unless (or (symbol? arg) (number? arg))
-              (error 'register-operator-impl! "~a: expected terminal `~a`" name arg)))]
+          (for ([arg (in-list args)]
+                #:unless (or (symbol? arg) (number? arg)))
+            (error 'register-operator-impl! "~a: expected terminal `~a`" name arg))]
          [`(,op ,args ...)
           (unless (symbol? op)
             (error 'register-operator-impl! "~a: expected symbol `~a`" name op))
-          (for ([arg (in-list args)])
-            (unless (or (symbol? arg) (number? arg))
-              (error 'register-operator-impl! "~a: expected terminal `~a`" name arg)))]
+          (for ([arg (in-list args)]
+                #:unless (or (symbol? arg) (number? arg)))
+            (error 'register-operator-impl! "~a: expected terminal `~a`" name arg))]
          [_ (error 'register-operator-impl! "Invalid fpcore for ~a: ~a" name fpcore)])
        fpcore]
       [else ; not provided => need to generate it
@@ -458,9 +436,9 @@
            [fields #'(fields ...)])
        (unless (identifier? id)
          (oops! "expected identifier" id))
-       (for ([var (in-list vars)])
-         (unless (identifier? var)
-           (oops! "expected identifier" var)))
+       (for ([var (in-list vars)]
+             #:unless (identifier? var))
+         (oops! "expected identifier" var))
        (define commutes? #f)
        (define spec #f)
        (define core #f)
@@ -542,57 +520,44 @@
 ;; For a given FPCore operator, rounding context, and input representations,
 ;; finds the best operator implementation. Panics if none can be found.
 (define/contract (get-fpcore-impl op prop-dict ireprs #:impls [all-impls (all-active-operator-impls)])
-  (->* (symbol? prop-dict/c (listof representation?)) (#:impls (listof symbol?)) symbol?)
+  (->* (symbol? prop-dict/c (listof representation?)) (#:impls (listof symbol?)) (or/c symbol? #f))
   ; gather all implementations that have the same spec, input representations,
   ; and its FPCore translation has properties that are found in `prop-dict`
   (define impls
     (reap [sow]
-          (for ([impl (in-list all-impls)])
-            (when (equal? ireprs (impl-info impl 'itype))
-              (define-values (prop-dict* expr) (impl->fpcore impl))
-              (define pattern (cons op (map (lambda (_) (gensym)) ireprs)))
-              (when (and (andmap (lambda (prop) (member prop prop-dict)) prop-dict*)
-                         (pattern-match pattern expr))
-                (sow impl))))))
+          (for ([impl (in-list all-impls)]
+                #:when (equal? ireprs (impl-info impl 'itype)))
+            (define-values (prop-dict* expr) (impl->fpcore impl))
+            (define pattern (cons op (map (lambda (_) (gensym)) ireprs)))
+            (when (and (subset? prop-dict* prop-dict) (pattern-match pattern expr))
+              (sow impl)))))
   ; check that we have any matching impls
-  (when (null? impls)
-    (raise-herbie-missing-error
-     "No implementation for `~a` under rounding context `~a` with types `~a`"
-     op
-     prop-dict
-     (string-join (map (λ (r) (format "<~a>" (representation-name r))) ireprs) " ")))
-  ; ; we rank implementations and select the highest scoring one
-  (define scores
-    (for/list ([impl (in-list impls)])
-      (define-values (prop-dict* _) (impl->fpcore impl))
-      (define num-matching (count (lambda (prop) (member prop prop-dict*)) prop-dict))
-      (cons num-matching (- (length prop-dict) num-matching))))
-  ; select the best implementation
-  ; sort first by the number of matched properties,
-  ; then tie break on the number of extraneous properties
-  (match-define (list (cons _ best) _ ...)
-    (sort (map cons scores impls)
-          (lambda (x y)
-            (cond
-              [(> (car x) (car y)) #t]
-              [(< (car x) (car y)) #f]
-              [else (> (cdr x) (cdr y))]))
-          #:key car))
-  best)
+  (cond
+    [(null? impls) #f]
+    [else
+     ; we rank implementations and select the highest scoring one
+     (define scores
+       (for/list ([impl (in-list impls)])
+         (define-values (prop-dict* _) (impl->fpcore impl))
+         (define num-matching (count (lambda (prop) (member prop prop-dict*)) prop-dict))
+         (cons num-matching (- (length prop-dict) num-matching))))
+     ; select the best implementation
+     ; sort first by the number of matched properties,
+     ; then tie break on the number of extraneous properties
+     (match-define (list (cons _ best) _ ...)
+       (sort (map cons scores impls)
+             (lambda (x y)
+               (cond
+                 [(> (car x) (car y)) #t]
+                 [(< (car x) (car y)) #f]
+                 [else (> (cdr x) (cdr y))]))
+             #:key car))
+     best]))
 
 ;; Casts and precision changes
 
 (define (cast-impl? x)
-  (and (symbol? x)
-       (impl-exists? x)
-       (match (impl-info x 'vars)
-         [(list v)
-          #:when (eq? (impl-info x 'spec) v)
-          #t]
-         [_ #f])))
-
-(define (get-cast-impl irepr orepr #:impls [impls (all-active-operator-impls)])
-  (get-fpcore-impl 'cast (repr->prop orepr) (list irepr) #:impls impls))
+  (and (symbol? x) (impl-exists? x) (equal? (list (impl-info x 'spec)) (impl-info x 'vars))))
 
 ; Similar to representation generators, conversion generators
 ; allow Herbie to query plugins for optimized implementations
@@ -605,22 +570,10 @@
   (unless (set-member? conversion-generators proc)
     (set! conversion-generators (cons proc conversion-generators))))
 
-(define (generate-cast-impl irepr orepr)
-  (match (get-cast-impl irepr orepr)
-    [#f
-     (for/first ([gen (in-list conversion-generators)])
-       (gen (representation-name irepr) (representation-name orepr)))]
-    [impl impl]))
-
 ;; Expression predicates ;;
 
 (define (impl-exists? op)
   (hash-has-key? operator-impls op))
-
-(define (operator-or-impl? op)
-  (and (symbol? op)
-       (not (equal? op 'if))
-       (or (hash-has-key? operators op) (hash-has-key? operator-impls op))))
 
 (define (constant-operator? op)
   (and (symbol? op)

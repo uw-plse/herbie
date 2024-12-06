@@ -16,6 +16,10 @@
 ;; This first part handles timelines for a single Herbie run
 
 (define (make-timeline name timeline #:info [info #f] #:path [path "."])
+  (define total-memory
+    (apply +
+           (for/list ([phase (in-list timeline)])
+             (second (first (dict-ref phase 'memory))))))
   `(html (head (meta ([charset "utf-8"]))
                (title "Metrics for " ,(~a name))
                (link ([rel "stylesheet"] [type "text/css"]
@@ -27,7 +31,7 @@
                                  `(("Report" . "index.html"))
                                  `(("Details" . "graph.html"))))
                ,(if info
-                    (render-about info)
+                    (render-about info total-memory)
                     "")
                ,(render-timeline timeline)
                ,(render-profile))))
@@ -532,7 +536,7 @@
 
 ;; This next part handles summarizing several timelines into one details section for the report page.
 
-(define (render-about info)
+(define (render-about info total-memory)
   (match-define (report-info date
                              commit
                              branch
@@ -575,7 +579,9 @@
                                      " "
                                      ,(~a class)
                                      ":"
-                                     ,(~a flag)))))))))
+                                     ,(~a flag)))))))
+          (tr (th "Memory:")
+              (td ,(~r (/ total-memory (expt 2 20)) #:group-sep " " #:precision '(= 1)) " MB"))))
 
 (define (render-profile)
   `(section ([id "profile"]) (h1 "Profiling") (p ((class "load-text")) "Loading profile data...")))

@@ -75,7 +75,7 @@
      (define p3 (midpoint p1 p2 repr))
      (define cmp
        ;; Sampling error: don't know who's better
-       (with-handlers ([exn:fail:user:herbie? (const 'fail)])
+       (with-handlers ([exn:fail:user:herbie:sampling? (const 'fail)])
          (pred p3)))
 
      (cond

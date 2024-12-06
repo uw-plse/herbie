@@ -24,9 +24,7 @@
   #:transparent
   #:methods gen:custom-write
   [(define (write-proc opt port mode)
-     (display "#<option " port)
-     (write (option-split-indices opt) port)
-     (display ">" port))])
+     (fprintf port "#<option ~a>" (option-split-indices opt)))])
 
 (define (pareto-regimes sorted ctx)
   (define err-lsts (flip-lists (batch-errors (map alt-expr sorted) (*pcontext*) ctx)))
@@ -105,50 +103,38 @@
   (define crit-vars (free-variables subexpr))
   (define replaced-expr (replace-expression expr subexpr 1))
   (define non-crit-vars (free-variables replaced-expr))
-  (set-disjoint? crit-vars non-crit-vars))
+  (and (not (null? crit-vars)) (set-disjoint? crit-vars non-crit-vars)))
 
 ;; Requires that prog is a λ expression
 (define (all-critical-subexpressions expr ctx)
-  (define (subexprs-in-expr expr)
-    (cons expr
-          (if (list? expr)
-              (append-map subexprs-in-expr (cdr expr))
-              '())))
   ;; We append all variables here in case of (λ (x y) 0) or similar,
   ;; where the variables do not appear in the body but are still worth
   ;; splitting on
-  (for/list ([subexpr (remove-duplicates (append (context-vars ctx) (subexprs-in-expr expr)))]
-             #:when (and (not (null? (free-variables subexpr)))
-                         (critical-subexpression? expr subexpr)))
+  (for/list ([subexpr (set-union (context-vars ctx) (all-subexpressions expr))]
+             #:when (critical-subexpression? expr subexpr))
     subexpr))
 
 (define (option-on-expr alts err-lsts expr ctx)
-  (define repr (repr-of expr ctx))
   (define timeline-stop! (timeline-start! 'times (~a expr)))
 
-  (define vars (context-vars ctx))
-  (define pts
-    (for/list ([(pt ex) (in-pcontext (*pcontext*))])
-      pt))
   (define fn (compile-prog expr ctx))
-  (define splitvals
-    (for/list ([pt pts])
-      (apply fn pt)))
-  (define big-table ; val and errors for each alt, per point
+  (define repr (repr-of expr ctx))
+
+  (define big-table ; pt ; splitval ; alt1-err ; alt2-err ; ...
     (for/list ([(pt ex) (in-pcontext (*pcontext*))]
                [err-lst err-lsts])
-      (list* pt (apply fn pt) err-lst)))
-  (match-define (list pts* splitvals* err-lsts* ...)
-    (flip-lists (sort big-table (curryr </total repr) #:key second)))
+      (list* (apply fn pt) pt err-lst)))
+  (match-define (list splitvals* pts* err-lsts* ...)
+    (flip-lists (sort big-table (curryr </total repr) #:key first)))
 
   (define bit-err-lsts* (map (curry map ulps->bits) err-lsts*))
 
   (define can-split?
-    (append (list #f)
-            (for/list ([val (cdr splitvals*)]
-                       [prev splitvals*])
-              (</total prev val repr))))
-  (define split-indices (err-lsts->split-indices bit-err-lsts* can-split?))
+    (cons #f
+          (for/list ([val (cdr splitvals*)]
+                     [prev splitvals*])
+            (</total prev val repr))))
+  (define split-indices (infer-split-indices bit-err-lsts* can-split?))
   (define out (option split-indices alts pts* expr (pick-errors split-indices pts* err-lsts* repr)))
   (timeline-stop!)
   (timeline-push! 'branch
@@ -198,13 +184,12 @@
 ;; Given error-lsts, returns a list of sp objects representing where the optimal splitpoints are.
 (define (valid-splitindices? can-split? split-indices)
   (and (for/and ([pidx (map si-pidx (drop-right split-indices 1))])
-         (and (> pidx 0))
-         (list-ref can-split? pidx))
+         (and (> pidx 0) (list-ref can-split? pidx)))
        (= (si-pidx (last split-indices)) (length can-split?))))
 
 (module core typed/racket
   (provide (struct-out si)
-           err-lsts->split-indices)
+           infer-split-indices)
   (require math/flonum)
 
   ;; Struct representing a splitindex
@@ -219,8 +204,8 @@
   ;; Returns a list of split indices saying which alt to use for which
   ;; range of points. Starting at 1 going up to num-points.
   ;; Alts are indexed 0 and points are index 1.
-  (: err-lsts->split-indices (-> (Listof (Listof Flonum)) (Listof Boolean) (Listof si)))
-  (define (err-lsts->split-indices err-lsts can-split)
+  (: infer-split-indices (-> (Listof (Listof Flonum)) (Listof Boolean) (Listof si)))
+  (define (infer-split-indices err-lsts can-split)
     ;; Coverts the list to vector form for faster processing
     (define can-split-vec (list->vector can-split))
     ;; Converting list of list to list of flvectors
@@ -230,7 +215,6 @@
     (define flvec-psums (vector-map make-vec-psum (list->vector err-lsts)))
 
     ;; Set up data needed for algorithm
-    (define number-of-alts (vector-length flvec-psums))
     (define number-of-points (vector-length can-split-vec))
     ;; min-weight is used as penalty to favor not adding split points
     (define min-weight (fl number-of-points))
@@ -320,18 +304,13 @@
       (vector-set! result-prev-idxs point-idx current-prev-idx))
 
     ;; Loop over results vectors in reverse and build the output split index list
-    (define next number-of-points)
-    (: split-idexs (Listof si))
-    (define split-idexs '())
-    (for ([i (in-range (- number-of-points 1) -1 -1)]
-          #:when (= (+ i 1) next))
+    (let loop ([i (- number-of-points 1)]
+               [rest (cast null (Listof si))])
       (define alt-idx (vector-ref result-alt-idxs i))
-      (define split-idx (vector-ref result-prev-idxs i))
-      (set! next (+ split-idx 1))
-      (set! split-idexs
-            (cond
-              [(null? split-idexs) (cons (si alt-idx number-of-points) '())]
-              [else (cons (si alt-idx (+ i 1)) split-idexs)])))
-    split-idexs))
+      (define next (vector-ref result-prev-idxs i))
+      (define sis (cons (si alt-idx (+ i 1)) rest))
+      (if (< next i)
+          (loop next sis)
+          sis))))
 
 (require (submod "." core))

@@ -15,7 +15,7 @@
               (with-handlers ([exn? (const #f)])
                 (define tl (call-with-input-file (build-path outdir dir "timeline.json") read-json))
                 (timeline-relink dir tl)))))
-  (define info (read-datafile (build-path outdir (first dirs) "results.json")))
+  (define info (call-with-input-file (build-path outdir (first dirs) "results.json") read-datafile))
   (define joint-tl (apply timeline-merge tls))
   (call-with-output-file (build-path outdir "timeline.json")
                          #:exists 'replace
@@ -42,7 +42,8 @@
     (filter (conjoin (negate eof-object?) identity)
             (for/list ([dir (in-list dirs)])
               (with-handlers ([exn? (const #f)])
-                (let ([df (read-datafile (build-path outdir dir "results.json"))])
+                (let ([df (call-with-input-file (build-path outdir dir "results.json")
+                                                read-datafile)])
                   (if (eof-object? df)
                       eof
                       (cons df dir)))))))

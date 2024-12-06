@@ -62,10 +62,9 @@
      ; will partition into training and testing set
      (split-pcontext joint-pcontext (*num-points*) (*reeval-pts*))]
     [else
-     ; the training set will just be up to the first 256
+     ; the training set will just be up to the first (*num-points*)
      ; the testing set will just be the entire set
-     ; TODO: where is 256 coming from?
-     (define training-count (min 256 num-points))
+     (define training-count (min (*num-points*) num-points))
      (define testing-count (- num-points training-count))
      (define-values (train-pcontext _) (split-pcontext joint-pcontext training-count testing-count))
      (values train-pcontext joint-pcontext)]))
@@ -143,7 +142,7 @@
 
   (define-values (train-pcontext test-pcontext) (partition-pcontext pcontext))
   (*pcontext* test-pcontext)
-  (local-error-as-tree test (*context*)))
+  (local-error-as-tree (test-input test) (*context*)))
 
 (define (get-explanations test pcontext)
   (unless pcontext
@@ -269,8 +268,7 @@
         [_ (error 'run-herbie "command ~a timed out" command)])))
 
   (define (compute-result test)
-    (parameterize ([*timeline-disabled* timeline-disabled?]
-                   [*warnings-disabled* false])
+    (parameterize ([*timeline-disabled* timeline-disabled?])
       (define start-time (current-inexact-milliseconds))
       (reset!)
       (*context* (test-context test))

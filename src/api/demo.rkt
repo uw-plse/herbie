@@ -4,26 +4,26 @@
 (require racket/exn)
 (require openssl/sha1
          (rename-in xml [location? xml-location?]))
-(require web-server/servlet
-         web-server/servlet-env
+(require web-server/configuration/responders
          web-server/dispatch
-         web-server/dispatchers/dispatch
          web-server/dispatch/extend
+         web-server/dispatchers/dispatch
          web-server/http/bindings
-         web-server/configuration/responders
          web-server/managers/none
-         web-server/safety-limits)
+         web-server/safety-limits
+         web-server/servlet
+         web-server/servlet-env)
 
-(require "../utils/common.rkt"
-         "../config.rkt"
+(require "../config.rkt"
          "../syntax/read.rkt"
+         "../utils/common.rkt"
          "../utils/errors.rkt")
-(require "../syntax/sugar.rkt"
-         "../core/points.rkt")
-(require "datafile.rkt"
-         "../reports/pages.rkt"
-         "../reports/common.rkt"
+(require "../core/points.rkt"
+         "../syntax/sugar.rkt")
+(require "../reports/common.rkt"
          "../reports/core2mathjs.rkt"
+         "../reports/pages.rkt"
+         "datafile.rkt"
          "server.rkt")
 
 (provide run-demo)
@@ -236,36 +236,35 @@
                (a ([href "./index.html"]) " See what formulas other users submitted."))]
             [else `("all formulas submitted here are " (a ([href "./index.html"]) "logged") ".")])))))
 
-(define (post-with-json-response fn)
-  (lambda (req)
-    (define post-body (request-post-data/raw req))
-    (define post-data
-      (cond
-        [post-body (bytes->jsexpr post-body)]
-        [#t #f]))
-    (define resp
-      (with-handlers ([exn:fail? (λ (e) (hash 'error (exn->string e)))])
-        (fn post-data)))
-    (if (hash-has-key? resp 'error)
-        (eprintf "Error handling request: ~a\n" (hash-ref resp 'error))
-        (eprintf "Success handling request\n"))
-    (if (hash-has-key? resp 'error)
-        (response 500
-                  #"Bad Request"
-                  (current-seconds)
-                  APPLICATION/JSON-MIME-TYPE
-                  (list (header #"Access-Control-Allow-Origin" (string->bytes/utf-8 "*")))
-                  (λ (op) (write-json resp op)))
-        (response 200
-                  #"OK"
-                  (current-seconds)
-                  APPLICATION/JSON-MIME-TYPE
-                  (filter values
-                          (list (header #"Access-Control-Allow-Origin" (string->bytes/utf-8 "*"))
-                                (and (hash-has-key? resp 'job)
-                                     (header #"X-Herbie-Job-ID"
-                                             (string->bytes/utf-8 (hash-ref resp 'job))))))
-                  (λ (op) (write-json resp op))))))
+(define ((post-with-json-response fn) req)
+  (define post-body (request-post-data/raw req))
+  (define post-data
+    (cond
+      [post-body (bytes->jsexpr post-body)]
+      [#t #f]))
+  (define resp
+    (with-handlers ([exn:fail? (λ (e) (hash 'error (exn->string e)))])
+      (fn post-data)))
+  (if (hash-has-key? resp 'error)
+      (eprintf "Error handling request: ~a\n" (hash-ref resp 'error))
+      (eprintf "Success handling request\n"))
+  (if (hash-has-key? resp 'error)
+      (response 500
+                #"Bad Request"
+                (current-seconds)
+                APPLICATION/JSON-MIME-TYPE
+                (list (header #"Access-Control-Allow-Origin" (string->bytes/utf-8 "*")))
+                (λ (op) (write-json resp op)))
+      (response 200
+                #"OK"
+                (current-seconds)
+                APPLICATION/JSON-MIME-TYPE
+                (filter values
+                        (list (header #"Access-Control-Allow-Origin" (string->bytes/utf-8 "*"))
+                              (and (hash-has-key? resp 'job)
+                                   (header #"X-Herbie-Job-ID"
+                                           (string->bytes/utf-8 (hash-ref resp 'job))))))
+                (λ (op) (write-json resp op)))))
 
 (define (response/error title body)
   (response/full 400
@@ -370,10 +369,9 @@
                (list (header #"X-Job-Count" (string->bytes/utf-8 (~a (job-count))))
                      (header #"Access-Control-Allow-Origin" (string->bytes/utf-8 "*")))
                (λ (out)
-                 (display (apply string-append
-                                 (for/list ([entry timeline])
-                                   (format "Doing ~a\n" (hash-ref entry 'type))))
-                          out)))]))
+                 (when timeline
+                   (for ([entry timeline])
+                     (fprintf out "Doing ~a\n" (hash-ref entry 'type))))))]))
 
 (define (check-up req)
   (response/full (if (is-server-up) 200 500)
@@ -556,8 +554,6 @@
   (*demo-output* output)
   (*demo-prefix* prefix)
   (*demo-log* log)
-  (unless threads
-    (set! threads (processor-count)))
   (start-job-server threads)
 
   (unless quiet?
