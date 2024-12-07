@@ -49,32 +49,18 @@
 
 (define program-to-egglog "program-to-egglog.egg")
 
+
+(define (get-numbered-file-name file-name extension)
+  (string-append file-name (string-append (number->string file-num) extension)) )
+
 ; Types handled
 ; - rationals
 ; - string
 (define (write-program-to-egglog program)
-  (with-output-to-file program-to-egglog #:exists 'replace (lambda () (for-each writeln program))))
+  (with-output-to-file 
+    (get-numbered-file-name "program-to-egglog" ".egg") 
+    #:exists 'replace (lambda () (for-each writeln program))))
 
-; (define (process-egglog egglog-filename)
-;   (define egglog-path
-;     (or (find-executable-path "egglog") (error "egglog executable not found in PATH")))
-
-;   (define curr-path (build-path (current-directory) egglog-filename))
-
-;   (define-values (sp out in err) (subprocess #f #f #f egglog-path curr-path))
-
-;   (subprocess-wait sp)
-
-;   (define stdout-content (port->string out))
-;   (define stderr-content (port->string err))
-
-;   (close-input-port out)
-;   (close-output-port in)
-;   (close-input-port err)
-
-;   (printf "reached here \n")
-
-;   (cons stdout-content stderr-content))
 
 (define (process-egglog egglog-filename)
   (define egglog-path
@@ -98,7 +84,7 @@
 (define (run-egglog-process program-struct)
   (write-program-to-egglog (egglog-program-program program-struct))
 
-  (process-egglog program-to-egglog))
+  (process-egglog (get-numbered-file-name "program-to-egglog" ".egg")))
 
 ;; Most calls to egglog should be done through this interface.
 ;;  - `make-egglog-runner`: creates a struct that describes a _reproducible_ egglog instance
@@ -285,14 +271,19 @@
   ;; 6. Call run-egglog-process
   (define egglog-output (run-egglog-process (egglog-program program)))
   (define stdout-content (car egglog-output))
+
   (with-output-to-file 
-    (string-append "stdout" (string-append (number->string file-num) ".txt")) 
+    (get-numbered-file-name "stdout" ".txt")
     #:exists 'replace (lambda () (writeln stdout-content)))
+
   (printf "stdout program: \n ~a \n\n" stdout-content)
+
   (define stderr-content (cdr egglog-output))
+
   ; (with-output-to-file "stderr.txt" #:exists 'replace (lambda () (writeln stderr-content)))
+
   (with-output-to-file 
-    (string-append "stderr" (string-append (number->string file-num) ".txt")) 
+    (get-numbered-file-name "stderr" ".txt")
     #:exists 'replace (lambda () (writeln stderr-content)))
 
   (set! file-num (+ file-num 1))
@@ -561,11 +552,6 @@
 
 (define (egglog-rewrite-rules rules tag)
   (for/list ([rule (in-list rules)])
-    ; (printf "rule ~a\n" rule)
-    ; (printf "input ~a\n" (rule-input rule))
-    ; (printf "output ~a\n" (rule-output rule))
-    ; (printf "o-type ~a\n\n" (rule-otype rule))
-
     (if (not (representation? (rule-otype rule)))
         `(rewrite ,(expr->e1-pattern (rule-input rule))
                   ,(expr->e1-pattern (rule-output rule))
@@ -578,7 +564,8 @@
 
 (define (egglog-add-exprs batch ctx)
   (define egglog-exprs '())
-  (define insert-batch (batch-remove-zombie batch (batch-roots batch)))
+  ; (define insert-batch (batch-remove-zombie batch (batch-roots batch)))
+  (define insert-batch (batch-copy batch))
   (define mappings (build-vector (batch-length insert-batch) values))
   (define bindings (make-hash))
   (define vars (make-hash))

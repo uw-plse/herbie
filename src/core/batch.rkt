@@ -20,7 +20,8 @@
          make-mutable-batch ; Mutable-batch
          batch->mutable-batch ; Batch -> Mutable-batch
          batch-copy-mutable-nodes! ; Batch -> Mutable-batch -> Void
-         mutable-batch-push!) ; Mutable-batch -> Node -> Idx
+         mutable-batch-push! ; Mutable-batch -> Node -> Idx
+         batch-copy)
 
 ;; This function defines the recursive structure of expressions
 (define (expr-recurse expr f)
