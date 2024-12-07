@@ -11,6 +11,6 @@
   (sqrt (* 0.5 (+ 1 (/ x (sqrt (+ (* (* 4 p) p) (* x x))))))))
 
 ;; Here, I'm doing (1 - the above), and x here is (2p / x)
-(FPCore (x)
-  :name "Given's Rotation SVD example, simplified"
-  (- 1 (sqrt (* 1/2 (+ 1 (/ 1 (hypot 1 x)))))))
+;(FPCore (x)
+;  :name "Given's Rotation SVD example, simplified"
+;  (- 1 (sqrt (* 1/2 (+ 1 (/ 1 (hypot 1 x)))))))
