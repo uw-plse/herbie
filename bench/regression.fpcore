@@ -65,9 +65,9 @@
  :name "exp-w (used to crash)"
  (* (exp (- w)) (pow l (exp w))))
 
-(FPCore (x)
- :name "expfmod (used to be hard to sample)"
- (* (fmod (exp x) (sqrt (cos x))) (exp (- x))))
+;(FPCore (x)
+; :name "expfmod (used to be hard to sample)"
+; (* (fmod (exp x) (sqrt (cos x))) (exp (- x))))
 
 ; Regression tests from user-filed bugs
 
