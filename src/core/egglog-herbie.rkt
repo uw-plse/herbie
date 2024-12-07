@@ -37,6 +37,8 @@
 (define id->e2 (make-hasheq))
 (define e2->id (make-hasheq))
 
+(define file-num 1)
+
 ;; [Copied from egg-herbie.rkt] Returns all representatations (and their types) in the current platform.
 (define (all-repr-names [pform (*active-platform*)])
   (remove-duplicates (map (lambda (repr) (representation-name repr)) (platform-reprs pform))))
@@ -53,24 +55,41 @@
 (define (write-program-to-egglog program)
   (with-output-to-file program-to-egglog #:exists 'replace (lambda () (for-each writeln program))))
 
+; (define (process-egglog egglog-filename)
+;   (define egglog-path
+;     (or (find-executable-path "egglog") (error "egglog executable not found in PATH")))
+
+;   (define curr-path (build-path (current-directory) egglog-filename))
+
+;   (define-values (sp out in err) (subprocess #f #f #f egglog-path curr-path))
+
+;   (subprocess-wait sp)
+
+;   (define stdout-content (port->string out))
+;   (define stderr-content (port->string err))
+
+;   (close-input-port out)
+;   (close-output-port in)
+;   (close-input-port err)
+
+;   (printf "reached here \n")
+
+;   (cons stdout-content stderr-content))
+
 (define (process-egglog egglog-filename)
   (define egglog-path
-    (or (find-executable-path "egglog") (error "egglog executable not found in PATH")))
+    (path->string (or (find-executable-path "egglog") (error "egglog executable not found in PATH"))))
 
-  (define curr-path (build-path (current-directory) egglog-filename))
+  (define curr-path (path->string (build-path (current-directory) egglog-filename)))
 
-  (define-values (sp out in err) (subprocess #f #f #f egglog-path curr-path))
+  (let ([stdout-port (open-output-string)]
+        [stderr-port (open-output-string)])
 
-  (subprocess-wait sp)
+    (parameterize ([current-output-port stdout-port]
+                   [current-error-port stderr-port])
+      (system (string-append egglog-path " " curr-path)))
 
-  (define stdout-content (port->string out))
-  (define stderr-content (port->string err))
-
-  (close-input-port out)
-  (close-output-port in)
-  (close-input-port err)
-
-  (cons stdout-content stderr-content))
+    (cons (get-output-string stdout-port) (get-output-string stderr-port))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Public API
@@ -180,17 +199,12 @@
   ;; 1. Prelude
   (set! program (append program (prelude #:mixed-egraph? #t)))
 
-  ; (printf "schedule ~a\n" (egg-runner-schedule runner))
-
-  ; (ruleset math)
-  ; (ruleset fp-safe)
-  (printf "before tag\n")
+  ; (printf "before tag\n")
   ;; 2. User Rules which comes from schedule (need to be translated)
+
   (define tag-schedule
     (for/list ([i (in-naturals 1)] ; Start index `i` from 1
                [element (in-list (egg-runner-schedule runner))])
-      ; (printf "element : ~a\n" element)
-      ; (printf "car element : ~a\n" (car element))
 
       (define rule-type (car element))
       (define schedule-params (cdr element))
@@ -201,25 +215,23 @@
           ['lower 'lowering]
           [_
            (define curr-tag (string->symbol (string-append "?tag" (number->string i))))
-           (printf "rules ~a\n" rule-type)
+
+           ;; Add rulsets
+           (set! program (append program `((ruleset ,curr-tag))))
+
+           ;; Add the actual egglog rewrite rules
            (set! program (append program (egglog-rewrite-rules rule-type curr-tag)))
+
            curr-tag]))
 
-      ; (printf "tag : ~a\n\n\n" tag)
-
       (cons tag schedule-params)))
-  (printf "after tag\n")
-
-  ; (printf "finished schedule \n")
-  ; (printf "schedule ~a\n\n" tag-schedule)
-
-  ; (set! program (append program (map cons schedule)))
+    
+  ; (printf "after tag\n")
 
   ;; 3. Inserting expressions -> (egglog-add-exprs curr-batch (egglog-runner-ctx))
   (set! program (append program (egglog-add-exprs curr-batch (egg-runner-ctx runner))))
 
   ;; 4. Running the schedule
-  ;; TODO:
 
   ; `((run-schedule (saturate lifting) (saturate math) (saturate lowering) ))
   (define run-schedule '())
@@ -229,69 +241,66 @@
       [(or 'lifting 'lowering) (set! run-schedule (append run-schedule (list (list 'saturate tag))))]
       [_
         ; Set Tag
-        (set! run-schedule (append run-schedule (list (list 'saturate tag))))
+        ; (set! run-schedule (append run-schedule (list (list 'saturate tag))))
 
         ; Set params
         (define is-node-present (dict-ref schedule-params 'node #f))
         (define is-iteration-present (dict-ref schedule-params 'iteration #f))
         
-
         (match* (is-node-present is-iteration-present)
           [((? nonnegative-integer? node-amt) (? nonnegative-integer? iter-amt))
-            (set! run-schedule (append run-schedule (list (list 'iter iter-amt) (list 'run node-amt))))]
-
+            (set! run-schedule (append run-schedule `((repeat ,iter-amt ,tag))))]
+            
           [(#f (? nonnegative-integer? iter-amt))
-            (set! run-schedule (append run-schedule (list (list 'iter iter-amt))))]
+            (set! run-schedule (append run-schedule `((repeat ,iter-amt ,tag))))]
+
           [((? nonnegative-integer? node-amt) #f)
-            (set! run-schedule (append run-schedule (list (list 'run node-amt))))]
-         [(#f #f) (error "lmao")])]))
+            (set! run-schedule (append run-schedule `((repeat 1 ,tag))))]
 
-  ; (define run-schedule
-  ;   (for/list ([(tag schedule-params) (in-dict tag-schedule)])
-  ;     (match tag
-  ;       [(or 'lifting 'lowering) (list (list 'saturate tag))]
-  ;       [_
-  ;         (define is-node-present (dict-ref schedule-params 'node #f))
-  ;         (define is-iteration-present (dict-ref schedule-params 'iteration #f))
-
-  ;         (match* (is-node-present is-iteration-present)
-  ;           [((? nonnegative-integer? node-amt) (? nonnegative-integer? iter-amt))
-  ;             (list (list 'iter iter-amt) (list 'run node-amt))]
-
-  ;           [(#f (? nonnegative-integer? iter-amt)) (list (list 'iter iter-amt))]
-  ;           [((? nonnegative-integer? node-amt) #f) (list (list 'run node-amt))]
-  ;           [(#f #f)
-  ;             (error "lmao")])])))
+         [(#f #f) `((repeat 1 ,tag))])
+         
+         ]))
 
   ; (printf "run-schedule ~a \n\n" run-schedule)
 
-  (set! program (append program `(run-schedule ,run-schedule)))
-  ; [(#f iter-amt) (list 'iter iter-amt)]
-  ; [(node-amt #f) (list 'run node-amt)]
-  ; [(#f #f) (error "lmao")])]))))))
+  (set! program (append program `((run-schedule ,@run-schedule))))
+  ; (set! program (append program `((run 10))))
+  ; (set! program (append program 
+  ; `((run-schedule
+  ;   (saturate ?tag1)
+  ;   (run ?tag1 4))))
 
-  ; (define egglog-scheduling-params
-  ;   (for/list ([param (in-list schedule-params)])
-  ;     (match param
-  ;       [(cons 'node num) (list 'run num)] ; exists (node 5)
-  ;       [(cons 'iteration num) (list 'run num)] ; exists (run 5)
-  ;       [_ (error "wrong")])))
-
-  ; (list (list 'saturate tag) egglog-scheduling-params)]))))))
   ;; dict-ref
-  (printf "finished run-schedule \n")
+  ; (printf "finished run-schedule \n")
 
   ;; 5. Extraction -> should just need root ids
   (for ([root (egg-runner-roots runner)])
-    (set! program
-          (append program
-                  '((extract (lower (lift (string-append "?r" (number->string root)) "binary64")))))))
-  ; not only binary64
-  (printf "reached end\n")
+    (define root-tag (string->symbol (string-append "?r" (number->string root))))
 
-  ;; 6. Call process-egglog
+    (set! program
+      (append program
+        (list `(extract ,root-tag)))))
+  ; TODO : not only binary64
+  
+  ;; 6. Call run-egglog-process
+  (define egglog-output (run-egglog-process (egglog-program program)))
+  (define stdout-content (car egglog-output))
+  (with-output-to-file 
+    (string-append "stdout" (string-append (number->string file-num) ".txt")) 
+    #:exists 'replace (lambda () (writeln stdout-content)))
+  (printf "stdout program: \n ~a \n\n" stdout-content)
+  (define stderr-content (cdr egglog-output))
+  ; (with-output-to-file "stderr.txt" #:exists 'replace (lambda () (writeln stderr-content)))
+  (with-output-to-file 
+    (string-append "stderr" (string-append (number->string file-num) ".txt")) 
+    #:exists 'replace (lambda () (writeln stderr-content)))
+
+  (set! file-num (+ file-num 1))
+  ; (printf "stderr program: \n ~a \n\n" stderr-content)
 
   ;; 7. Parse output
+
+  ; (printf "reached end\n")
 
   ;; (Listof (Listof batchref))
   (define out
@@ -552,7 +561,12 @@
 
 (define (egglog-rewrite-rules rules tag)
   (for/list ([rule (in-list rules)])
-    (if (not (representation? (rule-output rule)))
+    ; (printf "rule ~a\n" rule)
+    ; (printf "input ~a\n" (rule-input rule))
+    ; (printf "output ~a\n" (rule-output rule))
+    ; (printf "o-type ~a\n\n" (rule-otype rule))
+
+    (if (not (representation? (rule-otype rule)))
         `(rewrite ,(expr->e1-pattern (rule-input rule))
                   ,(expr->e1-pattern (rule-output rule))
                   :ruleset

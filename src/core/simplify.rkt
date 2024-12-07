@@ -26,10 +26,15 @@
   (timeline-push! 'method "egg-herbie")
 
   (define generate-flags (hash-ref all-flags 'generate))
+
+  (printf "before simplify\n")
+
   (define simplifieds
     (if (member 'egglog generate-flags)
         (run-egglog-single-extractor runner extractor)
         (run-egg runner (cons 'single extractor))))
+
+  (printf "after simplify\n\n")
 
   (define out
     (for/list ([simplified (in-list simplifieds)]

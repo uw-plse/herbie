@@ -99,6 +99,8 @@
                           (if (*egraph-platform-cost*) platform-egg-cost-proc default-egg-cost-proc)
                           batch))))
 
+  (printf "simplified ~a\n\n" simplified)
+
   ; run egg
   (define simplifiedss (regroup-nested subexprss simplified))
 
