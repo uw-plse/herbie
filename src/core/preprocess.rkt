@@ -64,9 +64,7 @@
 
   ; egg schedule (3-phases for mathematical rewrites and implementation selection)
   (define schedule
-    `((lift . ((iteration . 1))) 
-      (,rules . ((node . ,(*node-limit*)))) 
-      (lower . ((iteration . 1)))))
+    `((lift . ((iteration . 1))) (,rules . ((node . ,(*node-limit*)))) (lower . ((iteration . 1)))))
 
   ; egg query
   (define batch (progs->batch (list expr)))

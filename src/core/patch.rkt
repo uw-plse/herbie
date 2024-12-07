@@ -31,6 +31,7 @@
   (define rules (real-rules (*simplify-rules*)))
   (define lowering-rules (platform-lowering-rules))
 
+  (printf "RUNNING THE LOWER SCHEDULE\n")
   ; egg runner
   (define schedule
     (if (flag-set? 'generate 'simplify)
@@ -141,10 +142,9 @@
      global-batch))
 
   ; egg schedule (3-phases for mathematical rewrites and implementation selection)
+  (printf "RUNNING FULL SCHEDULE\n")
   (define schedule
-    `((lift . ((iteration . 1)))
-      (,rules . ((node . ,(*node-limit*))))
-      (lower . ((iteration . 1)))))
+    `((lift . ((iteration . 1))) (,rules . ((node . ,(*node-limit*)))) (lower . ((iteration . 1)))))
 
   ; run egg
   (define exprs (map (compose debatchref alt-expr) altns))

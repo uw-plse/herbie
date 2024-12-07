@@ -41,6 +41,8 @@
                [root (egg-runner-roots runner)])
       (remove-duplicates (cons (batchref (egg-runner-batch runner) root) simplified)
                          #:key batchref-idx)))
+  
+  (printf "out: ~a\n" (map (compose ~a debatchref) (apply append out)))
 
   (timeline-push! 'outputs (map (compose ~a debatchref) (apply append out)))
 
