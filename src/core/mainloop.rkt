@@ -347,7 +347,7 @@
     (timeline-push! 'freqs key val))
   (timeline-push! 'expl-stats (apply + timings) (length timings))
 
-  (define preclist (list 64 128 512 4096))
+  (define preclist (list 512))
   (define conf-hash-mega (make-hash))
   (define maybe-hash-mega (make-hash))
 
