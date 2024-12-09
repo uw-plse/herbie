@@ -62,8 +62,8 @@
 
 (define all-explanations (list 'uflow-rescue 'u/u 'u/n 'o/o 'n/o 'o*u 'u*o 'n*u 'cancellation))
 
-(define *condthres* (make-parameter (bf 128)))
-(define *maybethres* (make-parameter (bf 32)))
+(define *condthres* (make-parameter (bf 64)))
+(define *maybethres* (make-parameter (bf 16)))
 (define *exbfprec* (make-parameter (bf 128)))
 
 ;(define (*condthres*) (bf 100))
