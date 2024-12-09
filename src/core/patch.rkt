@@ -44,6 +44,13 @@
     (for/vector ([approx (in-list approxs)])
       (batchref-idx (alt-expr approx))))
 
+  (define generate-flags (hash-ref all-flags 'generate))
+
+  (define extractor-fn
+    (if (member 'egglog generate-flags)
+        last
+        (compose debatchref last)))
+
   ; run egg
   (define runner (make-egg-runner global-batch roots reprs schedule))
   (define simplification-options
@@ -68,6 +75,8 @@
                                              (batchref-idx batchreff))))
               (sow (alt (batchref global-batch idx) `(simplify ,runner #f #f) (list altn) '()))))
           (batch-copy-mutable-nodes! global-batch global-batch-mutable))) ; Update global-batch
+  
+  (printf "patch : \n ~a \n\n" simplified)
 
   (timeline-push! 'count (length approxs) (length simplified))
   simplified)
@@ -190,10 +199,11 @@
       (alt (batchref global-batch root) (list 'patch expr repr) '() '())))
 
   ; Series expand
-  (define approximations
-    (if (flag-set? 'generate 'taylor)
-        (run-taylor exprs start-altns global-batch)
-        '()))
+  ; (define approximations
+  ;   (if (flag-set? 'generate 'taylor)
+  ;       (run-taylor exprs start-altns global-batch)
+  ;       '()))
+  (define approximations '())
 
   ; Recursive rewrite
   (define rewritten

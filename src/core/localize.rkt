@@ -87,17 +87,24 @@
     (make-egg-runner batch
                      (batch-roots batch)
                      reprs
-                     `((lift . ((iteration . 1))) 
-                       (,rules . ((node . ,(*node-limit*))))
-                       (lower . ((iteration . 1))))))
+                     `((lift . ((iteration . 1))) (,rules . ((node . ,(*node-limit*))))
+                                                  (lower . ((iteration . 1))))))
+
+  (printf "localize\n")
 
   ; run egg
+  (define egglog-exprs
+    (simplify-batch runner
+      (typed-egg-batch-extractor
+        (if (*egraph-platform-cost*) platform-egg-cost-proc default-egg-cost-proc)
+        batch)))
+
+  (define generate-flags (hash-ref all-flags 'generate))
+  
   (define simplified
-    (map (compose debatchref last)
-         (simplify-batch runner
-                         (typed-egg-batch-extractor
-                          (if (*egraph-platform-cost*) platform-egg-cost-proc default-egg-cost-proc)
-                          batch))))
+    (if (member 'egglog generate-flags)
+        egglog-exprs
+        (map (compose debatchref last) egglog-exprs)))
 
   (printf "simplified ~a\n\n" simplified)
 

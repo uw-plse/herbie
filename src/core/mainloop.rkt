@@ -368,13 +368,19 @@
      (define runner (make-egg-runner batch (batch-roots batch) reprs schedule))
 
      ; run egg
-     (define simplified
-       (map (compose debatchref last)
-            (simplify-batch runner
-                            (typed-egg-batch-extractor (if (*egraph-platform-cost*)
-                                                           platform-egg-cost-proc
-                                                           default-egg-cost-proc)
-                                                       batch))))
+    (define egglog-exprs
+      (simplify-batch runner
+        (typed-egg-batch-extractor (if (*egraph-platform-cost*)
+                                        platform-egg-cost-proc
+                                        default-egg-cost-proc)
+                                    batch)))
+
+    (define generate-flags (hash-ref all-flags 'generate))
+    
+    (define simplified
+      (if (member 'egglog generate-flags)
+          egglog-exprs
+          (map (compose debatchref last) egglog-exprs)))
 
      ; de-duplication
      (remove-duplicates (for/list ([altn (in-list alts)]

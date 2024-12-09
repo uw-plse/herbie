@@ -183,11 +183,9 @@
   ;; 1. Prelude
   (set! program (append program (prelude #:mixed-egraph? #t)))
 
-  ; (printf "before tag\n")
   ;; 2. User Rules which comes from schedule (need to be translated)
-  ;(printf "Herbie Schedule: ~a\n" (egg-runner-schedule runner))
   (define tag-schedule
-    (for/list ([i (in-naturals 1)] ; Start index `i` from 1
+    (for/list ([i (in-naturals 1)]
                [element (in-list (egg-runner-schedule runner))])
 
       (define rule-type (car element))
@@ -210,27 +208,21 @@
 
       (cons tag schedule-params)))
 
-  ; (printf "after tag\n")
-
   ;; 3. Inserting expressions -> (egglog-add-exprs curr-batch (egglog-runner-ctx))
   ; (exprs . extract bindings)
   (define egglog-batch-exprs (egglog-add-exprs curr-batch (egg-runner-ctx runner)))
   (set! program (append program (car egglog-batch-exprs)))
 
   ;; 4. Running the schedule
-
-  ; `((run-schedule (saturate lifting) (saturate math) (saturate lowering) ))
   (define run-schedule '())
   (define domain-fns '())
+
   (for ([(tag schedule-params) (in-dict tag-schedule)])
     (match tag
       [(or 'lifting 'lowering)
        (set! domain-fns (cons tag domain-fns))
        (set! run-schedule (append run-schedule (list (list 'saturate tag))))]
       [_
-       ; Set Tag
-       ; (set! run-schedule (append run-schedule (list (list 'saturate tag))))
-
        ; Set params
        (define is-node-present (dict-ref schedule-params 'node #f))
        (define is-iteration-present (dict-ref schedule-params 'iteration #f))
@@ -243,61 +235,60 @@
           (set! run-schedule (append run-schedule `((repeat ,iter-amt ,tag))))]
 
          [((? nonnegative-integer? node-amt) #f)
-          (set! run-schedule (append run-schedule `((repeat 10 ,tag))))]
+          (set! run-schedule (append run-schedule `((repeat 5 ,tag))))]
 
-         [(#f #f) `((repeat 10 ,tag))])]))
-
-  ; (printf "run-schedule ~a \n\n" run-schedule)
+         [(#f #f) `((repeat 5 ,tag))])]))
 
   (set! program (append program `((run-schedule ,@run-schedule))))
-  ; (set! program (append program `((run 10))))
-  ; (set! program (append program
-  ; `((run-schedule
-  ;   (saturate ?tag1)
-  ;   (run ?tag1 4))))
-
-  ;; dict-ref
-  ; (printf "finished run-schedule \n")
 
   ;; 5. Extraction -> should just need root ids
   (for ([binding (cdr egglog-batch-exprs)])
-
-    (set! program (append program 
-      (if (= (length domain-fns) 2) 
-        (list `(extract (lower (lift ,binding) ,(symbol->string (representation-name (context-repr (egg-runner-ctx runner)))))))
-        (list `(extract ,binding))))))
+    (set! program
+          (append
+           program
+           (if (= (length domain-fns) 2)
+               (list `(extract (lower (lift ,binding)
+                                      ,(symbol->string (representation-name
+                                                        (context-repr (egg-runner-ctx runner)))))))
+               (list `(extract ,binding))))))
 
   ;; 6. Call run-egglog-process
   (define egglog-output (run-egglog-process (egglog-program program)))
   (define stdout-content (car egglog-output))
 
-  (with-output-to-file (get-numbered-file-name "stdout" ".txt")
-                       #:exists 'replace
-                       (lambda () (writeln stdout-content)))
+  ; (with-output-to-file (get-numbered-file-name "stdout" ".txt")
+  ;                      #:exists 'replace
+  ;                      (lambda () (writeln stdout-content)))
 
   (printf "stdout program: \n ~a \n\n" stdout-content)
 
-  (define stderr-content (cdr egglog-output))
+  ; (define stderr-content (cdr egglog-output))
 
-  ; (with-output-to-file "stderr.txt" #:exists 'replace (lambda () (writeln stderr-content)))
-
-  (with-output-to-file (get-numbered-file-name "stderr" ".txt")
-                       #:exists 'replace
-                       (lambda () (writeln stderr-content)))
+  ; (with-output-to-file (get-numbered-file-name "stderr" ".txt")
+  ;                      #:exists 'replace
+  ;                      (lambda () (writeln stderr-content)))
 
   (set! file-num (+ file-num 1))
-  ; (printf "stderr program: \n ~a \n\n" stderr-content)
 
   ;; 7. Parse output
+  (define egglog-exprs-split (string-split stdout-content "\n"))
 
-  ; (printf "reached end\n")
+  (define egglog-exprs-symbol
+    (map (lambda (line) (with-input-from-string line read)) egglog-exprs-split))
+
+  (printf "mid-egglog-exprs \n~a\n\n" egglog-exprs-symbol)
+
+  (define herbie-exprs (map e2->expr egglog-exprs-symbol))
+  (printf "herbie exprs \n~a\n\n" herbie-exprs)
+  ; (printf "herbie exprs-2 \n~a\n\n" (e2->expr `(Subf64Ty (Sinf64Ty (Addf64Ty (Varbinary64 "x") (Varbinary64 "eps"))) (Sinf64Ty (Varbinary64 "x")))))
 
   ;; (Listof (Listof batchref))
-  (define out
-    (for/list ([root (batch-roots curr-batch)])
-      (list (batchref curr-batch root))))
+  ; (define out
+  ;   (for/list ([root (batch-roots curr-batch)])
+  ;     (list (batchref curr-batch root))))
+  ; out)
 
-  out)
+  herbie-exprs)
 
 ;; TODO : Need to run egglog to get the actual ids
 ;; very hard - per id recruse one level and ger simplest child
@@ -726,11 +717,13 @@
        `(if ,(loop cond)
             ,(loop ift)
             ,(loop iff))]
-      [`(,op ,args ...) `(,(hash-ref e1->id op) ,@(map loop args))])))
+      [`(,op ,args ...) `(,(hash-ref e1->id op) ,@(map loop args))]
+      [`(Approx ,spec ,impl) (approx (e1->expr spec) (loop impl))])))
 
 (define (e2->expr expr)
   (let loop ([expr expr])
     (match expr
+      [`(Approx ,spec ,impl) (approx (e1->expr spec) (loop impl))]
       [`(,(? egglog-num? num) (bigrat (from-string ,n) (from-string ,d)))
        (/ (string->number n) (string->number d))]
       [`(,(? egglog-var? var) ,v) (string->symbol v)]
