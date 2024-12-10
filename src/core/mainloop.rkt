@@ -320,8 +320,10 @@
 
 (define (explain! expr context pcontext)
   (timeline-event! 'explain)
-
-  (define-values (fperrors
+  (eprintf "here")
+  (define confmatr (explain expr context pcontext))
+  (timeline-push! 'confusion confmatr)
+  #;(define-values (fperrors
                   explanations-table
                   confusion-matrix
                   maybe-confusion-matrix
@@ -330,27 +332,27 @@
                   timings)
     (explain expr context pcontext))
 
-  (for ([fperror (in-list fperrors)])
+  #;(for ([fperror (in-list fperrors)])
     (match-define (list expr truth opreds oex upreds uex) fperror)
     (timeline-push! 'fperrors expr truth opreds oex upreds uex))
 
-  (for ([explanation (in-list explanations-table)])
+  #;(for ([explanation (in-list explanations-table)])
     (match-define (list op expr expl val maybe-count flow-list) explanation)
     (timeline-push! 'explanations op expr expl val maybe-count flow-list))
 
-  (timeline-push! 'confusion confusion-matrix)
+  #;(timeline-push! 'confusion confusion-matrix)
 
-  (timeline-push! 'maybe-confusion maybe-confusion-matrix)
+  #;(timeline-push! 'maybe-confusion maybe-confusion-matrix)
 
-  (timeline-push! 'total-confusion total-confusion-matrix)
-  (for ([(key val) (in-dict freqs)])
+  #;(timeline-push! 'total-confusion total-confusion-matrix)
+  #;(for ([(key val) (in-dict freqs)])
     (timeline-push! 'freqs key val))
-  (timeline-push! 'expl-stats (apply + timings) (length timings))
+  #;(timeline-push! 'expl-stats (apply + timings) (length timings))
 
-  (define confusion-hash (make-hash))
-  (define maybe-hash (make-hash))
+  #;(define confusion-hash (make-hash))
+  #;(define maybe-hash (make-hash))
 
-  (for [(i (in-inclusive-range 0 10))]
+  #;(for [(i (in-inclusive-range 0 10))]
     (parameterize ([*maybethres* (lf (exact->inexact (expt 2 i)))]
                    [*condthres* (lf (exact->inexact (* 4 (expt 2 i))))])
       (define-values (fperror
@@ -364,7 +366,7 @@
       (define key (string->symbol (~a i)))
       (hash-set! confusion-hash key confusion-matrix)
       (hash-set! maybe-hash key maybe-confusion-matrix)))
-  (timeline-push! 'prcurve confusion-hash maybe-hash)
+  #;(timeline-push! 'prcurve confusion-hash maybe-hash)
   #;(eprintf confusion-hash maybe-hash))
 
 (define (make-regime! alts)

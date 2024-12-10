@@ -9,7 +9,8 @@
 
 (provide compile-progs
          compile-prog
-         compile-lfs)
+         compile-lfs
+         compile-lf)
 
 ;; Interpreter taking a narrow IR
 ;; ```
@@ -105,10 +106,10 @@
       (match node
         [(logfloat _ _ _ _ _) (list (const node))]
         [(list 'if c t f) (list if-proc c t f)]
-        [(list op a) (list (lambda (x) (lf-normalize/safe ((lfop op) x))) a)]
-        [(list op a b) (list (lambda (x y) (lf-normalize/safe ((lfop op) x y))) a b)]
-        [(list op a b c) (list (lambda (x y z) (lf-normalize/safe ((lfop op) x y z))) a b c)]
-        #;[(list op args ...) (cons (lambda ()) (lfop op) args)])))
+        #;[(list op a) (list (lambda (x) (lf-normalize/safe ((lfop op) x))) a)]
+        #;[(list op a b) (list (lambda (x y) (lf-normalize/safe ((lfop op) x y))) a b)]
+        #;[(list op a b c) (list (lambda (x y z) (lf-normalize/safe ((lfop op) x y z))) a b c)]
+        [(list op args ...) (cons (lfop op) args)])))
 
   (make-progs-interpreter (batch-vars batch) instructions (batch-roots batch)))
 
@@ -117,7 +118,7 @@
 
 ;; Like `compile-progs`, but a single prog.
 (define (compile-lf expr ctx)
-  (define core (compile-progs (list expr) ctx))
+  (define core (compile-lfs (list expr) ctx))
   (define (compiled-lf . xs)
     (vector-ref (apply core xs) 0))
   compiled-lf)
