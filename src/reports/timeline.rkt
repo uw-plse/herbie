@@ -425,7 +425,7 @@
                                maybemat))
 
 (define (render-phase-prcurve prcurve)
-  (match-define (list (list confusion-hash maybe-hash)) prcurve)
+  (match-define (list (list confusion-hash)) prcurve)
   (define res (for/list [(i (in-inclusive-range 0 10))]
                 (define key (string->symbol (~a i)))
                 (define conmat (hash-ref confusion-hash key))

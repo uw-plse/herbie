@@ -349,24 +349,14 @@
     (timeline-push! 'freqs key val))
   #;(timeline-push! 'expl-stats (apply + timings) (length timings))
 
-  #;(define confusion-hash (make-hash))
-  #;(define maybe-hash (make-hash))
+  (define confusion-hash (make-hash))
 
-  #;(for [(i (in-inclusive-range 0 10))]
-    (parameterize ([*maybethres* (lf (exact->inexact (expt 2 i)))]
-                   [*condthres* (lf (exact->inexact (* 4 (expt 2 i))))])
-      (define-values (fperror
-                      explanations-table
-                      confusion-matrix
-                      maybe-confusion-matrix
-                      total-confusion-matrix
-                      freqs
-                      timings)
-        (explain expr context pcontext))
+  (for [(i (in-inclusive-range 0 10))]
+    (parameterize ([*condthres* (lf (exact->inexact (* 4 (expt 2 i))))])
+      (define confmatr (explain expr context pcontext))
       (define key (string->symbol (~a i)))
-      (hash-set! confusion-hash key confusion-matrix)
-      (hash-set! maybe-hash key maybe-confusion-matrix)))
-  #;(timeline-push! 'prcurve confusion-hash maybe-hash)
+      (hash-set! confusion-hash key confmatr)))
+  (timeline-push! 'prcurve confusion-hash)
   #;(eprintf confusion-hash maybe-hash))
 
 (define (make-regime! alts)

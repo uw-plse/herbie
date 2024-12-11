@@ -46,7 +46,8 @@
     (define rdiff (ulp-difference real-answer fl-answer (repr-of expr ctx)))
     (cond
       [(and (> diff (*condthres*)) (> rdiff 16)) (set! tp (+ tp 1))]
-      [(and (> diff (*condthres*)) (<= rdiff 16)) (set! fp (+ fp 1))]
+      [(and (> diff (*condthres*)) (<= rdiff 16))
+       (set! fp (+ fp 1))]
       [(and (<= diff (*condthres*)) (> rdiff 16))
        (set! fn (+ fn 1))]
       [(and (<= diff (*condthres*)) (<= rdiff 16)) (set! tn (+ tn 1))]
