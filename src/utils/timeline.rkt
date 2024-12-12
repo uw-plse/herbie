@@ -192,19 +192,11 @@
       [(l1* l2*) (cons rec (loop l1* l2*))])))
 
 (define (merge-prcurve l1 l2)
-  (match-define (list (list a1 b1)) l1)
-  (match-define (list (list a2 b2)) l2)
+  (match-define (list a1) l1)
+  (match-define (list a2) l2)
   (define a (hash-union a1 a2 #:combine
-                        (lambda (h1 h2)
-                          (hash-union h1 h2 #:combine
-                                       (lambda (l1 l2)
-                                         (map + l1 l2))))))
-  (define b (hash-union b1 b2 #:combine
-                        (lambda (h1 h2)
-                          (hash-union h1 h2 #:combine
-                                       (lambda (l1 l2)
-                                         (map + l1 l2))))))
-  (list (list a b)))
+                        (lambda (l1 l2) (map + l1 l2))))
+  (list a))
 
 (define-timeline type #:custom (λ (a b) a))
 (define-timeline time #:custom +)

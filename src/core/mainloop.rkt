@@ -348,16 +348,12 @@
   (timeline-push! 'expl-stats (apply + timings) (length timings))
 
   (define preclist (list 512))
-  (define conf-hash-mega (make-hash))
-  (define maybe-hash-mega (make-hash))
-
-  (for ([j (in-list preclist)])
-    (define conf-hash (make-hash))
-    (define maybe-hash (make-hash))
-    (for [(i (in-inclusive-range 0 10))]
-      (parameterize ([*maybethres* (bf (exact->inexact (expt 2 i)))]
-                     [*condthres* (bf (exact->inexact (* 4 (expt 2 i))))]
-                     [*exbfprec* j])
+  (define conf-hash (make-hash))
+  (define maybe-hash (make-hash))
+  (for [(i (in-inclusive-range 0 10))]
+    (parameterize ([*maybethres* (bf (exact->inexact (expt 2 i)))]
+                   [*condthres* (bf (exact->inexact (* 4 (expt 2 i))))]
+                   [*exbfprec* 512])
       (define-values (fperror
                       explanations-table
                       confusion-matrix
@@ -369,10 +365,8 @@
       (define key (string->symbol (~a i)))
       (hash-set! conf-hash key confusion-matrix)
       (hash-set! maybe-hash key maybe-confusion-matrix)))
-    (define key (string->symbol (~a j)))
-    (hash-set! conf-hash-mega key conf-hash)
-    (hash-set! maybe-hash-mega key maybe-hash))
-  (timeline-push! 'prcurve conf-hash-mega maybe-hash-mega))
+
+  (timeline-push! 'prcurve conf-hash))
 
 (define (make-regime! alts)
   (define ctx (*context*))
