@@ -352,7 +352,7 @@
   (define confusion-hash (make-hash))
 
   (for [(i (in-inclusive-range 0 10))]
-    (parameterize ([*condthres* (lf (exact->inexact (* 4 (expt 2 i))))])
+    (parameterize ([*condthres* (* 4 (expt 2 i))])
       (define confmatr (explain expr context pcontext))
       (define key (string->symbol (~a i)))
       (hash-set! confusion-hash key confmatr)))
