@@ -166,7 +166,7 @@
   (define test-pcontext* (preprocess-pcontext (*context*) test-pcontext preprocessing))
   (when seed
     (set-seed! seed))
-  (list alternatives test-pcontext test-pcontext*))
+  (list alternatives test-pcontext test-pcontext* preprocessing))
 
 ;; Improvement backend for generating reports
 ;; A more heavyweight version of `get-alternatives`
@@ -211,6 +211,7 @@
 
   ;; compute error/cost for output expression
   (define end-exprs (map alt-expr end-alts))
+
   (define end-train-errs (flip-lists (batch-errors end-exprs train-pcontext ctx)))
   (define end-test-errs (flip-lists (batch-errors end-exprs test-pcontext* ctx)))
   (define end-alts-data (map alt-analysis end-alts end-train-errs end-test-errs))
@@ -266,7 +267,10 @@
         (timeline-event! 'start) ; Prevents the timeline from being empty.
         (define result
           (match command
-            ['alternatives (get-alternatives test pcontext seed)]
+            ['alternatives
+             (define out (get-alternatives test pcontext seed))
+             (eprintf "~a: result: ~a\n" command (first out))
+             out]
             ['evaluate (get-calculation test pcontext)]
             ['cost (get-cost test)]
             ['errors (get-errors test pcontext)]

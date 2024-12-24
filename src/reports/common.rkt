@@ -49,7 +49,8 @@
          core->wls
          core->tex
          expr->tex
-         core->js)
+         core->js
+         fpcore-with-preprocessing)
 
 (define (write-html xexpr out)
   (fprintf out "<!doctype html>\n")
@@ -258,11 +259,11 @@
 
 (define sort-note "NOTE: ~a should be sorted in increasing order before calling this function.")
 
-(define (render-program expr
-                        ctx
-                        #:ident [identifier #f]
-                        #:pre [precondition '(TRUE)]
-                        #:instructions [instructions empty])
+(define (fpcore-with-preprocessing expr
+                                   ctx
+                                   #:ident [identifier #f]
+                                   #:pre [precondition '(TRUE)]
+                                   #:instructions [instructions empty])
   (define output-repr (context-repr ctx))
   (match-define (cons expr* ctx*)
     (foldl (match-lambda*
@@ -275,7 +276,6 @@
 
   (define output-prec (representation-name output-repr))
   (define out-prog* (fpcore-add-props out-prog (list ':precision output-prec)))
-
   (define versions
     (reap
      [sow]
@@ -303,6 +303,56 @@
                          string-append)
                      prelude-lines
                      out)))))))
+  (match-define (cons left right) (first versions))
+  (eprintf "fpcore?; ~a\n" right)
+  right)
+
+(define (render-program expr
+                        ctx
+                        #:ident [identifier #f]
+                        #:pre [precondition '(TRUE)]
+                        #:instructions [instructions empty])
+  (define output-repr (context-repr ctx))
+  (match-define (cons expr* ctx*)
+    (foldl (match-lambda*
+             [(list i (cons e c)) (combine-fpcore-instruction i e c)])
+           (cons expr ctx)
+           instructions))
+  (define out-prog
+    (parameterize ([*expr-cse-able?* at-least-two-ops?])
+      (core-cse (program->fpcore expr* ctx* #:ident identifier))))
+
+  (define output-prec (representation-name output-repr))
+  (define out-prog* (fpcore-add-props out-prog (list ':precision output-prec)))
+  (eprintf "langs: ~a\n" languages)
+  (define versions
+    (reap
+     [sow]
+     (for ([(lang record) (in-dict languages)])
+       (match-define (list ext converter) record)
+       (when (and (fpcore? out-prog*) (or (equal? ext "fpcore") (supported-by-lang? out-prog* ext)))
+         (define name
+           (if identifier
+               (symbol->string identifier)
+               "code"))
+         (define out (converter out-prog* name))
+         (define prelude-lines
+           (string-join
+            (append-map (lambda (instruction)
+                          (let ([l (format-prelude-instruction instruction ctx ctx* lang converter)])
+                            (if (list? l)
+                                l
+                                (list l))))
+                        instructions)
+            (if (equal? lang "TeX") "\\\\\n" "\n")
+            #:after-last "\n"))
+         (sow (cons lang
+                    ((if (equal? lang "TeX")
+                         (curry format "\\begin{array}{l}\n~a\\\\\n~a\\end{array}\n")
+                         string-append)
+                     prelude-lines
+                     out)))))))
+  (eprintf "versions: ~a\n" versions)
 
   (define math-out
     (if (dict-has-key? versions "TeX")

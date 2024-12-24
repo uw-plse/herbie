@@ -511,7 +511,6 @@
                ([analysis end])
                (match-define (alt-analysis alt train-errors test-errs) analysis)
                (values alt train-errors test-errs (alt-cost alt repr))))
-
   (define alts-histories
     (for/list ([alt end-alts])
       (render-history alt (first pcontexts) (second pcontexts) (test-context test))))
@@ -549,7 +548,8 @@
   (define vars (test-vars test))
   (define repr (test-output-repr test))
 
-  (match-define (list altns test-pcontext processed-pcontext) (job-result-backend herbie-result))
+  (match-define (list altns test-pcontext processed-pcontext preprocessing)
+    (job-result-backend herbie-result))
   (define splitpoints
     (for/list ([alt altns])
       (for/list ([var vars])
@@ -560,8 +560,14 @@
             '()))))
 
   (define fpcores
-    (for/list ([altn altns])
-      (~a (program->fpcore (alt-expr altn) (test-context test)))))
+    (for/list ([expr (map alt-expr altns)])
+      (define out (fpcore-with-preprocessing expr
+                                                 (test-context test)
+                                                 #:ident (test-identifier test)
+                                                 #:instructions preprocessing))
+      (~s  out)))
+
+  (eprintf "alts: ~a\n" fpcores)
 
   (define histories
     (for/list ([altn altns])
