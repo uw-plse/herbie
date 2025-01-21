@@ -174,6 +174,7 @@
 
   (timeline-event! 'simplify)
   (define exprs (map alt-expr (^next-alts^)))
+  (displayln exprs)
   (define localized-exprs empty)
   (define repr (context-repr (*context*)))
 
