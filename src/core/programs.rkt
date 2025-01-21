@@ -40,6 +40,7 @@
     [(literal val precision) (get-representation precision)]
     [(? variable?) (context-lookup ctx node)]
     [(approx _ impl) (repr-of-node batch impl ctx)]
+    [(hole precision spec) (get-representation precision)]
     [(list 'if cond ift iff) (repr-of-node batch ift ctx)]
     [(list op args ...) (impl-info op 'otype)]))
 

@@ -242,9 +242,8 @@
   (define resp
     (with-handlers ([exn:fail? (λ (e) (hash 'error (exn->string e)))])
       (fn post-data)))
-  (if (hash-has-key? resp 'error)
-      (eprintf "Error handling request: ~a\n" (hash-ref resp 'error))
-      (eprintf "Success handling request\n"))
+  (when (hash-has-key? resp 'error)
+    (eprintf "Error handling request: ~a\n" (hash-ref resp 'error)))
   (if (hash-has-key? resp 'error)
       (response 500
                 #"Bad Request"

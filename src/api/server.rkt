@@ -136,20 +136,30 @@
                     #:when (equal? (hash-ref result 'command) "improve"))
            (get-table-data-from-hash result (make-path job-id)))])))
 
+(define (get-json-converter command)
+  (match (herbie-command-command command)
+    ['alternatives make-alternatives-result]
+    ['cost make-cost-result]
+    ['errors make-error-result]
+    ['evaluate make-calculate-result]
+    ['exacts make-exacts-result]
+    ['explanations make-explanation-result]
+    ['improve make-improve-result]
+    ['local-error make-local-error-result]
+    ['sample make-sample-result]
+    [_ (error 'compute-result "unknown command ~a" command)]))
+
 (define (herbie-do-server-job command job-id)
   (define herbie-result (wrapper-run-herbie command job-id))
-  (match-define (job-result kind test status time _ _ _ backend) herbie-result)
-  (match kind
-    ['alternatives (make-alternatives-result herbie-result test job-id)]
-    ['evaluate (make-calculate-result herbie-result job-id)]
-    ['cost (make-cost-result herbie-result job-id)]
-    ['errors (make-error-result herbie-result job-id)]
-    ['exacts (make-exacts-result herbie-result job-id)]
-    ['improve (make-improve-result herbie-result test job-id)]
-    ['local-error (make-local-error-result herbie-result job-id)]
-    ['explanations (make-explanation-result herbie-result job-id)]
-    ['sample (make-sample-result herbie-result test job-id)]
-    [_ (error 'compute-result "unknown command ~a" kind)]))
+  (define basic-output ((get-json-converter command) herbie-result job-id))
+  ;; Add default fields that all commands have
+  (hash-set* basic-output
+             'command
+             (~a (herbie-command-command command))
+             'job
+             job-id
+             'path
+             (make-path job-id)))
 
 (define completed-work (make-hash))
 
@@ -178,11 +188,6 @@
 
 (define manager #f)
 (define manager-dead-event #f)
-
-(define (get-command herbie-result)
-  ; force symbol type to string.
-  ; This is a HACK to fix JSON parsing errors that may or may not still happen.
-  (~s (job-result-command herbie-result)))
 
 (define (compute-job-id job-info)
   (sha1 (open-input-string (~s job-info))))
@@ -363,56 +368,22 @@
   (place-channel-put manager (list 'finished manager worker-id job-id out-result)))
 
 (define (make-explanation-result herbie-result job-id)
-  (hasheq 'command
-          (get-command herbie-result)
-          'explanation
-          (job-result-backend herbie-result)
-          'job
-          job-id
-          'path
-          (make-path job-id)))
+  (hasheq 'explanation (job-result-backend herbie-result)))
 
 (define (make-local-error-result herbie-result job-id)
-  (hasheq 'command
-          (get-command herbie-result)
-          'tree
-          (job-result-backend herbie-result)
-          'job
-          job-id
-          'path
-          (make-path job-id)))
+  (hasheq 'tree (job-result-backend herbie-result)))
 
-(define (make-sample-result herbie-result test job-id)
+(define (make-sample-result herbie-result job-id)
+  (define test (job-result-test herbie-result))
   (define pctx (job-result-backend herbie-result))
   (define repr (context-repr (test-context test)))
-  (hasheq 'command
-          (get-command herbie-result)
-          'points
-          (pcontext->json pctx repr)
-          'job
-          job-id
-          'path
-          (make-path job-id)))
+  (hasheq 'points (pcontext->json pctx repr)))
 
 (define (make-calculate-result herbie-result job-id)
-  (hasheq 'command
-          (get-command herbie-result)
-          'points
-          (job-result-backend herbie-result)
-          'job
-          job-id
-          'path
-          (make-path job-id)))
+  (hasheq 'points (job-result-backend herbie-result)))
 
 (define (make-cost-result herbie-result job-id)
-  (hasheq 'command
-          (get-command herbie-result)
-          'cost
-          (job-result-backend herbie-result)
-          'job
-          job-id
-          'path
-          (make-path job-id)))
+  (hasheq 'cost (job-result-backend herbie-result)))
 
 (define (make-error-result herbie-result job-id)
   (define errs
@@ -420,19 +391,13 @@
       (define pt (first pt&err))
       (define err (second pt&err))
       (list pt (format-bits (ulps->bits err)))))
-  (hasheq 'command (get-command herbie-result) 'points errs 'job job-id 'path (make-path job-id)))
+  (hasheq 'points errs))
 
 (define (make-exacts-result herbie-result job-id)
-  (hasheq 'command
-          (get-command herbie-result)
-          'points
-          (job-result-backend herbie-result)
-          'job
-          job-id
-          'path
-          (make-path job-id)))
+  (hasheq 'points (job-result-backend herbie-result)))
 
-(define (make-improve-result herbie-result test job-id)
+(define (make-improve-result herbie-result job-id)
+  (define test (job-result-test herbie-result))
   (define ctx (context->json (test-context test)))
   (define backend (job-result-backend herbie-result))
   (define job-time (job-result-time herbie-result))
@@ -447,9 +412,7 @@
       ['timeout #f]
       ['failure (exception->datum backend)]))
 
-  (hasheq 'command
-          (get-command herbie-result)
-          'status
+  (hasheq 'status
           (job-result-status herbie-result)
           'test
           test
@@ -464,11 +427,7 @@
           'profile
           profile
           'backend
-          backend-hash
-          'job
-          job-id
-          'path
-          (make-path job-id)))
+          backend-hash))
 
 (define (backend-improve-result-hash-table backend repr test)
   (define pcontext (improve-result-pctxs backend))
@@ -529,8 +488,9 @@
 (define (repr->json repr)
   (hasheq 'name (representation-name repr) 'type (representation-type repr)))
 
-(define (make-alternatives-result herbie-result test job-id)
+(define (make-alternatives-result herbie-result job-id)
 
+  (define test (job-result-test herbie-result))
   (define vars (test-vars test))
   (define repr (test-output-repr test))
 
@@ -559,17 +519,11 @@
   (define derivations
     (for/list ([altn altns])
       (render-json altn processed-pcontext test-pcontext (test-context test))))
-  (hasheq 'command
-          (get-command herbie-result)
-          'alternatives
+  (hasheq 'alternatives
           fpcores
           'histories
           histories
           'derivations
           derivations
           'splitpoints
-          splitpoints
-          'job
-          job-id
-          'path
-          (make-path job-id)))
+          splitpoints))

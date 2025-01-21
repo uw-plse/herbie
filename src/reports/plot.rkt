@@ -133,7 +133,8 @@
   ;  (a) a power of 10 between n and (n + ε) divisions below max where ε is some tolerance, or
   ;  (b) a value, n divisions below max
   (define sub-range (round (/ (- max min) (add1 number))))
-  (define near (λ (x n) (and (<= x n) (<= (abs (/ (- x n) sub-range)) 0.2)))) ; <- tolerance
+  (define (near x n)
+    (and (<= x n) (<= (abs (/ (- x n) sub-range)) 0.2))) ; <- tolerance
   (for/list ([itr (in-range 1 (add1 number))])
     (define power10
       (first-power10 (ordinal->real (clamp (- max (* (add1 itr) sub-range)) min max) repr)

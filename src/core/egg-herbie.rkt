@@ -132,11 +132,12 @@
   (for ([node (in-vector (batch-nodes insert-batch))]
         [root? (in-vector root-mask)]
         [n (in-naturals)])
-    (define node*
+    (define idx
       (match node
-        [(literal v _) v]
-        [(? number?) node]
-        [(? symbol?) (normalize-var node)]
+        [(literal v _) (insert-node! v root?)]
+        [(? number?) (insert-node! node root?)]
+        [(? symbol?) (insert-node! (normalize-var node) root?)]
+        [(hole prec spec) (remap spec)] ; "hole" terms currently disappear
         [(approx spec impl)
          (hash-ref! id->spec
                     (remap spec)
@@ -144,10 +145,10 @@
                       (define spec* (normalize-spec (batch-ref insert-batch spec)))
                       (define type (representation-type (repr-of-node insert-batch impl ctx)))
                       (cons spec* type))) ; preserved spec and type for extraction
-         (list '$approx (remap spec) (remap impl))]
-        [(list op (app remap args) ...) (cons op args)]))
+         (insert-node! (list '$approx (remap spec) (remap impl)) root?)]
+        [(list op (app remap args) ...) (insert-node! (cons op args) root?)]))
 
-    (vector-set! mappings n (insert-node! node* root?)))
+    (vector-set! mappings n idx))
 
   (for/list ([root (in-vector (batch-roots insert-batch))])
     (remap root)))
@@ -276,6 +277,7 @@
                     (hash-set! egg->herbie-dict replacement (cons expr (context-lookup ctx expr)))
                     replacement))]
       [(approx spec impl) (list '$approx (loop spec) (loop impl))]
+      [(hole precision spec) (loop spec)]
       [(list op args ...) (cons op (map loop args))])))
 
 (define (flatten-let expr)

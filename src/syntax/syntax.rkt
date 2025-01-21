@@ -10,6 +10,7 @@
 
 (provide (struct-out literal)
          (struct-out approx)
+         (struct-out hole)
          variable?
          constant-operator?
          operator-exists?
@@ -493,8 +494,11 @@
 (struct literal (value precision) #:prefab)
 
 ;; An approximation of a specification by
-;; an arbitrary floating-point expression.
+;; a floating-point expression.
 (struct approx (spec impl) #:prefab)
+
+;; An unknown floating-point expression that implements a given spec
+(struct hole (precision spec) #:prefab)
 
 ;; name -> (vars repr body)	;; name -> (vars prec body)
 (define *functions* (make-parameter (make-hasheq)))
