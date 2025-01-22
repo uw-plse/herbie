@@ -64,8 +64,8 @@
 ; Makes a new egraph that is managed by Racket's GC
 (define (make-egraph mode)
   (if (equal? mode 'single)
-    (egraph-data (egraph_create 0) (make-hash) (make-hash) (make-hash))
-    (egraph-data (egraph_create 1) (make-hash) (make-hash) (make-hash))))
+      (egraph-data (egraph_create 0) (make-hash) (make-hash) (make-hash))
+      (egraph-data (egraph_create 1) (make-hash) (make-hash) (make-hash))))
 
 ; Creates a new runner using an existing egraph.
 ; Useful for multi-phased rule application
@@ -170,12 +170,13 @@
       ['simple #t]
       [_ (error 'egraph-run "unknown scheduler: `~a`" scheduler)]))
   (define timeline-end! (timeline-start! 'times (~a "i-egraph-run")))
-  (define out (egraph_run (egraph-data-egraph-pointer egraph-data)
-              ffi-rules
-              iter_limit
-              node_limit
-              simple_scheduler?
-              const-folding?))
+  (define out
+    (egraph_run (egraph-data-egraph-pointer egraph-data)
+                ffi-rules
+                iter_limit
+                node_limit
+                simple_scheduler?
+                const-folding?))
   (timeline-end!)
   out)
 
@@ -1292,57 +1293,58 @@
   (timeline-end!)
   ; Perform extraction
   (define timeline-end-2! (timeline-start! 'times (~a "i-run-egg-extraction")))
-  (define out (match cmd
-    [`(single . ,extractor) ; single expression extraction
-     (define regraph (make-regraph egg-graph))
-     (define reprs (egg-runner-reprs runner))
-     (when (flag-set? 'dump 'egg)
-       (regraph-dump regraph root-ids reprs))
+  (define out
+    (match cmd
+      [`(single . ,extractor) ; single expression extraction
+       (define regraph (make-regraph egg-graph))
+       (define reprs (egg-runner-reprs runner))
+       (when (flag-set? 'dump 'egg)
+         (regraph-dump regraph root-ids reprs))
 
-     (define extract-id (extractor regraph))
-     (define finalize-batch (last extract-id))
+       (define extract-id (extractor regraph))
+       (define finalize-batch (last extract-id))
 
-     ; (Listof (Listof batchref))
-     (define out
-       (for/list ([id (in-list root-ids)]
-                  [repr (in-list reprs)])
-         (regraph-extract-best regraph extract-id id repr)))
-     ; commit changes to the batch
-     (finalize-batch)
-     out]
-    [`(multi . ,extractor) ; multi expression extraction
-     (define regraph (make-regraph egg-graph))
-     (define reprs (egg-runner-reprs runner))
-     (when (flag-set? 'dump 'egg)
-       (regraph-dump regraph root-ids reprs))
+       ; (Listof (Listof batchref))
+       (define out
+         (for/list ([id (in-list root-ids)]
+                    [repr (in-list reprs)])
+           (regraph-extract-best regraph extract-id id repr)))
+       ; commit changes to the batch
+       (finalize-batch)
+       out]
+      [`(multi . ,extractor) ; multi expression extraction
+       (define regraph (make-regraph egg-graph))
+       (define reprs (egg-runner-reprs runner))
+       (when (flag-set? 'dump 'egg)
+         (regraph-dump regraph root-ids reprs))
 
-     (define extract-id (extractor regraph))
-     (define finalize-batch (last extract-id))
+       (define extract-id (extractor regraph))
+       (define finalize-batch (last extract-id))
 
-     ; (Listof (Listof batchref))
-     (define out
-       (for/list ([id (in-list root-ids)]
-                  [repr (in-list reprs)])
-         (regraph-extract-variants regraph extract-id id repr)))
-     ; commit changes to the batch
-     (finalize-batch)
-     out]
-    [`(proofs . ((,start-exprs . ,end-exprs) ...)) ; proof extraction
-     (for/list ([start (in-list start-exprs)]
-                [end (in-list end-exprs)])
-       (unless (egraph-expr-equal? egg-graph start end ctx)
-         (error 'run-egg
-                "cannot find proof; start and end are not equal.\n start: ~a \n end: ~a"
-                start
-                end))
-       (define proof (egraph-get-proof egg-graph start end ctx))
-       (when (null? proof)
-         (error 'run-egg "proof extraction failed between`~a` and `~a`" start end))
-       proof)]
-    [`(equal? . ((,start-exprs . ,end-exprs) ...)) ; term equality?
-     (for/list ([start (in-list start-exprs)]
-                [end (in-list end-exprs)])
-       (egraph-expr-equal? egg-graph start end ctx))]
-    [_ (error 'run-egg "unknown command `~a`\n" cmd)]))
-    (timeline-end-2!)
-    out)
+       ; (Listof (Listof batchref))
+       (define out
+         (for/list ([id (in-list root-ids)]
+                    [repr (in-list reprs)])
+           (regraph-extract-variants regraph extract-id id repr)))
+       ; commit changes to the batch
+       (finalize-batch)
+       out]
+      [`(proofs . ((,start-exprs . ,end-exprs) ...)) ; proof extraction
+       (for/list ([start (in-list start-exprs)]
+                  [end (in-list end-exprs)])
+         (unless (egraph-expr-equal? egg-graph start end ctx)
+           (error 'run-egg
+                  "cannot find proof; start and end are not equal.\n start: ~a \n end: ~a"
+                  start
+                  end))
+         (define proof (egraph-get-proof egg-graph start end ctx))
+         (when (null? proof)
+           (error 'run-egg "proof extraction failed between`~a` and `~a`" start end))
+         proof)]
+      [`(equal? . ((,start-exprs . ,end-exprs) ...)) ; term equality?
+       (for/list ([start (in-list start-exprs)]
+                  [end (in-list end-exprs)])
+         (egraph-expr-equal? egg-graph start end ctx))]
+      [_ (error 'run-egg "unknown command `~a`\n" cmd)]))
+  (timeline-end-2!)
+  out)
