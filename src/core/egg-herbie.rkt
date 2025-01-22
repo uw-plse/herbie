@@ -463,7 +463,7 @@
 (define (rule->egg-rules ru)
   (define input (rule-input ru))
   (cond
-    [(symbol? input)
+    [false #;(symbol? input)
      ; expansive rules
      (define itype (dict-ref (rule-itypes ru) input))
      (for/list ([op (all-operators)]
