@@ -1,6 +1,6 @@
 ; -*- mode: scheme -*-
 
-(FPCore (u1 u2)
- :name "normal distribution"
- :pre (and (<= 0 u1 1) (<= 0 u2 1))
- (+ (* (* (/ 1 6) (pow (* -2 (log u1)) 0.5)) (cos (* (* 2 PI) u2))) 0.5))
+;; (FPCore (u1 u2)
+;;  :name "normal distribution"
+;;  :pre (and (<= 0 u1 1) (<= 0 u2 1))
+;;  (+ (* (* (/ 1 6) (pow (* -2 (log u1)) 0.5)) (cos (* (* 2 PI) u2))) 0.5))

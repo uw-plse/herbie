@@ -31,15 +31,15 @@
 
  (- (* a a) (* b b)))
 
-(FPCore (a b c)
- :name "Area of a triangle"
- :pre (and (< 0 a (+ b c)) (< 0 b (+ a c)) (< 0 c (+ a b)))
- :alt 
- (! :herbie-platform default
-  (/ (sqrt (* (+ a (+ b c)) (- c (- a b)) (+ c (- a b)) (+ a (- b c)))) 4))
-
- (let ((s (/ (+ (+ a b) c) 2)))
-   (sqrt (* (* (* s (- s a)) (- s b)) (- s c)))))
+;; (FPCore (a b c)
+;;  :name "Area of a triangle"
+;;  :pre (and (< 0 a (+ b c)) (< 0 b (+ a c)) (< 0 c (+ a b)))
+;;  :alt 
+;;  (! :herbie-platform default
+;;   (/ (sqrt (* (+ a (+ b c)) (- c (- a b)) (+ c (- a b)) (+ a (- b c)))) 4))
+;; 
+;;  (let ((s (/ (+ (+ a b) c) 2)))
+;;    (sqrt (* (* (* s (- s a)) (- s b)) (- s c)))))
 
 (FPCore (x)
  :name "ln(1 + x)"

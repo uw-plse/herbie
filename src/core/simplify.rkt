@@ -23,7 +23,9 @@
   (-> egg-runner? procedure? (listof (listof batchref?)))
   (timeline-push! 'inputs (map ~a (batch->progs (egg-runner-batch runner) (egg-runner-roots runner))))
   (timeline-push! 'method "egg-herbie")
+  (define timeline-end! (timeline-start! 'times (~a "i-run-egg")))
   (define simplifieds (run-egg runner (cons 'single extractor)))
+  (timeline-end!)
   (define out
     (for/list ([simplified (in-list simplifieds)]
                [root (egg-runner-roots runner)])

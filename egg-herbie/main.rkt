@@ -159,7 +159,7 @@
                p)))
 
 ;; Constructs an e-graph instances.
-(define-eggmath egraph_create (_fun -> _egraph-pointer))
+(define-eggmath egraph_create (_fun _uint -> _egraph-pointer))
 
 ;; Frees an e-graph instance.
 (define-eggmath egraph_destroy (_fun _egraph-pointer -> _void))

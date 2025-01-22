@@ -7,12 +7,20 @@ use indexmap::IndexMap;
 use libc::{c_void, strlen};
 use math::*;
 
-use std::cmp::min;
 use std::ffi::{CStr, CString};
 use std::mem::{self, ManuallyDrop};
 use std::os::raw::c_char;
 use std::time::Duration;
 use std::{slice, sync::atomic::Ordering};
+
+use lazy_static::lazy_static;
+use std::sync::Mutex;
+
+lazy_static! {
+    static ref ACTIVE_MODE: Mutex<Option<Mode>> = Mutex::new(None);
+    static ref ACTIVE_INC_EGRAPH: Mutex<Option<EGraph>> = Mutex::new(None);
+    static ref SIMPLIFY_INC_EGRAPH: Mutex<Option<EGraph>> = Mutex::new(Some(EGraph::default()));
+}
 
 pub struct Context {
     iteration: usize,
@@ -20,12 +28,70 @@ pub struct Context {
     rules: Vec<Rewrite>,
 }
 
-// I had to add $(rustc --print sysroot)/lib to LD_LIBRARY_PATH to get linking to work after installing rust with rustup
+#[derive(Clone, Copy, Debug)]
+enum Mode {
+    Simplify,
+    Other,
+}
+
+fn activate_inc_egraph(mode: Mode) {
+    let mut simplify = SIMPLIFY_INC_EGRAPH.try_lock().unwrap();
+    let mut active = ACTIVE_INC_EGRAPH.try_lock().unwrap();
+    let mut active_mode = ACTIVE_MODE.try_lock().unwrap();
+    println!("current mode: {:?}, new mode: {:?}", active_mode, mode);
+
+    match active_mode.as_ref() {
+        Some(Mode::Simplify) => match mode {
+            Mode::Simplify => return,
+            Mode::Other => {
+                *active_mode = Some(Mode::Other);
+                *simplify = Some(active.take().unwrap());
+                *active = Some(EGraph::default());
+            }
+        },
+        Some(Mode::Other) => match mode {
+            Mode::Simplify => {
+                *active_mode = Some(Mode::Simplify);
+                *active = Some(simplify.take().unwrap());
+            }
+            Mode::Other => return,
+        },
+        None => match mode {
+            Mode::Simplify => {
+                *active_mode = Some(Mode::Simplify);
+                *active = Some(simplify.take().unwrap());
+            }
+            Mode::Other => {
+                *active_mode = Some(Mode::Other);
+                *active = Some(EGraph::default());
+            }
+        },
+    }
+}
+
 #[no_mangle]
-pub unsafe extern "C" fn egraph_create() -> *mut Context {
+pub unsafe extern "C" fn egraph_create(mode: u32) -> *mut Context {
+    if mode == 0 {
+        activate_inc_egraph(Mode::Simplify);
+        let mut guard = ACTIVE_INC_EGRAPH.try_lock().unwrap();
+        let mut inc_egraph = guard.take().unwrap();
+        let version = inc_egraph.get_version();
+        if version != 0 && version % 50 == 0 {
+            *guard = Some(EGraph::default());
+        } else {
+            let version = inc_egraph.inc_version();
+            *guard = Some(inc_egraph);
+            println!("Incremented version to: {}", version);
+        }
+    } else if mode == 1 {
+        activate_inc_egraph(Mode::Other);
+    } else {
+        unreachable!()
+    }
+
     Box::into_raw(Box::new(Context {
         iteration: 0,
-        runner: Runner::new(Default::default()).with_explanations_enabled(),
+        runner: Runner::new(Default::default()),
         rules: vec![],
     }))
 }
@@ -68,21 +134,22 @@ pub struct FFIRule {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn egraph_add_expr(ptr: *mut Context, expr: *const c_char) -> u32 {
-    let _ = env_logger::try_init();
-    // Safety: `ptr` was box allocated by `egraph_create`
-    let mut context = Box::from_raw(ptr);
+pub unsafe extern "C" fn egraph_add_expr(_ptr: *mut Context, _expr: *const c_char) -> u32 {
+    todo!()
+    // let _ = env_logger::try_init();
+    // // Safety: `ptr` was box allocated by `egraph_create`
+    // let mut context = Box::from_raw(ptr);
 
-    assert_eq!(context.iteration, 0);
-    let rec_expr = CStr::from_ptr(expr).to_str().unwrap().parse().unwrap();
-    context.runner = context.runner.with_expr(&rec_expr);
-    let id = usize::from(*context.runner.roots.last().unwrap())
-        .try_into()
-        .unwrap();
+    // assert_eq!(context.iteration, 0);
+    // let rec_expr = CStr::from_ptr(expr).to_str().unwrap().parse().unwrap();
+    // context.runner = context.runner.with_expr(&rec_expr);
+    // let id = usize::from(*context.runner.roots.last().unwrap())
+    //     .try_into()
+    //     .unwrap();
 
-    mem::forget(context);
+    // mem::forget(context);
 
-    id
+    // id
 }
 
 #[no_mangle]
@@ -102,7 +169,11 @@ pub unsafe extern "C" fn egraph_add_node(
     let ids: &[u32] = slice::from_raw_parts(ids_ptr, len);
     let ids = ids.iter().map(|id| Id::from(*id as usize)).collect();
     let node = Math::from_op(f, ids).unwrap();
-    let id = context.runner.egraph.add(node);
+
+    let mut guard = ACTIVE_INC_EGRAPH.try_lock().unwrap();
+    let inc_egraph = guard.as_mut().unwrap();
+
+    let id = inc_egraph.add(node);
     if is_root {
         context.runner.roots.push(id);
     }
@@ -114,9 +185,12 @@ pub unsafe extern "C" fn egraph_add_node(
 pub unsafe extern "C" fn egraph_copy(ptr: *mut Context) -> *mut Context {
     // Safety: `ptr` was box allocated by `egraph_create`
     let context = Box::from_raw(ptr);
-    let mut runner = Runner::new(Default::default())
-        .with_explanations_enabled()
-        .with_egraph(context.runner.egraph.clone());
+
+    assert!(context.runner.egraph.is_empty());
+
+    // FIXME: This does not actually copy! But it's fine as long as we don't have any unsoundness,
+    // which we don't.
+    let mut runner = Runner::new(Default::default()).with_explanations_enabled();
     runner.roots = context.runner.roots.clone();
     runner.egraph.rebuild();
 
@@ -159,6 +233,8 @@ pub unsafe extern "C" fn egraph_run(
     // Safety: `ptr` was box allocated by `egraph_create`
     let mut context = Box::from_raw(ptr);
 
+    assert!(context.runner.iterations.is_empty());
+
     if context.runner.stop_reason.is_none() {
         let length: usize = rules_array_length as usize;
         let ffi_rules: &[*mut FFIRule] = slice::from_raw_parts(rules_array_ptr, length);
@@ -176,26 +252,66 @@ pub unsafe extern "C" fn egraph_run(
         let rules: Vec<Rewrite> = math::mk_rules(&ffi_tuples);
         context.rules = rules;
 
-        context.runner.egraph.analysis.constant_fold = is_constant_folding_enabled;
+        let mut guard = ACTIVE_INC_EGRAPH.try_lock().unwrap();
+        let mut inc_egraph = guard.take().unwrap();
+
+        inc_egraph.analysis.constant_fold = is_constant_folding_enabled;
         context.runner = if simple_scheduler {
             context.runner.with_scheduler(SimpleScheduler)
         } else {
             context.runner.with_scheduler(BackoffScheduler::default())
         };
 
-        context.runner = context
-            .runner
-            .with_node_limit(node_limit as usize)
-            .with_iter_limit(iter_limit as usize) // should never hit
-            .with_time_limit(Duration::from_secs(u64::MAX))
-            .with_hook(|r| {
-                if r.egraph.analysis.unsound.load(Ordering::SeqCst) {
-                    Err("Unsoundness detected".into())
-                } else {
-                    Ok(())
-                }
-            })
-            .run(&context.rules);
+        inc_egraph.rebuild();
+
+        let zeros = inc_egraph.newest_old_classes.len() as f64;
+        let ones = inc_egraph.newest_classes.len() as f64;
+        let rho = ones / (zeros + ones);
+        assert!(rho.is_nan() || rho <= 1f64);
+
+        let increase = (0.1 * rho * node_limit as f64) as usize;
+        if increase == 0 {
+            println!("shortcircuiting...");
+            context.runner.stop_reason = Some(StopReason::Saturated);
+            *guard = Some(inc_egraph);
+        } else {
+            let node_limit = if node_limit != u32::MAX {
+                println!("rho: {}, increase in node_limit: {}", rho, increase);
+                inc_egraph.total_size() + increase
+            } else {
+                node_limit as usize
+            };
+
+            context.runner = context
+                .runner
+                .with_node_limit(node_limit as usize)
+                .with_iter_limit(iter_limit as usize) // should never hit
+                .with_time_limit(Duration::from_secs(u64::MAX))
+                .with_hook(|r| {
+                    if r.egraph.analysis.unsound.load(Ordering::SeqCst) {
+                        panic!("Unsoundness detected")
+                    } else {
+                        Ok(())
+                    }
+                })
+                .with_egraph(inc_egraph)
+                .run(&context.rules);
+
+            println!(
+                "stop_reason: {:?}",
+                context.runner.stop_reason.clone().unwrap()
+            );
+
+            println!("{}", context.runner.report());
+            println!(
+                "Total whitelisted nodes: {}",
+                context.runner.egraph.total_number_of_whitelist_nodes()
+            );
+
+            *guard = Some(context.runner.egraph);
+            context.runner.egraph = EGraph::default();
+            context.runner.iterations = vec![];
+        }
     }
 
     let iterations = context
@@ -234,50 +350,33 @@ pub unsafe extern "C" fn egraph_get_stop_reason(ptr: *mut Context) -> u32 {
     }
 }
 
-fn find_extracted(runner: &Runner, id: u32, iter: u32) -> &Extracted {
-    let id = runner.egraph.find(Id::from(id as usize));
-
-    // go back one more iter, egg can duplicate the final iter in the case of an error
-    let is_unsound = runner.egraph.analysis.unsound.load(Ordering::SeqCst);
-    let sound_iter = min(
-        runner
-            .iterations
-            .len()
-            .saturating_sub(if is_unsound { 3 } else { 1 }),
-        iter as usize,
-    );
-
-    runner.iterations[sound_iter]
-        .data
-        .extracted
-        .iter()
-        .find(|(i, _)| runner.egraph.find(*i) == id)
-        .map(|(_, ext)| ext)
-        .expect("Couldn't find matching extraction!")
+fn find_extracted(_runner: &Runner, _id: u32, _iter: u32) -> &Extracted {
+    unimplemented!()
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn egraph_find(ptr: *mut Context, id: usize) -> u32 {
-    let context = ManuallyDrop::new(Box::from_raw(ptr));
+pub unsafe extern "C" fn egraph_find(_ptr: *mut Context, id: usize) -> u32 {
     let node_id = Id::from(id);
-    let canon_id = context.runner.egraph.find(node_id);
+    let guard = ACTIVE_INC_EGRAPH.try_lock().unwrap();
+    let inc_egraph = guard.as_ref().unwrap();
+    let canon_id = inc_egraph.find(node_id);
     usize::from(canon_id) as u32
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn egraph_serialize(ptr: *mut Context) -> *const c_char {
-    // Safety: `ptr` was box allocated by `egraph_create`
-    let context = ManuallyDrop::new(Box::from_raw(ptr));
-    let mut ids: Vec<Id> = context.runner.egraph.classes().map(|c| c.id).collect();
+pub unsafe extern "C" fn egraph_serialize(_ptr: *mut Context) -> *const c_char {
+    let guard = ACTIVE_INC_EGRAPH.try_lock().unwrap();
+    let inc_egraph = guard.as_ref().unwrap();
+    let mut ids: Vec<Id> = inc_egraph.classes().map(|c| c.id).collect();
     ids.sort();
 
     // Iterate through the eclasses and print each eclass
     let mut s = String::from("(");
     for id in ids {
-        let c = &context.runner.egraph[id];
+        let c = &inc_egraph[id];
         s.push_str(&format!("({}", id));
         for node in &c.nodes {
-            if matches!(node, Math::Symbol(_) | Math::Constant(_)) {
+            if matches!(node.node, Math::Symbol(_) | Math::Constant(_)) {
                 s.push_str(&format!(" {}", node));
             } else {
                 s.push_str(&format!("({}", node));
@@ -297,35 +396,39 @@ pub unsafe extern "C" fn egraph_serialize(ptr: *mut Context) -> *const c_char {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn egraph_size(ptr: *mut Context) -> u32 {
-    let context = ManuallyDrop::new(Box::from_raw(ptr));
-    context.runner.egraph.number_of_classes() as u32
+pub unsafe extern "C" fn egraph_size(_ptr: *mut Context) -> u32 {
+    let guard = ACTIVE_INC_EGRAPH.try_lock().unwrap();
+    let inc_egraph = guard.as_ref().unwrap();
+    inc_egraph.whitelist.len() as u32
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn egraph_eclass_size(ptr: *mut Context, id: u32) -> u32 {
-    let context = ManuallyDrop::new(Box::from_raw(ptr));
+pub unsafe extern "C" fn egraph_eclass_size(_ptr: *mut Context, id: u32) -> u32 {
+    let guard = ACTIVE_INC_EGRAPH.try_lock().unwrap();
+    let inc_egraph = guard.as_ref().unwrap();
     let id = Id::from(id as usize);
-    context.runner.egraph[id].nodes.len() as u32
+    inc_egraph[id].nodes.len() as u32
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn egraph_enode_size(ptr: *mut Context, id: u32, idx: u32) -> u32 {
-    let context = ManuallyDrop::new(Box::from_raw(ptr));
+pub unsafe extern "C" fn egraph_enode_size(_ptr: *mut Context, id: u32, idx: u32) -> u32 {
     let id = Id::from(id as usize);
     let idx = idx as usize;
-    context.runner.egraph[id].nodes[idx].len() as u32
+    let guard = ACTIVE_INC_EGRAPH.try_lock().unwrap();
+    let inc_egraph = guard.as_ref().unwrap();
+    inc_egraph[id].nodes[idx].node.len() as u32
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn egraph_get_eclasses(ptr: *mut Context, ids_ptr: *mut u32) {
-    let context = ManuallyDrop::new(Box::from_raw(ptr));
-    let mut ids: Vec<u32> = context
-        .runner
-        .egraph
-        .classes()
-        .map(|c| usize::from(c.id) as u32)
-        .collect();
+pub unsafe extern "C" fn egraph_get_eclasses(_ptr: *mut Context, ids_ptr: *mut u32) {
+    let guard = ACTIVE_INC_EGRAPH.try_lock().unwrap();
+    let inc_egraph = guard.as_ref().unwrap();
+
+    let mut ids = inc_egraph
+        .whitelist
+        .iter()
+        .map(|c| usize::from(*c) as u32)
+        .collect::<Vec<u32>>();
     ids.sort();
 
     for (i, id) in ids.iter().enumerate() {
@@ -335,18 +438,23 @@ pub unsafe extern "C" fn egraph_get_eclasses(ptr: *mut Context, ids_ptr: *mut u3
 
 #[no_mangle]
 pub unsafe extern "C" fn egraph_get_node(
-    ptr: *mut Context,
+    _ptr: *mut Context,
     id: u32,
     idx: u32,
     ids: *mut u32,
 ) -> *const c_char {
-    let context = ManuallyDrop::new(Box::from_raw(ptr));
     let id = Id::from(id as usize);
     let idx = idx as usize;
 
-    let node = &context.runner.egraph[id].nodes[idx];
+    let guard = ACTIVE_INC_EGRAPH.try_lock().unwrap();
+    let inc_egraph = guard.as_ref().unwrap();
+
+    let node = &inc_egraph[id].nodes[idx];
     for (i, id) in node.children().iter().enumerate() {
-        std::ptr::write(ids.offset(i as isize), usize::from(*id) as u32);
+        std::ptr::write(
+            ids.offset(i as isize),
+            usize::from(inc_egraph.find(*id)) as u32,
+        );
     }
 
     let c_string = ManuallyDrop::new(CString::new(node.to_string()).unwrap());
@@ -376,7 +484,10 @@ pub unsafe extern "C" fn egraph_get_proof(
     // Safety: `ptr` was box allocated by `egraph_create`
     let mut context = ManuallyDrop::new(Box::from_raw(ptr));
     // Send `EGraph` since neither `Context` nor `Runner` are `Send`. `Runner::explain_equivalence` just forwards to `EGraph::explain_equivalence` so this is fine.
-    let egraph = &mut context.runner.egraph;
+    let mut guard = ACTIVE_INC_EGRAPH.try_lock().unwrap();
+    let mut inc_egraph = guard.take().unwrap();
+
+    let egraph = &mut inc_egraph;
     let expr_rec = CStr::from_ptr(expr).to_str().unwrap().parse().unwrap();
     let goal_rec = CStr::from_ptr(goal).to_str().unwrap().parse().unwrap();
 
@@ -385,6 +496,8 @@ pub unsafe extern "C" fn egraph_get_proof(
         .explain_equivalence(&expr_rec, &goal_rec)
         .get_string_with_let()
         .replace('\n', " ");
+
+    *guard = Some(inc_egraph);
 
     let c_string = ManuallyDrop::new(CString::new(string).unwrap());
     c_string.as_ptr()
@@ -405,7 +518,8 @@ pub unsafe extern "C" fn egraph_get_variants(
     let head_node = &orig_recexpr.as_ref()[orig_recexpr.as_ref().len() - 1];
 
     // extractor
-    let extractor = Extractor::new(&context.runner.egraph, AltCost::new(&context.runner.egraph));
+    let mut extractor =
+        Extractor::new(&context.runner.egraph, AltCost::new(&context.runner.egraph));
     let mut cache: IndexMap<Id, RecExpr> = Default::default();
 
     // extract variants
@@ -413,16 +527,16 @@ pub unsafe extern "C" fn egraph_get_variants(
     for n in &context.runner.egraph[id].nodes {
         // assuming same ops in an eclass cannot
         // have different precisions
-        if !n.matches(head_node) {
+        if !n.node.matches(head_node) {
             // extract if not in cache
-            n.for_each(|id| {
+            n.node.for_each(|id| {
                 if cache.get(&id).is_none() {
                     let (_, best) = extractor.find_best(id);
                     cache.insert(id, best);
                 }
             });
 
-            exprs.push(n.join_recexprs(|id| cache.get(&id).unwrap().as_ref()));
+            exprs.push(n.node.join_recexprs(|id| cache.get(&id).unwrap().as_ref()));
         }
     }
 
@@ -438,12 +552,14 @@ pub unsafe extern "C" fn egraph_is_unsound_detected(ptr: *mut Context) -> bool {
     // Safety: `ptr` was box allocated by `egraph_create`
     let context = ManuallyDrop::new(Box::from_raw(ptr));
 
-    context
+    let result = context
         .runner
         .egraph
         .analysis
         .unsound
-        .load(Ordering::SeqCst)
+        .load(Ordering::SeqCst);
+    assert!(!result);
+    result
 }
 
 #[no_mangle]

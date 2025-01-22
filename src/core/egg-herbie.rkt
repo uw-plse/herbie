@@ -1,6 +1,6 @@
 #lang racket
 
-(require egg-herbie
+(require "../../egg-herbie/main.rkt"
          (only-in ffi/vector
                   make-u32vector
                   u32vector-length
@@ -62,8 +62,10 @@
          id->spec)) ; map from e-class id to an approx-spec or #f
 
 ; Makes a new egraph that is managed by Racket's GC
-(define (make-egraph)
-  (egraph-data (egraph_create) (make-hash) (make-hash) (make-hash)))
+(define (make-egraph mode)
+  (if (equal? mode 'single)
+    (egraph-data (egraph_create 0) (make-hash) (make-hash) (make-hash))
+    (egraph-data (egraph_create 1) (make-hash) (make-hash) (make-hash))))
 
 ; Creates a new runner using an existing egraph.
 ; Useful for multi-phased rule application
@@ -167,12 +169,15 @@
       ['backoff #f]
       ['simple #t]
       [_ (error 'egraph-run "unknown scheduler: `~a`" scheduler)]))
-  (egraph_run (egraph-data-egraph-pointer egraph-data)
+  (define timeline-end! (timeline-start! 'times (~a "i-egraph-run")))
+  (define out (egraph_run (egraph-data-egraph-pointer egraph-data)
               ffi-rules
               iter_limit
               node_limit
               simple_scheduler?
               const-folding?))
+  (timeline-end!)
+  out)
 
 (define (egraph-get-simplest egraph-data node-id iteration ctx)
   (define expr (egraph_get_simplest (egraph-data-egraph-pointer egraph-data) node-id iteration))
@@ -216,7 +221,9 @@
   ; need to fix up any constant operators
   (for ([enode (in-vector eclass)]
         [i (in-naturals)])
-    (when (and (symbol? enode) (not (hash-has-key? egg->herbie enode)))
+    (when (and (symbol? enode)
+               (not (string-prefix? (symbol->string enode) "$h"))
+               (not (hash-has-key? egg->herbie enode)))
       (vector-set! eclass i (cons enode empty-u32vec))))
   eclass)
 
@@ -265,6 +272,7 @@
 ;; Translates a Herbie expression into an expression usable by egg.
 ;; Updates translation dictionary upon encountering variables.
 ;; Result is the expression.
+
 (define (expr->egg-expr expr egg-data ctx)
   (define egg->herbie-dict (egraph-data-egg->herbie-dict egg-data))
   (define herbie->egg-dict (egraph-data-herbie->egg-dict egg-data))
@@ -558,7 +566,7 @@
   (match enode
     [(? number?) (cons 'real (platform-reprs (*active-platform*)))] ; number
     [(? symbol?) ; variable
-     (match-define (cons _ repr) (hash-ref egg->herbie enode))
+     (match-define (cons _ repr) (hash-ref egg->herbie enode (lambda () (hash-ref egg->herbie '$h0))))
      (list repr (representation-type repr))]
     [(cons f _) ; application
      (cond
@@ -826,12 +834,14 @@
 ;; Constructs a Racket egraph from an S-expr representation of
 ;; an egraph and data to translate egg IR to herbie IR.
 (define (make-regraph egraph-data)
+  (define timeline-end! (timeline-start! 'times (~a "i-make-regraph")))
   (define egg->herbie (egraph-data-egg->herbie-dict egraph-data))
   (define id->spec (egraph-data-id->spec egraph-data))
 
   ;; split the e-classes by type
   (define-values (eclasses types canon) (make-typed-eclasses egraph-data egg->herbie))
   (define n (vector-length eclasses))
+  (eprintf "#eclasses from make-regraph: ~a\n" n)
 
   ;; analyze each eclass
   (define-values (parents leaf? constants) (analyze-eclasses eclasses))
@@ -844,7 +854,9 @@
     (vector-set! specs id* spec))
 
   ; construct the `regraph` instance
-  (regraph eclasses types leaf? constants specs parents canon egg->herbie))
+  (define out (regraph eclasses types leaf? constants specs parents canon egg->herbie))
+  (timeline-end!)
+  out)
 
 (define (regraph-nodes->json regraph)
   (define cost (platform-node-cost-proc (*active-platform*)))
@@ -1008,6 +1020,7 @@
     ;  (ii) non-nullary operators: compute when any of its child eclasses
     ;       have their analysis updated
     (define (node-requires-update? node)
+
       (if (node-has-children? node)
           (ormap (lambda (id) (vector-ref changed?-vec id)) (cdr node))
           (= iter 0)))
@@ -1161,9 +1174,9 @@
            (loop (sub1 num-iters)))]
       [else (values egg-graph iteration-data)])))
 
-(define (egraph-run-schedule batch roots schedule ctx)
+(define (egraph-run-schedule mode batch roots schedule ctx)
   ; allocate the e-graph
-  (define egg-graph (make-egraph))
+  (define egg-graph (make-egraph mode))
 
   ; insert expressions into the e-graph
   (define root-ids (egraph-add-exprs egg-graph batch roots ctx))
@@ -1173,14 +1186,16 @@
     (for/fold ([egg-graph egg-graph]) ([(rules params) (in-dict schedule)])
       ; run rules in the egraph
       (define egg-rules (expand-rules rules))
+      (define timeline-end! (timeline-start! 'times (~a "i-egraph-run-rules")))
       (define-values (egg-graph* iteration-data) (egraph-run-rules egg-graph egg-rules params))
+      (timeline-end!)
 
       ; get cost statistics
-      (for ([iter (in-list iteration-data)]
-            [i (in-naturals)])
-        (define cnt (iteration-data-num-nodes iter))
-        (define cost (apply + (map (λ (id) (egraph-get-cost egg-graph* id i)) root-ids)))
-        (timeline-push! 'egraph i cnt cost (iteration-data-time iter)))
+      ;; (for ([iter (in-list iteration-data)]
+      ;;       [i (in-naturals)])
+      ;;   (define cnt (iteration-data-num-nodes iter))
+      ;;   (define cost (apply + (map (λ (id) (egraph-get-cost egg-graph* id i)) root-ids)))
+      ;;   (timeline-push! 'egraph i cnt cost (iteration-data-time iter)))
 
       egg-graph*))
 
@@ -1267,13 +1282,17 @@
 (define (run-egg runner cmd)
   ;; Run egg using runner
   (define ctx (egg-runner-ctx runner))
+  (define timeline-end! (timeline-start! 'times (~a "i-egraph-run-schedule")))
   (define-values (root-ids egg-graph)
-    (egraph-run-schedule (egg-runner-batch runner)
+    (egraph-run-schedule (car cmd)
+                         (egg-runner-batch runner)
                          (egg-runner-roots runner)
                          (egg-runner-schedule runner)
                          ctx))
+  (timeline-end!)
   ; Perform extraction
-  (match cmd
+  (define timeline-end-2! (timeline-start! 'times (~a "i-run-egg-extraction")))
+  (define out (match cmd
     [`(single . ,extractor) ; single expression extraction
      (define regraph (make-regraph egg-graph))
      (define reprs (egg-runner-reprs runner))
@@ -1325,3 +1344,5 @@
                 [end (in-list end-exprs)])
        (egraph-expr-equal? egg-graph start end ctx))]
     [_ (error 'run-egg "unknown command `~a`\n" cmd)]))
+    (timeline-end-2!)
+    out)

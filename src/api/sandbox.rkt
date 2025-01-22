@@ -262,7 +262,7 @@
       (set! timeline (*timeline*))
       (when seed
         (set-seed! seed))
-      (with-handlers ([exn? (curry on-exception start-time)])
+      (with-handlers ([(lambda (_) false) (curry on-exception start-time)])
         (timeline-event! 'start) ; Prevents the timeline from being empty.
         (define result
           (match command

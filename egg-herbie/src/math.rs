@@ -15,10 +15,12 @@ pub type Rewrite = egg::Rewrite<Math, ConstantFold>;
 pub type Runner = egg::Runner<Math, ConstantFold, IterData>;
 pub type Iteration = egg::Iteration<IterData>;
 
+#[derive(Clone)]
 pub struct IterData {
-    pub extracted: Vec<(Id, Extracted)>,
+    pub extracted: (),
 }
 
+#[derive(Clone)]
 pub struct Extracted {
     pub best: RecExpr,
     pub cost: usize,
@@ -56,18 +58,8 @@ impl<'a> CostFunction<Math> for AltCost<'a> {
 }
 
 impl IterationData<Math, ConstantFold> for IterData {
-    fn make(runner: &Runner) -> Self {
-        let extractor = Extractor::new(&runner.egraph, AltCost::new(&runner.egraph));
-        let extracted = runner
-            .roots
-            .iter()
-            .map(|&root| {
-                let (cost, best) = extractor.find_best(root);
-                let ext = Extracted { cost, best };
-                (root, ext)
-            })
-            .collect();
-        Self { extracted }
+    fn make(_runner: &Runner) -> Self {
+        Self { extracted: () }
     }
 }
 
@@ -264,7 +256,7 @@ impl Analysis<Math> for ConstantFold {
             );
 
             if egraph.analysis.prune {
-                egraph[class_id].nodes.retain(|n| n.is_leaf())
+                egraph[class_id].nodes.retain(|n| n.node.is_leaf())
             }
         }
     }
