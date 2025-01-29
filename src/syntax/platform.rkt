@@ -351,16 +351,40 @@
        (*lifting-rules*)
        (cons impl pform)
        (lambda ()
-         (define name (sym-append 'lift- impl))
+         (define name (sym-append 'lift-spot- impl))
          (define itypes (impl-info impl 'itype))
          (define otype (impl-info impl 'otype))
          (define-values (vars spec-expr impl-expr) (impl->rule-parts impl))
          (define spec-expr-w-hole-term `($hole ,(representation-name otype) ,spec-expr))
-         (rule name impl-expr spec-expr-w-hole-term (map cons vars itypes) otype '(lifting))))))
+
+         ; Spot lifting rule applies a rewrite like:
+         ; (+.f64 ?x ?y) -> ($hole binary64 (+ x y))
+         (define spot-lifting-rule
+           (rule name impl-expr spec-expr-w-hole-term (map cons vars itypes) otype '(lifting)))
+
+         ; Expanding lifting rule applies a rewrite like:
+         ; ($hole binary64 (+ ($hole binary64 x) ($hole binary64 y))) -> ($hole binary64 (+ x y))
+         ; where type of x and y are required to match +.f64's implementation
+         (define expanding-lifting-rule
+           (match (length vars)
+             [0 '()]
+             [_
+              (define name* (sym-append 'lift-expand- impl))
+              (define op (car spec-expr))
+              (define left-side
+                `($hole ,(representation-name otype)
+                        ,(list* op
+                                (map (λ (x y) `($hole ,(representation-name y) ,(format "~a" x)))
+                                     vars
+                                     itypes))))
+              (define right-side
+                `($hole ,(representation-name otype) ,(list* op (map (λ (x) (format "~a" x)) vars))))
+              (rule name* left-side right-side (map cons vars itypes) otype '(lifting))]))
+         (cons spot-lifting-rule expanding-lifting-rule)))))
   ;; special rule for approx nodes
   ; (define approx-rule (rule 'lift-approx (approx 'a 'b) 'a '((a . real) (b . real)) 'real))
   ; (cons approx-rule impl-rules))
-  impl-rules)
+  (flatten impl-rules))
 
 ;; Synthesizes lowering rules for a given platform.
 (define (platform-lowering-rules [pform (*active-platform*)])

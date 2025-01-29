@@ -111,13 +111,15 @@
         [(list op ids ...) (egraph_add_node ptr (symbol->string op) (list->u32vec ids) root?)]
         [(? symbol? x) (egraph_add_node ptr (symbol->string x) 0-vec root?)]
         [(? number? n) (egraph_add_node ptr (number->string n) 0-vec root?)]))
-    (hash-ref h idx (λ ()
-                      (hash-set! h idx #t)
-                      (printf "Eclass ~a: ~a\n" idx node)))
+    (hash-ref h
+              idx
+              (λ ()
+                (hash-set! h idx #t)
+                (printf "Eclass ~a: ~a\n" idx node)))
     idx)
 
   (define insert-batch (batch-remove-zombie batch roots))
-  
+
   (define mappings (build-vector (batch-length insert-batch) values))
   (define (remap x)
     (vector-ref mappings x))
@@ -125,7 +127,7 @@
   (printf "Building egraph ...\n")
 
   (define nodes-length (batch-length insert-batch))
-  
+
   ; Inserting nodes bottom-up
   (define root-mask (make-vector nodes-length #f))
   (for ([root (in-vector (batch-roots insert-batch))])
@@ -135,23 +137,11 @@
         [n (in-naturals)])
     (define node*
       (match node
-        ; impl
-        [(literal v prec) ; a problem here, if v==1 or 0 - rules will be applied, we need to do the same as with vars
-         (list '$literal (insert-node! v #f) (insert-node! prec #f))]
-        [(? symbol?)
-         (var->egg-var node ctx)]
-        [(hole repr spec)
-         (list '$hole (insert-node! repr #f) (remap spec))]
-        [(approx spec impl)
-         (define repr (representation-name (repr-of-node insert-batch impl ctx)))
-         (define idx (insert-node! (list '$approx (remap spec) (remap impl)) #f))
-         (list '$hole (insert-node! repr #f) idx)]
-        [(list (? impl-exists? op) (app remap args) ...)
-         (define idx (insert-node! (cons (impl-info op 'spec) args) #f))
-         (define repr (representation-name (impl-info op 'otype)))
-         (list '$hole (insert-node! repr #f) idx)]
-        ; spec
+        [(literal v prec) (list '$literal v prec)]
         [(? number?) node]
+        [(? symbol?) (var->egg-var node ctx)]
+        [(hole repr spec) (list '$hole (insert-node! repr #f) (remap spec))]
+        [(approx spec impl) (list '$approx (remap spec) (remap impl))]
         [(list op (app remap args) ...) (cons op args)]))
     (define idx (insert-node! node* root?))
     (vector-set! mappings n idx))
@@ -165,7 +155,6 @@
                  (define spec* (normalize-spec (batch-ref insert-batch spec)))
                  (define type (representation-type (repr-of-node insert-batch impl ctx)))
                  (cons spec* type))))
-  (printf "id->spec: ~a\n" id->spec)
 
   (for/list ([root (in-vector (batch-roots insert-batch))])
     (remap root)))
@@ -517,6 +506,11 @@
 ;; Uses a cache to only expand each rule once.
 (define (expand-rules rules)
   (reap [sow]
+        (sow (cons #f (make-ffi-rule "lift-literal" "($literal ?repr ?a)" "($hole ?repr ?a)")))
+        (sow (cons #f
+                   (make-ffi-rule "lift-approx"
+                                  "($approx ?spec ($hole ?r ?t))"
+                                  "($hole ?r ($approx ?spec ?t))")))
         (for ([rule (in-list rules)])
           (define egg&ffi-rules
             (hash-ref! (*egg-rule-cache*)
@@ -982,13 +976,13 @@
     (match-define (cons idx type) key)
     (define existing-types (hash-ref type-hash idx (const '())))
     (hash-set! type-hash idx (cons type existing-types)))
-  
+
   (printf "\nProcessed Egraph: \n")
   (for ([eclass (in-vector eclasses)]
         [n (in-naturals)])
     (printf "Eclass ~a, types ~a: ~a\n" n (hash-ref type-hash n (const "no types")) eclass))
   ; ------------------------------------
-  
+
   (define types (regraph-types regraph))
   (define n (vector-length eclasses))
 
@@ -1233,7 +1227,7 @@
     ; at least one extractable expression
     [(hash-has-key? canon key)
      (define id* (hash-ref canon key))
-     
+
      (remove-duplicates (for/list ([enode (vector-ref eclasses id*)])
                           (extract-enode enode type))
                         #:key batchref-idx)]
@@ -1438,17 +1432,17 @@
 (module+ test
   (require "../syntax/load-plugin.rkt")
   (load-herbie-builtins)
-  
+
   (define double-repr (get-representation 'binary64))
   (define rules (*rules*))
   (define schedule `((,rules . ((node . 20)))))
-  
+
   (define vars '(x y))
-  (define exprs (list `(* (+ x y) ,(literal 2 'binary64))
-                      (approx '(+ 3 4) (hole 'binary64 '(* x y)))))
+  (define exprs
+    (list `(* (+ x y) ,(literal 2 'binary64)) (approx '(+ 3 4) (hole 'binary64 '(* x y)))))
   (define batch (progs->batch exprs))
   (define reprs (map (const double-repr) exprs))
   (define ctx (make-debug-context vars))
-  
+
   (define runner (make-egraph batch (batch-roots batch) reprs schedule #:context ctx))
   (define batchrefss (egraph-variations runner batch)))
