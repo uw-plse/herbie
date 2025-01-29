@@ -137,7 +137,7 @@
         [n (in-naturals)])
     (define node*
       (match node
-        [(literal v prec) (list '$literal v prec)]
+        [(literal v repr) (list '$literal (insert-node! v #f) (insert-node! repr #f))]
         [(? number?) node]
         [(? symbol?) (var->egg-var node ctx)]
         [(hole repr spec) (list '$hole (insert-node! repr #f) (remap spec))]
@@ -254,12 +254,15 @@
 
 ;; Translates a Herbie rule LHS or RHS into a pattern usable by egg.
 ;; Rules can be over specs or impls.
-(define (expr->egg-pattern expr)
+(define (expr->egg-pattern expr vars)
   (let loop ([expr expr])
     (match expr
       [(? number?) expr]
       [(? literal?) (literal-value expr)]
-      [(? symbol?) (string->symbol (format "?~a" expr))]
+      [(? symbol?)
+       (if (member expr vars)
+           (string->symbol (format "?~a" expr)) ; it is a variable
+           expr)] ; it is a symbol 'bool, 'binary32
       [(approx spec impl) (list '$approx (loop spec) (loop impl))]
       [(list op args ...) (cons op (map loop args))])))
 
@@ -467,10 +470,11 @@
 
 ;; Translates a Herbie rule into an egg rule
 (define (rule->egg-rule ru)
+  (define ru-vars (map car (rule-itypes ru)))
   (struct-copy rule
                ru
-               [input (expr->egg-pattern (rule-input ru))]
-               [output (expr->egg-pattern (rule-output ru))]))
+               [input (expr->egg-pattern (rule-input ru) ru-vars)]
+               [output (expr->egg-pattern (rule-output ru) ru-vars)]))
 
 (define (rule->egg-rules ru)
   (define input (rule-input ru))
@@ -511,6 +515,10 @@
                    (make-ffi-rule "lift-approx"
                                   "($approx ?spec ($hole ?r ?t))"
                                   "($hole ?r ($approx ?spec ?t))")))
+        (sow (cons #f
+                   (make-ffi-rule "lift-if"
+                                  "(if ($hole bool ?c) ($hole ?r ?t) ($hole ?r ?f))"
+                                  "($hole ?r (if ?c ?t ?f))")))
         (for ([rule (in-list rules)])
           (define egg&ffi-rules
             (hash-ref! (*egg-rule-cache*)
@@ -970,7 +978,6 @@
   ; debugging
   ; ------------------------------------
   (define canon (regraph-canon regraph))
-  (println canon)
   (define type-hash (make-hash))
   (for ([key (hash-keys canon)])
     (match-define (cons idx type) key)

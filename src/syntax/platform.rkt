@@ -367,18 +367,14 @@
          ; where type of x and y are required to match +.f64's implementation
          (define expanding-lifting-rule
            (match (length vars)
-             [0 '()]
+             [0 '()] ; when there is no vars - nothing to expand
              [_
               (define name* (sym-append 'lift-expand- impl))
               (define op (car spec-expr))
               (define left-side
                 `($hole ,(representation-name otype)
-                        ,(list* op
-                                (map (λ (x y) `($hole ,(representation-name y) ,(format "~a" x)))
-                                     vars
-                                     itypes))))
-              (define right-side
-                `($hole ,(representation-name otype) ,(list* op (map (λ (x) (format "~a" x)) vars))))
+                        ,(list* op (map (λ (x y) `($hole ,(representation-name y) ,x)) vars itypes))))
+              (define right-side `($hole ,(representation-name otype) ,(list* op vars)))
               (rule name* left-side right-side (map cons vars itypes) otype '(lifting))]))
          (cons spot-lifting-rule expanding-lifting-rule)))))
   ;; special rule for approx nodes
