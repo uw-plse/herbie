@@ -471,6 +471,11 @@
 ;; Translates a Herbie rule into an egg rule
 (define (rule->egg-rule ru)
   (define ru-vars (map car (rule-itypes ru)))
+  (define lhs (expr->egg-pattern (rule-input ru) ru-vars))
+  (define rhs (expr->egg-pattern (rule-output ru) ru-vars))
+  (when (or (equal? (rule-tags ru) '(lowering)) (equal? (rule-tags ru) '(lifting)))
+    (printf "~a -> ~a\n" lhs rhs)
+    (sleep 2))
   (struct-copy rule
                ru
                [input (expr->egg-pattern (rule-input ru) ru-vars)]
@@ -510,15 +515,6 @@
 ;; Uses a cache to only expand each rule once.
 (define (expand-rules rules)
   (reap [sow]
-        (sow (cons #f (make-ffi-rule "lift-literal" "($literal ?repr ?a)" "($hole ?repr ?a)")))
-        (sow (cons #f
-                   (make-ffi-rule "lift-approx"
-                                  "($approx ?spec ($hole ?r ?t))"
-                                  "($hole ?r ($approx ?spec ?t))")))
-        (sow (cons #f
-                   (make-ffi-rule "lift-if"
-                                  "(if ($hole bool ?c) ($hole ?r ?t) ($hole ?r ?f))"
-                                  "($hole ?r (if ?c ?t ?f))")))
         (for ([rule (in-list rules)])
           (define egg&ffi-rules
             (hash-ref! (*egg-rule-cache*)
