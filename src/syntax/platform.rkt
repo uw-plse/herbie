@@ -341,6 +341,20 @@
   (define spec (impl-info impl 'spec))
   (values vars spec (cons impl vars)))
 
+;; Parses holes into spec-expr instead of vars
+;; (_ x y) -> (_ ($hole 'binary64 x) ($hole 'binary64 y))
+(define (replace-vars-with-holes expr vars itypes)
+  (define replacements
+    (for/hash ([var (in-list vars)]
+               [itype (in-list itypes)])
+      (values var `($hole ,(representation-name itype) ,var))))
+  (let loop ([expr expr])
+    (match expr
+      [(or (? number?) (? literal?)) expr]
+      [(? symbol?) (hash-ref replacements expr (λ () expr))]
+      [(list op args ...) (list* op (map loop args))]
+      [_ expr]))) ; it can be a literal or a number
+
 ;; Synthesizes lifting rules for a given platform.
 (define (platform-lifting-rules [pform (*active-platform*)])
   ;; every impl maps to a spec
@@ -351,36 +365,21 @@
        (*lifting-rules*)
        (cons impl pform)
        (lambda ()
-         (define name (sym-append 'lift-spot- impl))
+         (define name (sym-append 'lift- impl))
          (define itypes (impl-info impl 'itype))
          (define otype (impl-info impl 'otype))
          (define-values (vars spec-expr impl-expr) (impl->rule-parts impl))
-         (define spec-expr-w-hole-term `($hole ,(representation-name otype) ,spec-expr))
+         (define lhs (replace-vars-with-holes impl-expr vars itypes))
+         (define rhs `($hole ,(representation-name otype) ,spec-expr))
 
-         ; Spot lifting rule applies a rewrite like:
-         ; (+.f64 ?x ?y) -> ($hole binary64 (+ x y))
-         (define spot-lifting-rule
-           (rule name impl-expr spec-expr-w-hole-term (map cons vars itypes) otype '(lifting)))
-
-         ; Expanding lifting rule applies a rewrite like:
-         ; ($hole binary64 (+ ($hole binary64 x) ($hole binary64 y))) -> ($hole binary64 (+ x y))
-         ; where type of x and y are required to match +.f64's implementation
-         (define expanding-lifting-rule
-           (match (length vars)
-             [0 '()] ; when there is no vars - nothing to expand
-             [_
-              (define name* (sym-append 'lift-expand- impl))
-              (define op (car spec-expr))
-              (define left-side
-                `($hole ,(representation-name otype)
-                        ,(list* op (map (λ (x y) `($hole ,(representation-name y) ,x)) vars itypes))))
-              (define right-side `($hole ,(representation-name otype) ,(list* op vars)))
-              (rule name* left-side right-side (map cons vars itypes) otype '(lifting))]))
-         (cons spot-lifting-rule expanding-lifting-rule)))))
+         ; Lifting rule applies a rewrite like:
+         ; (+.f64 ($hole 'binary64 x) ($hole 'binary64 y)) -> ($hole binary64 (+ x y))
+         ; (hypot.f64 ($hole 'binary64 x) ($hole 'binary64 y)) -> ($hole binary64 (sqrt (* x x) (* y y))))
+         (rule name lhs rhs (map cons vars itypes) otype '(lifting))))))
   ;; special rule for approx nodes
   ; (define approx-rule (rule 'lift-approx (approx 'a 'b) 'a '((a . real) (b . real)) 'real))
   ; (cons approx-rule impl-rules))
-  (flatten impl-rules))
+  impl-rules)
 
 ;; Synthesizes lowering rules for a given platform.
 (define (platform-lowering-rules [pform (*active-platform*)])
@@ -390,10 +389,29 @@
                (cons impl pform)
                (lambda ()
                  (define name (sym-append 'lower- impl))
-                 (define itypes (map representation-type (impl-info impl 'itype)))
-                 (define otype (representation-type (impl-info impl 'otype)))
+                 (define itypes (impl-info impl 'itype))
+                 (define otype (impl-info impl 'otype))
                  (define-values (vars spec-expr impl-expr) (impl->rule-parts impl))
-                 (rule name spec-expr impl-expr (map cons vars itypes) otype '(lowering))))))
+
+                 ; shrinking lowering rules
+                 ; ($hole binary64 (+ x y)) -> (+.f64 ($hole binary64 x) ($hole binary64 y))
+                 ; question? what to do when we may end up with ($hole binary64 ($hole binary32 x)) ?
+                 (define name* (sym-append 'lower-shrink- impl))
+                 (define op (car spec-expr))
+                 (define op* (car impl-expr))
+                 (define lhs `($hole ,(representation-name otype) ,(list* op vars)))
+                 (define rhs
+                   `,(list* op* (map (λ (x y) `($hole ,(representation-name y) ,x)) vars itypes)))
+                 (define shrinking-lowering-rule
+                   (rule name*
+                         lhs
+                         rhs
+                         (map cons vars (map representation-type itypes))
+                         (representation-type otype)
+                         '(lowering)))
+
+                 #;(rule name spec-expr impl-expr (map cons vars itypes) otype '(lowering))
+                 shrinking-lowering-rule))))
 
 (define (expr-otype expr)
   (match expr

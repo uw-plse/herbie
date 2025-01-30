@@ -564,6 +564,7 @@
 ;;  - ops/impls: its output type/representation
 ;; NOTE: we can constrain "every" type by using the platform.
 (define (enode-type enode ctx)
+  (printf "enode=~a\n" enode)
   (match enode
     [(? number?) (cons 'real (platform-reprs (*active-platform*)))] ; number
     [(? symbol?) ; variable
@@ -658,6 +659,7 @@
   (for ([eid (in-u32vector eclass-ids)]
         [idx (in-naturals)])
     (define enodes (egraph-get-eclass egraph-data eid))
+    (printf "enodes")
     (for ([enode (in-vector enodes)])
       ; get all possible types for the enode
       ; lookup its correct eclass and add the rebuilt node
