@@ -387,7 +387,7 @@
     (rule 'lift-approx
           '($approx s ($hole r t))
           '($hole r ($approx s t))
-          '((s . real) (r . real) (t . real))
+          '((s . real) (r . real) (t . real)) ; this is ugly but works
           'real
           '(lifting)))
 
@@ -401,10 +401,13 @@
           'real
           '(lifting)))
 
+  (define lift-var
+    (rule 'lift-var '($var repr a) '($hole repr a) '((a . real) (repr . real)) 'real '(lifting)))
+
   ;; special rule for approx nodes
   ; (define approx-rule (rule 'lift-approx (approx 'a 'b) 'a '((a . real) (b . real)) 'real))
   ; (cons approx-rule impl-rules))
-  (list* lift-if-rule lift-approx-rule lift-literal-rule impl-rules))
+  (list* lift-var lift-if-rule lift-approx-rule lift-literal-rule impl-rules))
 
 ;; Synthesizes lowering rules for a given platform.
 ;; Lowering rules apply a rewrite like
@@ -412,22 +415,43 @@
 ;; question? what to do when we may end up with ($hole binary64 ($hole binary32 x)) ?
 (define (platform-lowering-rules [pform (*active-platform*)])
   (define impls (platform-impls pform))
-  (for/list ([impl (in-list impls)])
-    (hash-ref! (*lowering-rules*)
-               (cons impl pform)
-               (lambda ()
-                 (define name (sym-append 'lower- impl))
-                 (define itypes (impl-info impl 'itype))
-                 (define otype (impl-info impl 'otype))
-                 (define-values (vars spec-expr impl-expr) (impl->rule-parts impl))
-                 (define lhs `($hole ,(representation-name otype) ,spec-expr))
-                 (define rhs (replace-vars-with-holes impl-expr vars itypes))
-                 (rule name
-                       lhs
-                       rhs
-                       (map cons vars (map representation-type itypes))
-                       (representation-type otype)
-                       '(lowering))))))
+  (define impl-rules
+    (for/list ([impl (in-list impls)])
+      (hash-ref! (*lowering-rules*)
+                 (cons impl pform)
+                 (lambda ()
+                   (define name (sym-append 'lower- impl))
+                   (define itypes (impl-info impl 'itype))
+                   (define otype (impl-info impl 'otype))
+                   (define-values (vars spec-expr impl-expr) (impl->rule-parts impl))
+                   (define lhs `($hole ,(representation-name otype) ,spec-expr))
+                   (define rhs (replace-vars-with-holes impl-expr vars itypes))
+                   (rule name
+                         lhs
+                         rhs
+                         (map cons vars (map representation-type itypes))
+                         (representation-type otype)
+                         '(lowering))))))
+
+  (define lower-approx-rule
+    (rule 'lower-approx
+          '($hole r ($approx s t))
+          '($approx s ($hole r t))
+          '((s . real) (r . real) (t . real))
+          'real
+          '(lowering)))
+
+  (define lower-if-rule
+    (rule 'lower-if
+          '($hole r (if c t f))
+          '(if ($hole bool c)
+               ($hole r t)
+               ($hole r f))
+          '((c . real) (r . real) (t . real) (f . real))
+          'real
+          '(lowering)))
+
+  (list* lower-if-rule lower-approx-rule impl-rules))
 
 (define (expr-otype expr)
   (match expr

@@ -139,7 +139,12 @@
       (match node
         [(literal v repr) (list '$literal (insert-node! v #f) (insert-node! repr #f))]
         [(? number?) node]
-        [(? symbol?) (var->egg-var node ctx)]
+        [(? symbol?)
+         (define repr
+           (representation-name (list-ref (context-var-reprs ctx)
+                                          (index-of (context-vars ctx) node))))
+         (define var (var->egg-var node ctx))
+         (list '$var (insert-node! repr #f) (insert-node! var #f))]
         [(hole repr spec) (list '$hole (insert-node! repr #f) (remap spec))]
         [(approx spec impl) (list '$approx (remap spec) (remap impl))]
         [(list op (app remap args) ...) (cons op args)]))
@@ -515,6 +520,7 @@
 ;; Uses a cache to only expand each rule once.
 (define (expand-rules rules)
   (reap [sow]
+        (sow (cons #f (make-ffi-rule "drop-var" "($var ?repr ?a)" "?a")))
         (for ([rule (in-list rules)])
           (define egg&ffi-rules
             (hash-ref! (*egg-rule-cache*)
