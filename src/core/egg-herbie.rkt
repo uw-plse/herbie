@@ -476,11 +476,6 @@
 ;; Translates a Herbie rule into an egg rule
 (define (rule->egg-rule ru)
   (define ru-vars (map car (rule-itypes ru)))
-  (define lhs (expr->egg-pattern (rule-input ru) ru-vars))
-  (define rhs (expr->egg-pattern (rule-output ru) ru-vars))
-  (when (or (equal? (rule-tags ru) '(lowering)) (equal? (rule-tags ru) '(lifting)))
-    (printf "~a -> ~a\n" lhs rhs)
-    (sleep 2))
   (struct-copy rule
                ru
                [input (expr->egg-pattern (rule-input ru) ru-vars)]
@@ -519,20 +514,23 @@
 ;; Expand and convert the rules for egg.
 ;; Uses a cache to only expand each rule once.
 (define (expand-rules rules)
-  (reap [sow]
-        (sow (cons #f (make-ffi-rule "drop-var" "($var ?repr ?a)" "?a")))
-        (for ([rule (in-list rules)])
-          (define egg&ffi-rules
-            (hash-ref! (*egg-rule-cache*)
-                       rule
-                       (lambda ()
-                         (for/list ([egg-rule (in-list (rule->egg-rules rule))])
-                           (define name (rule-name egg-rule))
-                           (define ffi-rule
-                             (make-ffi-rule name (rule-input egg-rule) (rule-output egg-rule)))
-                           (hash-set! (*canon-names*) name (rule-name rule))
-                           (cons egg-rule ffi-rule)))))
-          (for-each sow egg&ffi-rules))))
+  (reap
+   [sow]
+   (sow
+    (cons #f (make-ffi-rule "drop-hole-of-hole" "($hole ?repr ($hole ?repr ?a))" "($hole ?repr ?a)")))
+   (sow (cons #f (make-ffi-rule "drop-var" "($var ?repr ?a)" "?a")))
+   (for ([rule (in-list rules)])
+     (define egg&ffi-rules
+       (hash-ref! (*egg-rule-cache*)
+                  rule
+                  (lambda ()
+                    (for/list ([egg-rule (in-list (rule->egg-rules rule))])
+                      (define name (rule-name egg-rule))
+                      (define ffi-rule
+                        (make-ffi-rule name (rule-input egg-rule) (rule-output egg-rule)))
+                      (hash-set! (*canon-names*) name (rule-name rule))
+                      (cons egg-rule ffi-rule)))))
+     (for-each sow egg&ffi-rules))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Racket egraph
@@ -566,7 +564,6 @@
 ;;  - ops/impls: its output type/representation
 ;; NOTE: we can constrain "every" type by using the platform.
 (define (enode-type enode ctx)
-  (printf "enode=~a\n" enode)
   (match enode
     [(? number?) (cons 'real (platform-reprs (*active-platform*)))] ; number
     [(? symbol?) ; variable
@@ -581,7 +578,7 @@
        [else (list (operator-info f 'otype))])]))
 
 ;; Rebuilds an e-node using typed e-classes
-(define (rebuild-enode enode type lookup)
+(define (rebuild-enode enode lookup)
   (match enode
     [(? number?) enode] ; number
     [(? symbol?) enode] ; variable
@@ -590,16 +587,18 @@
        [(eq? f '$approx) ; approx node
         (define spec (u32vector-ref ids 0))
         (define impl (u32vector-ref ids 1))
-        (list '$approx (lookup spec (representation-type type)) (lookup impl type))]
+        (list '$approx spec impl)]
        [(eq? f 'if) ; if expression
         (define cond (u32vector-ref ids 0))
         (define ift (u32vector-ref ids 1))
         (define iff (u32vector-ref ids 2))
-        (define cond-type
-          (if (representation? type)
-              (get-representation 'bool)
-              'bool))
-        (list 'if (lookup cond cond-type) (lookup ift type) (lookup iff type))]
+        (list 'if cond ift iff)]
+       [(eq? f '$hole) ; hole expression
+        (define repr (u32vector-ref ids 0))
+        (define val (u32vector-ref ids 1))
+        (list '$hole repr val)]
+       ; it is just a repr node
+       [(repr-exists? f) f]
        [else
         (define itypes
           (if (impl-exists? f)
@@ -611,13 +610,10 @@
          f
          (match itypes
            [(list) '()]
-           [(list t1) (list (lookup (u32vector-ref ids 0) t1))]
-           [(list t1 t2) (list (lookup (u32vector-ref ids 0) t1) (lookup (u32vector-ref ids 1) t2))]
-           [(list t1 t2 t3)
-            (list (lookup (u32vector-ref ids 0) t1)
-                  (lookup (u32vector-ref ids 1) t2)
-                  (lookup (u32vector-ref ids 2) t3))]
-           [_ (map lookup (u32vector->list ids) itypes)]))])]))
+           [(list t1) (list (u32vector-ref ids 0))]
+           [(list t1 t2) (list (u32vector-ref ids 0) (u32vector-ref ids 1))]
+           [(list t1 t2 t3) (list (u32vector-ref ids 0) (u32vector-ref ids 1) (u32vector-ref ids 2))]
+           [_ (u32vector->list ids)]))])]))
 
 ;; Splits untyped eclasses into typed eclasses.
 ;; Nodes are duplicated across their possible types.
@@ -646,6 +642,11 @@
   (define (lookup-id eid type)
     (idx+type->id (u32vector-ref egg-id->idx eid) type))
 
+  ;;;
+  (define (lookup-id2 eid)
+    (vector-ref (egraph-get-eclass egraph-data eid) 0))
+  ;;;
+
   ; allocate enough eclasses for every (egg-id, type) combination
   (define n (* (u32vector-length eclass-ids) num-types))
   (define id->eclass (make-vector n '()))
@@ -658,26 +659,35 @@
   ;            | (<symbol> . <u32vector>)
   ; NOTE: nodes in typed eclasses are reversed relative
   ; to their position in untyped eclasses
+  (printf "Extracting egraph ...\n")
   (for ([eid (in-u32vector eclass-ids)]
         [idx (in-naturals)])
     (define enodes (egraph-get-eclass egraph-data eid))
-    (printf "enodes")
-    (for ([enode (in-vector enodes)])
-      ; get all possible types for the enode
-      ; lookup its correct eclass and add the rebuilt node
-      (define types (enode-type enode ctx))
-      (for ([type (in-list types)])
-        (define id (idx+type->id idx type))
-        (define enode* (rebuild-enode enode type lookup-id))
-        (vector-set! id->eclass id (cons enode* (vector-ref id->eclass id)))
-        (match enode*
-          [(list _ ids ...)
-           (if (null? ids)
-               (vector-set! id->leaf? id #t)
-               (for ([child-id (in-list ids)])
-                 (vector-set! id->parents child-id (cons id (vector-ref id->parents child-id)))))]
-          [(? symbol?) (vector-set! id->leaf? id #t)]
-          [(? number?) (vector-set! id->leaf? id #t)]))))
+    (for/list ([enode (in-vector enodes)])
+      (rebuild-enode enode lookup-id2)))
+
+  #;(for ([eid (in-u32vector eclass-ids)]
+          [idx (in-naturals)])
+      (define enodes (egraph-get-eclass egraph-data eid))
+      (printf "Eclass ~a: ~a\n" idx enodes)
+      (println (lookup-id2 idx))
+      (for ([enode (in-vector enodes)])
+        (println (cdr enode))
+        ; get all possible types for the enode
+        ; lookup its correct eclass and add the rebuilt node
+        (define types (enode-type enode ctx))
+        (for ([type (in-list types)])
+          (define id (idx+type->id idx type))
+          (define enode* (rebuild-enode enode type lookup-id))
+          (vector-set! id->eclass id (cons enode* (vector-ref id->eclass id)))
+          (match enode*
+            [(list _ ids ...)
+             (if (null? ids)
+                 (vector-set! id->leaf? id #t)
+                 (for ([child-id (in-list ids)])
+                   (vector-set! id->parents child-id (cons id (vector-ref id->parents child-id)))))]
+            [(? symbol?) (vector-set! id->leaf? id #t)]
+            [(? number?) (vector-set! id->leaf? id #t)]))))
 
   ; dedup `id->parents` values
   (for ([id (in-range n)])
