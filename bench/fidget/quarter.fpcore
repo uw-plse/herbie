@@ -1,0 +1,5 @@
+(FPCore (x y)
+  :name "A quarter-circle in the lower-left quadrant"
+  :precision binary64
+  (fmax (- (+ (pow y 2) (pow x 2)) 0.5) (fmax x y))
+)

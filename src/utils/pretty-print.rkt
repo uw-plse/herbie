@@ -82,7 +82,7 @@
 
 (define (string-pad s n c)
   (define k (- n (string-length s)))
-  (if (> k 0)
+  (if (positive? k)
       (string-append (build-string k (const c)) s)
       s))
 
@@ -95,7 +95,7 @@
   (define sb (number->string b))
   (cond
     [(<= a 0 b) 0]
-    [(< b 0) (- (integer-interval-shortest (- b) (- a)))]
+    [(negative? b) (- (integer-interval-shortest (- b) (- a)))]
     [else
      (define s1 (string-pad sa (max (string-length sa) (string-length sb)) #\0))
      (define s2 (string-pad sb (max (string-length sa) (string-length sb)) #\0))

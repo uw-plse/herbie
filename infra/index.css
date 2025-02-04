@@ -44,8 +44,7 @@ svg .no-data { text-anchor: middle; font-size: 18px; fill: rgb(60%, 60%, 60%)}
 #reports tr.crash { color: red; }
 #reports td { text-align: right; padding: .5em; overflow: hidden; font-size: 15pt; }
 #reports tbody tr:hover {background-color: #e0f8d8; cursor: pointer;}
-#reports td:nth-child(3), #reports th:nth-child(2) { text-align: center; display: none; }
-#reports td:nth-child(4) { text-align: center; }
+#reports td:nth-child(3), #reports th:nth-child(3) { display: none; }
 #reports thead { border-bottom: 1px solid black; height: 5em; vertical-align: bottom; }
 #reports a {
     position: absolute; left: 0; right: 0; z-index: 100;

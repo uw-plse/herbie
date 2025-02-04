@@ -102,8 +102,8 @@
         (for/fold ([combined* (list)]
                    #:result (finalize combined*))
                   ([ppt (in-list combined)])
-          (let ([ppts (pareto-minimize (pareto-shift ppt frontier))])
-            (pareto-union ppts combined*))))))
+          (define ppts (pareto-minimize (pareto-shift ppt frontier)))
+          (pareto-union ppts combined*)))))
 
 (module+ test
   (require rackunit)

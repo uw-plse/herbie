@@ -13,7 +13,6 @@
          batch-ref ; Batch -> Idx -> Expr
          deref ; Batchref -> Expr
          batch-replace ; Batch -> (Expr<Batchref> -> Expr<Batchref>) -> Batch
-         egg-nodes->batch ; Nodes -> Spec-maps -> Batch -> (Listof Batchref)
          debatchref ; Batchref -> Expr
          batch-remove-zombie ; Batch -> ?(Vectorof Root) -> Batch
          mutable-batch-munge! ; Mutable-batch -> Expr -> Root
@@ -26,6 +25,7 @@
 (define (expr-recurse expr f)
   (match expr
     [(approx spec impl) (approx (f spec) (f impl))]
+    [(hole precision spec) (hole precision (f spec))]
     [(list op args ...) (cons op (map f args))]
     [_ expr]))
 
@@ -175,91 +175,6 @@
   (make-hash (for/list ([node (in-vector (batch-nodes batch))]
                         [n (in-naturals)])
                (cons node n))))
-
-(define (egg-nodes->batch egg-nodes id->spec input-batch rename-dict)
-  (define out (batch->mutable-batch input-batch))
-  ; This fuction here is only because of cycles in loads:( Can not be imported from egg-herbie.rkt
-  (define (egg-parsed->expr expr rename-dict type)
-    (let loop ([expr expr]
-               [type type])
-      (match expr
-        [(? number?)
-         (if (representation? type)
-             (literal expr (representation-name type))
-             expr)]
-        [(? symbol?)
-         (if (hash-has-key? rename-dict expr)
-             (car (hash-ref rename-dict expr))
-             (list expr))]
-        [(list '$approx spec impl)
-         (define spec-type
-           (if (representation? type)
-               (representation-type type)
-               type))
-         (approx (loop spec spec-type) (loop impl type))]
-        [(list 'if cond ift iff)
-         (if (representation? type)
-             (list 'if (loop cond (get-representation 'bool)) (loop ift type) (loop iff type))
-             (list 'if (loop cond 'bool) (loop ift type) (loop iff type)))]
-        [(list (? impl-exists? impl) args ...) (cons impl (map loop args (impl-info impl 'itype)))]
-        [(list op args ...) (cons op (map loop args (operator-info op 'itype)))])))
-
-  (define (eggref id)
-    (cdr (vector-ref egg-nodes id)))
-
-  (define (add-enode enode type)
-    (define idx
-      (let loop ([enode enode]
-                 [type type])
-        (define enode*
-          (match enode
-            [(? number?)
-             (if (representation? type)
-                 (literal enode (representation-name type))
-                 enode)]
-            [(? symbol?)
-             (if (hash-has-key? rename-dict enode)
-                 (car (hash-ref rename-dict enode))
-                 enode)]
-            [(list '$approx spec (app eggref impl))
-             (define spec* (vector-ref id->spec spec))
-             (unless spec*
-               (error 'regraph-extract-variants "no initial approx node in eclass"))
-             (define spec-type
-               (if (representation? type)
-                   (representation-type type)
-                   type))
-             (define final-spec (egg-parsed->expr spec* rename-dict spec-type))
-             (define final-spec-idx (mutable-batch-munge! out final-spec))
-             (approx final-spec-idx (loop impl type))]
-            [(list 'if (app eggref cond) (app eggref ift) (app eggref iff))
-             (if (representation? type)
-                 (list 'if (loop cond (get-representation 'bool)) (loop ift type) (loop iff type))
-                 (list 'if (loop cond 'bool) (loop ift type) (loop iff type)))]
-            [(list (? impl-exists? impl) (app eggref args) ...)
-             (define args*
-               (for/list ([arg (in-list args)]
-                          [type (in-list (impl-info impl 'itype))])
-                 (loop arg type)))
-             (cons impl args*)]
-            [(list (? operator-exists? op) (app eggref args) ...)
-             (define args*
-               (for/list ([arg (in-list args)]
-                          [type (in-list (operator-info op 'itype))])
-                 (loop arg type)))
-             (cons op args*)]))
-        (mutable-batch-push! out enode*)))
-    (batchref input-batch idx))
-
-  ; same as add-enode but works with index as an input instead of enode
-  (define (add-id id type)
-    (add-enode (eggref id) type))
-
-  ; Commit changes to the input-batch
-  (define (finalize-batch)
-    (batch-copy-mutable-nodes! input-batch out))
-
-  (values add-id add-enode finalize-batch))
 
 ; Tests for progs->batch and batch->progs
 (module+ test

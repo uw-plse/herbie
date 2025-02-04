@@ -2,8 +2,8 @@
 
 (require json
          racket/date)
-(require "../utils/common.rkt"
-         "../syntax/types.rkt"
+(require "../syntax/types.rkt"
+         "../utils/common.rkt"
          "../utils/pareto.rkt")
 
 (provide (struct-out table-row)
@@ -11,8 +11,7 @@
          make-report-info
          read-datafile
          write-datafile
-         merge-datafiles
-         diff-datafiles)
+         merge-datafiles)
 
 (struct table-row
         (name identifier
@@ -37,21 +36,18 @@
               cost-accuracy)
   #:prefab)
 
-(struct report-info
-        (date commit branch hostname seed flags points iterations note tests merged-cost-accuracy)
+(struct report-info (date commit branch seed flags points iterations tests merged-cost-accuracy)
   #:prefab
   #:mutable)
 
-(define (make-report-info tests #:note [note ""] #:seed [seed #f])
+(define (make-report-info tests #:seed [seed #f])
   (report-info (current-date)
                *herbie-commit*
                *herbie-branch*
-               *hostname*
                (or seed (get-seed))
                (*flags*)
                (*num-points*)
                (*num-iterations*)
-               note
                tests
                (merged-cost-accuracy tests)))
 
@@ -156,25 +152,13 @@
 
   (define data
     (match info
-      [(report-info date
-                    commit
-                    branch
-                    hostname
-                    seed
-                    flags
-                    points
-                    iterations
-                    note
-                    tests
-                    merged-cost-accuracy)
+      [(report-info date commit branch seed flags points iterations tests merged-cost-accuracy)
        (make-hash `((date . ,(date->seconds date)) (commit . ,commit)
                                                    (branch . ,branch)
-                                                   (hostname . ,hostname)
                                                    (seed . ,(~a seed))
                                                    (flags . ,(flags->list flags))
                                                    (points . ,points)
                                                    (iterations . ,iterations)
-                                                   (note . ,note)
                                                    (tests . ,(map simplify-test tests))
                                                    (merged-cost-accuracy . ,merged-cost-accuracy)))]))
 
@@ -194,23 +178,21 @@
                                              list))])
                (cons (car (first part)) (map cadr part)))))
 
-(define (read-datafile file)
+(define (read-datafile port)
   (define (parse-string s)
     (if s
         (call-with-input-string s read)
         #f))
 
-  (let* ([json (call-with-input-file file read-json)]
+  (let* ([json (read-json port)]
          [get (λ (field) (hash-ref json field))])
     (report-info (seconds->date (get 'date))
                  (get 'commit)
                  (get 'branch)
-                 (hash-ref json 'hostname "")
                  (parse-string (get 'seed))
                  (list->flags (get 'flags))
                  (get 'points)
                  (get 'iterations)
-                 (hash-ref json 'note #f)
                  (for/list ([test (get 'tests)]
                             #:when (hash-has-key? test 'vars))
                    (let ([get (λ (field) (hash-ref test field))])
@@ -257,11 +239,10 @@
 (define (unique? a)
   (or (null? a) (andmap (curry equal? (car a)) (cdr a))))
 
-(define (merge-datafiles dfs #:dirs [dirs #f] #:name [name #f])
+(define (merge-datafiles dfs #:dirs [dirs #f])
   (when (null? dfs)
     (error 'merge-datafiles "Cannot merge no datafiles"))
   (for ([f (in-list (list report-info-commit
-                          report-info-hostname
                           report-info-seed
                           report-info-flags
                           report-info-points
@@ -284,42 +265,10 @@
   (report-info (last (sort (map report-info-date dfs) < #:key date->seconds))
                (report-info-commit (first dfs))
                (first (filter values (map report-info-branch dfs)))
-               (report-info-hostname (first dfs))
                (report-info-seed (first dfs))
                (report-info-flags (first dfs))
                (report-info-points (first dfs))
                (report-info-iterations (first dfs))
-               (if name
-                   (~a name)
-                   (~a (cons 'merged (map report-info-note dfs))))
                tests
                ;; Easiest to just recompute everything based off the combined tests
                (merged-cost-accuracy tests)))
-
-(define (diff-datafiles old new)
-  (define old-tests
-    (for/hash ([ot (in-list (report-info-tests old))])
-      (values (table-row-name ot) ot)))
-  (define tests*
-    (for/list ([nt (in-list (report-info-tests new))])
-      (if (hash-has-key? old-tests (table-row-name nt))
-          (let ([ot (hash-ref old-tests (table-row-name nt))])
-            (define end-score (table-row-result nt))
-            (define target-score (table-row-result ot))
-            (define start-score (table-row-start nt))
-
-            (struct-copy table-row
-                         nt
-                         [status
-                          (if (and end-score target-score start-score)
-                              (cond
-                                [(< end-score (- target-score 1)) "gt-target"]
-                                [(< end-score (+ target-score 1)) "eq-target"]
-                                [(> end-score (+ start-score 1)) "lt-start"]
-                                [(> end-score (- start-score 1)) "eq-start"]
-                                [(> end-score (+ target-score 1)) "lt-target"])
-                              (table-row-status nt))]
-                         [target-prog (table-row-output ot)]
-                         [target (table-row-result ot)]))
-          nt)))
-  (struct-copy report-info new [tests tests*]))

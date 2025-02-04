@@ -11,7 +11,7 @@
     (filter (conjoin (negate eof-object?) identity)
             (for/list ([dir (in-list dirs)])
               (with-handlers ([exn? (const #f)])
-                (read-datafile (build-path dir "results.json"))))))
+                (call-with-input-file (build-path dir "results.json") read-datafile)))))
   (for/hash ([group (group-by table-row-name (append-map report-info-tests results))])
     (values (table-row-name (first group))
             (for/hash ([(name metric) (in-dict metrics)])

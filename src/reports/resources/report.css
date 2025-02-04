@@ -319,7 +319,7 @@ table pre { padding: 0; margin: 0; text-align: left; font-size: 110%; }
 
 .timeline-rewrite  { --phase-color: #4e9a06; }
 .timeline-simplify { --phase-color: #73d216; }
-.timeline-soundness{ --phase-color: #8ae234; }
+.timeline-derivations{ --phase-color: #8ae234; }
 
 .timeline-preprocess { --phase-color: #5c3566; }
 .timeline-series   { --phase-color: #ad7fa8; }

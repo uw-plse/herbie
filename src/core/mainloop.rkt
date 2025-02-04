@@ -6,8 +6,6 @@
          "alt-table.rkt"
          "bsearch.rkt"
          "egg-herbie.rkt"
-         "egglog-herbie.rkt"
-         "localize.rkt"
          "regimes.rkt"
          "simplify.rkt"
          "../utils/alternative.rkt"
@@ -20,7 +18,7 @@
          "preprocess.rkt"
          "programs.rkt"
          "../utils/timeline.rkt"
-         "soundiness.rkt"
+         "derivations.rkt"
          "batch.rkt")
 (provide run-improve!)
 
@@ -34,14 +32,13 @@
 ;; Each stage is stored in this global variable for REPL debugging.
 
 (define/reset ^next-alts^ #f)
-(define/reset ^locs^ #f)
 (define/reset ^patched^ #f)
 (define/reset ^table^ #f)
 
 ;; These high-level functions give the high-level workflow of Herbie:
 ;; - Initial steps: explain, preprocessing, initialize the alt table
 ;; - the loop: choose some alts, localize, run the patch table, and finalize
-;; - Final steps: regimes, final simplify, add soundiness, and remove preprocessing
+;; - Final steps: regimes, final simplify, derivations, and remove preprocessing
 
 (define (run-improve! initial specification context pcontext)
   (prelude)
@@ -54,7 +51,7 @@
   (initialize-alt-table! simplified context pcontext*)
   (for ([iteration (in-range (*num-iterations*))]
         #:break (atab-completed? (^table^)))
-    (run-iter!))
+    (finish-iter!))
   (define alternatives (extract!))
   (timeline-event! 'preprocess)
   (define best (alt-expr (first alternatives)))
@@ -65,17 +62,6 @@
        (remove-unnecessary-preprocessing best context pcontext (alt-preprocessing altern)))))
   (values final-alts (remove-unnecessary-preprocessing best context pcontext preprocessing)))
 
-(define (run-iter!)
-  (when (^next-alts^)
-    (raise-user-error 'run-iter!
-                      "An iteration is already in progress\n~a"
-                      "Run (finish-iter!) to finish it, or (rollback-iter!) to abandon it.\n"))
-
-  (choose-alts!)
-  (localize!)
-  (reconstruct! (generate-candidates (^locs^)))
-  (finalize-iter!))
-
 (define (extract!)
   (timeline-push-alts! '())
 
@@ -83,7 +69,7 @@
   (define joined-alts (make-regime! all-alts))
 
   (define cleaned-alts (final-simplify! joined-alts))
-  (define annotated-alts (add-soundness! cleaned-alts))
+  (define annotated-alts (add-derivations! cleaned-alts))
 
   (timeline-push! 'stop (if (atab-completed? (^table^)) "done" "fuel") 1)
   (sort-alts annotated-alts))
@@ -226,8 +212,8 @@
          (define event*
            (match event
              [(list 'taylor name var) (list 'taylor loc0 name var)]
-             [(list 'rr input proof soundiness) (list 'rr loc0 input proof soundiness)]
-             [(list 'simplify input proof soundiness) (list 'simplify loc0 input proof soundiness)]))
+             [(list 'rr input proof) (list 'rr loc0 input proof)]
+             [(list 'simplify input proof) (list 'simplify loc0 input proof)]))
          (define expr* (location-do loc0 (alt-expr orig) (const (debatchref (alt-expr altn)))))
          (alt expr* event* (list (loop (first prevs))) (alt-preprocessing orig))])))
 
@@ -278,7 +264,8 @@
   (timeline-push! 'min-error
                   (errors-score (atab-min-errors (^table^)))
                   (format "~a" (representation-name repr)))
-  (rollback-iter!)
+  (^next-alts^ #f)
+  (^patched^ #f)
   (void))
 
 (define (finish-iter!)
@@ -292,9 +279,6 @@
   (void))
 
 (define (rollback-iter!)
-  (^locs^ #f)
-  (^next-alts^ #f)
-  (^patched^ #f)
   (void))
 
 (define (initialize-alt-table! alternatives context pcontext)
@@ -342,8 +326,7 @@
           (> (length alts) 1)
           (equal? (representation-type repr) 'real)
           (not (null? (context-vars ctx)))
-          (with-handlers ([exn:fail:user:herbie:missing? (const #f)])
-            (get-fpcore-impl '<= '() (list repr repr))))
+          (get-fpcore-impl '<= '() (list repr repr)))
      (define opts (pareto-regimes (sort alts < #:key (curryr alt-cost repr)) ctx))
      (for/list ([opt (in-list opts)])
        (combine-alts opt ctx))]
@@ -351,11 +334,11 @@
 
 (define (final-simplify! alts)
   (cond
-    [(flag-set? 'generate 'simplify)
+    [(flag-set? 'reduce 'simplify)
      (timeline-event! 'simplify)
 
-     ; egg schedule (only mathematical rewrites)
-     (define rules (append (*fp-safe-simplify-rules*) (real-rules (*simplify-rules*))))
+     ; egg schedule (only FP rewrites plus simplify rewrites for if statements)
+     (define rules (append (platform-simplify-rules) (*simplify-rules*)))
      (define schedule `((,rules . ((node . ,(*node-limit*)) (const-fold? . #f)))))
 
      ; egg runner
@@ -367,13 +350,7 @@
      (define runner (make-egg-runner batch (batch-roots batch) reprs schedule))
 
      ; run egg
-     (define simplified
-       (map (compose debatchref last)
-            (simplify-batch runner
-                            (typed-egg-batch-extractor (if (*egraph-platform-cost*)
-                                                           platform-egg-cost-proc
-                                                           default-egg-cost-proc)
-                                                       batch))))
+     (define simplified (map (compose debatchref last) (simplify-batch runner batch)))
 
      ; de-duplication
      (remove-duplicates (for/list ([altn (in-list alts)]
@@ -384,16 +361,16 @@
                         alt-equal?)]
     [else alts]))
 
-(define (add-soundness! alts)
+(define (add-derivations! alts)
   (cond
     [(flag-set? 'generate 'proofs)
-     (timeline-event! 'soundness)
-     (add-soundiness alts (*pcontext*) (*context*))]
+     (timeline-event! 'derivations)
+     (add-derivations alts)]
     [else alts]))
 
 (define (sort-alts alts)
   (define repr (context-repr (*context*)))
   ;; find the best, sort the rest by cost
   (define errss (batch-errors (map alt-expr alts) (*pcontext*) (*context*)))
-  (define best (car (argmin (compose errors-score cdr) (map cons alts (flip-lists errss)))))
+  (define best (car (argmin (compose errors-score cdr) (map cons alts errss))))
   (cons best (sort (set-remove alts best) > #:key (curryr alt-cost repr))))

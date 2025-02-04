@@ -47,6 +47,7 @@
     (define b
       (make-hasheq (list (cons 'type (~a type))
                          (cons 'time (current-inexact-milliseconds))
+                         (cons 'gc-time (current-gc-milliseconds))
                          (cons 'memory (list (list live-memory alloc-memory))))))
     (set-box! (*timeline*) (cons b (unbox (*timeline*))))))
 
@@ -132,12 +133,15 @@
   (define end
     (hasheq 'time
             (current-inexact-milliseconds)
+            'gc-time
+            (current-gc-milliseconds)
             'memory
             (list (list (current-memory-use #f) (current-memory-use 'cumulative)))))
   (reverse (for/list ([evt (unbox (*timeline*))]
                       [next (cons end (unbox (*timeline*)))])
              (define evt* (hash-copy evt))
              (hash-update! evt* 'time (λ (v) (- (hash-ref next 'time) v)))
+             (hash-update! evt* 'gc-time (λ (v) (- (hash-ref next 'gc-time) v)))
              (hash-update! evt* 'memory (λ (v) (diff-memory-records (hash-ref next 'memory) v)))
              evt*)))
 
@@ -158,29 +162,28 @@
     [(_ name #:custom fn) (hash-set! timeline-types 'name fn)]
     [(_ name #:unmergable) (hash-set! timeline-types 'name #f)]))
 
-(define (make-merger . fields)
-  (λ tables
-    (define rows (apply append tables))
-    (define groups (make-hash))
-    (for ([row rows])
-      (define-values (values key*) (partition cdr (map cons row fields)))
-      (define key (map car key*))
-      (if (hash-has-key? groups key)
-          (hash-update! groups
-                        key
-                        (λ (old)
-                          (for/list ([value2 old]
-                                     [(value1 fn) (in-dict values)])
-                            (fn value2 value1))))
-          (hash-set! groups key (map car values))))
-    (for/list ([(k v) (in-hash groups)])
-      (let loop ([fields fields]
-                 [k k]
-                 [v v])
-        (match* (fields k v)
-          [((cons #f f*) (cons k k*) v) (cons k (loop f* k* v))]
-          [((cons _ f*) k (cons v v*)) (cons v (loop f* k v*))]
-          [('() '() '()) '()])))))
+(define ((make-merger . fields) . tables)
+  (define rows (apply append tables))
+  (define groups (make-hash))
+  (for ([row rows])
+    (define-values (values key*) (partition cdr (map cons row fields)))
+    (define key (map car key*))
+    (if (hash-has-key? groups key)
+        (hash-update! groups
+                      key
+                      (λ (old)
+                        (for/list ([value2 old]
+                                   [(value1 fn) (in-dict values)])
+                          (fn value2 value1))))
+        (hash-set! groups key (map car values))))
+  (for/list ([(k v) (in-hash groups)])
+    (let loop ([fields fields]
+               [k k]
+               [v v])
+      (match* (fields k v)
+        [((cons #f f*) (cons k k*) v) (cons k (loop f* k* v))]
+        [((cons _ f*) k (cons v v*)) (cons v (loop f* k v*))]
+        [('() '() '()) '()]))))
 
 (define (merge-sampling-tables l1 l2)
   (let loop ([l1 (sort l1 < #:key first)]
@@ -196,6 +199,7 @@
 
 (define-timeline type #:custom (λ (a b) a))
 (define-timeline time #:custom +)
+(define-timeline gc-time #:custom +)
 
 (define-timeline memory [live +] [alloc +])
 (define-timeline method [method])

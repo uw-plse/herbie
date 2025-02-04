@@ -3,6 +3,7 @@
 (require "../utils/common.rkt"
          "../utils/errors.rkt"
          "types.rkt"
+         "platform.rkt"
          "syntax.rkt")
 (provide assert-program-typed!)
 
@@ -65,14 +66,11 @@
       [#`,(? number?) (get-representation (dict-ref prop-dict ':precision))]
       [#`,(? variable? x) (context-lookup ctx x)]
       [#`,(? constant-operator? op)
-       (define impl
-         (with-handlers ([exn:fail:user:herbie:missing? (const #f)])
-           (get-fpcore-impl op prop-dict '())))
-       (match impl
+       (match (get-fpcore-impl op prop-dict '())
          [#f ; no implementation found
           (error! stx "No implementation of `~a` in platform for context `~a`" op prop-dict)
           (get-representation (dict-ref prop-dict ':precision))]
-         [_ (impl-info impl 'otype)])]
+         [impl (impl-info impl 'otype)])]
       [#`(let ([,ids #,exprs] ...) #,body)
        (define ctx*
          (for/fold ([ctx* ctx])
@@ -118,30 +116,24 @@
        (cond
          [(equal? irepr repr) repr]
          [else
-          (define impl
-            (with-handlers ([exn:fail:user:herbie:missing? (const #f)])
-              (get-fpcore-impl 'cast prop-dict (list irepr))))
-          (match impl
+          (match (get-fpcore-impl 'cast prop-dict (list irepr))
             [#f ; no implementation found
              (error! stx
                      "No implementation of `~a` in platform for context `~a`"
                      (application->string 'cast (list irepr))
                      prop-dict)
              (get-representation (dict-ref prop-dict ':precision))]
-            [_ (impl-info impl 'otype)])])]
+            [impl (impl-info impl 'otype)])])]
       [#`(,(? symbol? op) #,args ...)
        (define ireprs (map (lambda (arg) (loop arg prop-dict ctx)) args))
-       (define impl
-         (with-handlers ([exn:fail:user:herbie:missing? (const #f)])
-           (get-fpcore-impl op prop-dict ireprs)))
-       (match impl
+       (match (get-fpcore-impl op prop-dict ireprs)
          [#f ; no implementation found
           (error! stx
                   "No implementation of `~a` in platform for context `~a`"
                   (application->string op ireprs)
                   prop-dict)
           (get-representation (dict-ref prop-dict ':precision))]
-         [_ (impl-info impl 'otype)])])))
+         [impl (impl-info impl 'otype)])])))
 
 (module+ test
   (require rackunit)

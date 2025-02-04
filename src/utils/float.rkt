@@ -9,6 +9,7 @@
 (provide ulp-difference
          ulps->bits
          midpoint
+         two-midpoints
          random-generate
          </total
          <=/total
@@ -28,6 +29,22 @@
   ((representation-ordinal->repr repr) (floor (/ (+ ((representation-repr->ordinal repr) p1)
                                                     ((representation-repr->ordinal repr) p2))
                                                  2))))
+
+(define (repr-round repr dir point)
+  ((representation-repr->bf repr) (parameterize ([bf-rounding-mode dir])
+                                    ((representation-bf->repr repr) point))))
+
+(define (two-midpoints repr lo hi)
+  ; Midpoint is taken in repr-space, but values are stored in bf
+  (define <-ordinal (compose (representation-repr->bf repr) (representation-ordinal->repr repr)))
+  (define ->ordinal (compose (representation-repr->ordinal repr) (representation-bf->repr repr)))
+
+  (define lower (<-ordinal (floor (/ (+ (->ordinal hi) (->ordinal lo)) 2))))
+  (define higher (repr-round repr 'up (bfnext lower))) ; repr-next
+
+  (and (bf>= lower lo)
+       (bf<= higher hi) ; False if lo and hi were already close together
+       (cons lower higher)))
 
 (define (ulps->bits x)
   (real->double-flonum (log x 2)))

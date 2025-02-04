@@ -21,8 +21,8 @@
 
 (module+ main
   (command-line #:args (outdir1 outdir2)
-                (define df1 (read-datafile (build-path outdir1 "results.json")))
-                (define df2 (read-datafile (build-path outdir2 "results.json")))
+                (define df1 (call-with-input-file (build-path outdir1 "results.json") read-datafile))
+                (define df2 (call-with-input-file (build-path outdir2 "results.json") read-datafile))
                 (cond
                   [(datafile-tests-equal? df1 df2) (printf "Matching output expressions\n")]
                   [else

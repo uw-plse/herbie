@@ -191,25 +191,32 @@ function on(mark, listeners = {}) {
     return mark
 }
 
-function plotXY(testsData, filterFunction) {
-    var filteredTests = []
-    testsData.tests.forEach((test) => {
-        // Ugh global scope 
-        let other = diffAgainstFields[test.name]
-        if (filterFunction(test, other)) {
-            filteredTests.push(test)
-        }
-    })
+function plotXY(testsData, otherJsonData, filterFunction) {
+    const filteredTests = testsData.tests.filter((test) => {
+        return filterFunction(test, diffAgainstFields[test.name]);
+    });
+    function onclick(e, d) {
+        window.location = d.link + "/graph.html";
+    }
+    let marks = [
+        Plot.line([[0, 0], [1, 1]], { stroke: '#ddd' }),
+    ];
+    if (otherJsonData) {
+        marks.push(Plot.arrow(filteredTests, {
+            x1: d => 1 - diffAgainstFields[d.name].start / 64,
+            y1: d => 1 - diffAgainstFields[d.name].end / 64,
+            x2: d => 1 - d.start / 64,
+            y2: d => 1 - d.end / 64,
+            stroke: "#900", strokeWidth: 2,
+        }));
+    }
+    marks.push(on(Plot.dot(filteredTests, {
+        x: d => 1 - d.start / 64, y: d => 1 - d.end / 64,
+        fill: "#00a", strokeWidth: 2,
+    }), { click: onclick }));
+    
     const out = Plot.plot({
-        marks: [
-            Plot.line([[0, 0], [1, 1]], { stroke: '#ddd' }),
-            on(Plot.dot(filteredTests, {
-                x: d => 1 - d.start / 64, y: d => 1 - d.end / 64,
-                fill: "#00a", strokeWidth: 2,
-            }), {
-                click: (e, d) => { window.location = d.link + "/graph.html"; },
-            }),
-        ],
+        marks: marks,
         className: "clickable",
         marginBottom: 0,
         marginRight: 0,
@@ -222,20 +229,37 @@ function plotXY(testsData, filterFunction) {
     return out;
 }
 
-function plotPareto(jsonData) {
+function plotPareto(jsonData, otherJsonData) {
     const [initial, frontier] = jsonData["merged-cost-accuracy"];
-    const out = Plot.plot({
-        marks: [
-            Plot.dot([initial], {
-                stroke: "#d00",
+    let marks = [
+        Plot.dot([initial], {
+            stroke: "#00a",
+            symbol: "square",
+            strokeWidth: 2,
+        }),
+        Plot.line(frontier, {
+            stroke: "#00a",
+            strokeWidth: 2,
+        }),
+    ];
+
+    if (otherJsonData) {
+        const [initial2, frontier2] = otherJsonData["merged-cost-accuracy"];
+        marks = [
+            Plot.dot([initial2], {
+                stroke: "#900",
                 symbol: "square",
-                strokeWidth: 2
-            }),
-            Plot.line(frontier, {
-                stroke: "#00a",
                 strokeWidth: 2,
             }),
-        ],
+            Plot.line(frontier2, {
+                stroke: "#900",
+                strokeWidth: 2,
+            })
+        ].concat(marks);
+    }
+
+    const out = Plot.plot({
+        marks: marks,
         width: '400',
         height: '400',
         x: { line: true, nice: true, tickFormat: c => c + "×" },
@@ -257,7 +281,8 @@ function buildCheckboxLabel(classes, text, boolState) {
 function buildDiffLine(jsonData, show) {
     const urlInput = Element("input", {
         id: "compare-input", value: compareAgainstURL,
-        placeholder: "URL to other json file"
+        placeholder: "URL to report or JSON file",
+        size: 60,
     }, []);
 
     var unitText = radioStates[radioState]?.tolerance;
@@ -307,8 +332,8 @@ function buildCompareForm(jsonData) {
 
     const hideEqual = buildCheckboxLabel("hide-equal", "Hide equal", hideDirtyEqual)
     hideEqual.addEventListener("click", (e) => {
-        hideDirtyEqual = !hideDirtyEqual
-        update()
+        hideDirtyEqual = ! hideDirtyEqual;
+        update();
     })
 
     return Element("form", {}, [radioButtons, " ", hideEqual]);
@@ -316,10 +341,6 @@ function buildCompareForm(jsonData) {
 
 function buildBody(jsonData, otherJsonData) {
     let filterFunction = makeFilterFunction();
-
-    function hasNote(note) {
-        return (note ? toTitleCase(note) + " " : "") + "Results"
-    }
 
     var total_start = 0
     var total_result = 0
@@ -362,7 +383,7 @@ function buildBody(jsonData, otherJsonData) {
     ])
 
     const header = Element("header", {}, [
-        Element("h1", {}, hasNote(jsonData.note)),
+        Element("h1", {}, "Herbie Results"),
         Element("img", { src: "logo-car.png" }, []),
         Element("nav", {}, [
             Element("ul", {}, [Element("li", {}, [Element("a", { href: "timeline.html" }, ["Metrics"])])])
@@ -372,12 +393,12 @@ function buildBody(jsonData, otherJsonData) {
     const figureRow = Element("div", { classList: "figure-row" }, [
         Element("figure", { id: "xy" }, [
             Element("h2", {}, [tempXY_A]),
-            plotXY(jsonData, filterFunction),
+            plotXY(jsonData, otherJsonData, filterFunction),
             Element("figcaption", {}, [tempXY_B])
         ]),
         Element("figure", { id: "pareto" }, [
             Element("h2", {}, [tempPareto_A]),
-            plotPareto(jsonData),
+            plotPareto(jsonData, otherJsonData),
             Element("figcaption", {}, [tempPareto_B])
         ])
     ])
@@ -385,6 +406,7 @@ function buildBody(jsonData, otherJsonData) {
     function buildTableHeader(stringName, help) {
         const textElement = Element("th", {}, [
             toTitleCase(stringName),
+            " ",
             (stringName != sortState.key ? "–" : sortState.dir ?  "⏶" : "⏷"),
             help && Element("span", { classList: "help-button", title: help }, ["?"]),
         ]);
@@ -443,7 +465,7 @@ function buildTableContents(jsonData, otherJsonData, filterFunction) {
             rows.push(row)
         }
     }
-    return rows
+    return rows;
 }
 
 function getMinimum(target) {
