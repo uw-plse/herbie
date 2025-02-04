@@ -79,9 +79,8 @@
 
   ; egg schedule (3-phases for mathematical rewrites and implementation selection)
   (define schedule
-    `((,lifting-rules . ((iteration . 1) (scheduler . simple)))
-      (,rules . ((node . ,50)))
-      (,lowering-rules . ((iteration . 1) (scheduler . simple)))))
+    `((,lifting-rules . ((scheduler . simple))) (,rules . ((node . ,50)))
+                                                (,lowering-rules . ((scheduler . simple)))))
 
   ; run egg
   (define exprs (map (compose debatchref alt-expr) altns))

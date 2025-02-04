@@ -582,7 +582,7 @@
        [else (list (operator-info f 'otype))])]))
 
 ;; Rebuilds an e-node using typed e-classes
-(define (rebuild-enode enode lookup-id)
+(define (rebuild-enode enode lookup-id lookup-eclass)
   (match enode
     [(? number?) enode] ; number
     [(? symbol?) enode] ; variable
@@ -600,7 +600,10 @@
        [(eq? f '$hole) ; hole expression
         (define repr (lookup-id (u32vector-ref ids 0)))
         (define val (lookup-id (u32vector-ref ids 1)))
-        (list '$hole repr val)]
+        (define val-eclass (vector->list (lookup-eclass (u32vector-ref ids 1))))
+        (if (or (andmap (λ (x) (number? x)) val-eclass) (andmap (λ (x) (symbol? x)) val-eclass))
+            (list '$hole repr val) ; it is a hole that pointing to a variable/number
+            '())] ; it is a hole that pointing to expression - lowering rules did not work!
        ; it is just a repr node
        [(repr-exists? f) f]
        [else
@@ -637,6 +640,8 @@
   ; maps (untyped eclass id, type) to typed eclass id
   (define (lookup-id eid)
     (u32vector-ref egg-id->idx eid))
+  (define (lookup-eclass eid)
+    (egraph-get-eclass egraph-data eid))
 
   ; allocate enough eclasses for every egg-id combination
   (define n (u32vector-length eclass-ids))
@@ -653,9 +658,9 @@
   (printf "Extracting egraph ...\n")
   (for ([eid (in-u32vector eclass-ids)]
         [idx (in-naturals)])
-    (define enodes (egraph-get-eclass egraph-data eid))
+    (define enodes (lookup-eclass eid))
     (for ([enode (in-vector enodes)])
-      (define enode* (rebuild-enode enode lookup-id))
+      (define enode* (rebuild-enode enode lookup-id lookup-eclass))
       (match enode*
         [(list _ ids ...)
          (if (null? ids)
@@ -663,8 +668,16 @@
              (for ([child-id (in-list ids)])
                (vector-set! id->parents child-id (cons idx (vector-ref id->parents child-id)))))]
         [(? symbol?) (vector-set! id->leaf? idx #t)]
-        [(? number?) (vector-set! id->leaf? idx #t)])
-      (vector-set! id->eclass idx (cons enode* (vector-ref id->eclass idx))))
+        [(? number?) (vector-set! id->leaf? idx #t)]
+        ; it was a hole expressions that got pruned
+        #;(printf "PRUNED BULLSHIT: ~a which refers to ~a\n"
+                  enode
+                  (lookup-eclass (u32vector-ref (cdr enode) 1)))
+        [(list) enode*])
+      (unless (empty? enode*)
+        (vector-set! id->eclass idx (cons enode* (vector-ref id->eclass idx)))))
+    (when (empty? (vector-ref id->eclass idx))
+      (error "WARNING, EMPTY ECLASS!!!"))
     (printf "Eclass ~a: ~a\n" idx (vector-ref id->eclass idx)))
 
   ; dedup `id->parents` values
@@ -686,16 +699,9 @@
 
   ;; is the e-node well-typed?
   (define (enode-typed? enode)
-    (match enode
-      [(list '$hole repr val-idx) ; hole can be only at variable or literal, otherwise it is illegal
-       (define val (vector-ref id->eclass val-idx))
-       (unless (or (symbol? val) (number? val))
-         (printf "Node ~a, val=~a, defined as not well typed!\n" enode val))
-       (or (symbol? val) (number? val))]
-      [_
-       (or (number? enode)
-           (symbol? enode)
-           (and (list? enode) (andmap eclass-well-typed? (cdr enode))))]))
+    (or (number? enode)
+        (symbol? enode)
+        (and (list? enode) (not (empty? enode)) (andmap eclass-well-typed? (cdr enode)))))
 
   (define (check-typed! dirty?-vec)
     (define dirty? #f)
