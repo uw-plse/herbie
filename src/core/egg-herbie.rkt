@@ -582,6 +582,9 @@
   (match enode
     [(? number?) enode] ; number
     [(? symbol?) enode] ; variable
+    [(? repr-exists?)
+     (error "never got here")
+     enode]
     [(cons f ids) ; application
      (cond
        [(eq? f '$approx) ; approx node
@@ -649,7 +652,7 @@
   (printf "Extracting egraph ...\n")
   (for ([eid (in-u32vector eclass-ids)]
         [idx (in-naturals)])
-    (define enodes (egraph-get-eclass egraph-data eid))
+    (define enodes (lookup-eclass eid))
     (for ([enode (in-vector enodes)])
       (define enode* (rebuild-enode enode lookup-id))
       (match enode*
@@ -672,7 +675,7 @@
 ;; Prunes e-nodes that are not well-typed.
 ;; An e-class is well-typed if it has one well-typed node
 ;; A node is well-typed if all of its child e-classes are well-typed.
-(define (prune-holes! id->eclass id->parents id->leaf?)
+(define (prune-ill-typed! id->eclass id->parents id->leaf?)
   (define n (vector-length id->eclass))
 
   ;; is the e-class well-typed?
@@ -682,14 +685,23 @@
 
   ;; is the e-node well-typed?
   (define (enode-typed? enode)
-    (or (number? enode) (symbol? enode) (and (list? enode) (andmap eclass-well-typed? (cdr enode)))))
+    (match enode
+      [(list '$hole repr val-idx) ; hole can be only at variable or literal, otherwise it is illegal
+       (define val (vector-ref id->eclass val))
+       (unless (or (symbol? val) (number? val))
+         (printf "Node ~a, val=~a, defined as not well typed!\n"))
+       (or (symbol? val) (number? val))]
+      [_
+       (or (number? enode)
+           (symbol? enode)
+           (and (list? enode) (andmap eclass-well-typed? (cdr enode))))]))
 
   (define (check-typed! dirty?-vec)
     (define dirty? #f)
     (define dirty?-vec* (make-vector n #f))
     (for ([id (in-range n)]
           #:when (vector-ref dirty?-vec id))
-      (unless (vector-ref typed?-vec id)
+      (unless (eclass-well-typed? id)
         (when (ormap enode-typed? (vector-ref id->eclass id))
           (vector-set! typed?-vec id #t)
           (define parent-ids (vector-ref id->parents id))
@@ -737,9 +749,6 @@
 
   ; invert `type->idx` map
   (define idx->type (make-hash))
-  (define num-types (hash-count type->idx))
-  (for ([(type idx) (in-hash type->idx)])
-    (hash-set! idx->type idx type))
 
   ; rebuild eclass and type vectors
   ; transform each eclass from a list to a vector
@@ -784,7 +793,7 @@
   ;; Step 2: keep well-typed e-nodes
   ;; An e-class is well-typed if it has one well-typed node
   ;; A node is well-typed if all of its child e-classes are well-typed.
-  (prune-holes! id->eclass id->parents id->leaf?)
+  (prune-ill-typed! id->eclass id->parents id->leaf?)
 
   ;; Step 3: remap e-classes
   ;; Any empty e-classes must be removed, so we re-map every id
