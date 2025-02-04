@@ -563,17 +563,21 @@
 ;;  - `approx`: every real representation [can prune incorrect ones]
 ;;  - ops/impls: its output type/representation
 ;; NOTE: we can constrain "every" type by using the platform.
-(define (enode-type enode ctx)
+(define (enode-type enode ctx lookup)
   (match enode
     [(? number?) (cons 'real (platform-reprs (*active-platform*)))] ; number
+    [(? repr-exists?) (get-representation enode)] ; to be changed!
     [(? symbol?) ; variable
      (define var (egg-var->var enode ctx))
      (define repr (context-lookup ctx var))
      (list repr (representation-type repr))]
-    [(cons f _) ; application
+    [(cons f ids) ; application
      (cond
        [(eq? f '$approx) (platform-reprs (*active-platform*))]
        [(eq? f 'if) (all-reprs/types)]
+       [(eq? f '$hole)
+        (define repr (lookup (car ids)))
+        (get-representation repr)]
        [(impl-exists? f) (list (impl-info f 'otype))]
        [else (list (operator-info f 'otype))])]))
 
@@ -582,9 +586,6 @@
   (match enode
     [(? number?) enode] ; number
     [(? symbol?) enode] ; variable
-    [(? repr-exists?)
-     (error "never got here")
-     enode]
     [(cons f ids) ; application
      (cond
        [(eq? f '$approx) ; approx node
@@ -652,7 +653,7 @@
   (printf "Extracting egraph ...\n")
   (for ([eid (in-u32vector eclass-ids)]
         [idx (in-naturals)])
-    (define enodes (lookup-eclass eid))
+    (define enodes (egraph-get-eclass egraph-data eid))
     (for ([enode (in-vector enodes)])
       (define enode* (rebuild-enode enode lookup-id))
       (match enode*
@@ -687,9 +688,9 @@
   (define (enode-typed? enode)
     (match enode
       [(list '$hole repr val-idx) ; hole can be only at variable or literal, otherwise it is illegal
-       (define val (vector-ref id->eclass val))
+       (define val (vector-ref id->eclass val-idx))
        (unless (or (symbol? val) (number? val))
-         (printf "Node ~a, val=~a, defined as not well typed!\n"))
+         (printf "Node ~a, val=~a, defined as not well typed!\n" enode val))
        (or (symbol? val) (number? val))]
       [_
        (or (number? enode)
@@ -735,7 +736,7 @@
         [_ (void)]))))
 
 ;; Rebuilds eclasses and associated data after pruning.
-(define (rebuild-eclasses id->eclass eclass-ids egg-id->idx type->idx)
+(define (rebuild-eclasses id->eclass eclass-ids egg-id->idx ctx)
   (define n (vector-length id->eclass))
   (define remap (make-vector n #f))
 
@@ -747,8 +748,8 @@
       (vector-set! remap id n*)
       (set! n* (add1 n*))))
 
-  ; invert `type->idx` map
-  (define idx->type (make-hash))
+  (define (lookup x)
+    (vector-ref id->eclass x))
 
   ; rebuild eclass and type vectors
   ; transform each eclass from a list to a vector
@@ -768,18 +769,18 @@
                        [(list op ids ...)
                         (define ids* (map (lambda (id) (vector-ref remap id)) ids))
                         (cons op ids*)])))
-      (vector-set! types id* (hash-ref idx->type (modulo id num-types)))))
+      (define type (remove-duplicates (map (λ (x) (enode-type x ctx lookup)) eclass)))
+      (when (> (length type) 1)
+        (error "not a single type!"))
+      (vector-set! types id* type)))
 
   ; build the canonical id map
   (define egg-id->id (make-hash))
   (for ([eid (in-u32vector eclass-ids)])
     (define idx (u32vector-ref egg-id->idx eid))
-    (define id0 (* idx num-types))
-    (for ([id (in-range id0 (+ id0 num-types))])
-      (define id* (vector-ref remap id))
-      (when id*
-        (define type (vector-ref types id*))
-        (hash-set! egg-id->id (cons eid type) id*))))
+    (define id* (vector-ref remap idx))
+    (when id*
+      (hash-set! egg-id->id eid id*)))
 
   (values eclasses types egg-id->id))
 
@@ -797,8 +798,7 @@
 
   ;; Step 3: remap e-classes
   ;; Any empty e-classes must be removed, so we re-map every id
-  #;(rebuild-eclasses id->eclass eclass-ids egg-id->idx type->idx)
-  (values id->eclass '() egg-id->idx))
+  (rebuild-eclasses id->eclass eclass-ids egg-id->idx ctx))
 
 ;; Analyzes eclasses for their properties.
 ;; The result are vector-maps from e-class ids to data.
@@ -837,7 +837,7 @@
   (define id->spec (egraph-data-id->spec egraph-data))
 
   ;; split the e-classes by type
-  (define-values (eclasses _ canon) (make-typed-eclasses egraph-data ctx))
+  (define-values (eclasses types canon) (make-typed-eclasses egraph-data ctx))
   (define n (vector-length eclasses))
 
   ;; analyze each eclass
@@ -851,7 +851,7 @@
     (vector-set! specs id* spec))
 
   ; construct the `regraph` instance
-  (regraph eclasses #;types '() leaf? constants specs parents canon ctx))
+  (regraph eclasses types leaf? constants specs parents canon ctx))
 
 (define (regraph-nodes->json regraph)
   (define cost (platform-node-cost-proc (*active-platform*)))
