@@ -79,7 +79,7 @@
 
   ; egg schedule (3-phases for mathematical rewrites and implementation selection)
   (define schedule
-    `((,lifting-rules . ((scheduler . simple))) (,rules . ((node . ,50)))
+    `((,lifting-rules . ((scheduler . simple))) (,rules . ((node . ,(*node-limit*))))
                                                 (,lowering-rules . ((scheduler . simple)))))
 
   ; run egg
