@@ -33,7 +33,7 @@
   (require "../syntax/load-plugin.rkt")
   (load-herbie-builtins))
 
-(define debugging? #f)
+(define debugging? #t)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FFI utils
@@ -573,8 +573,6 @@
 ;;  - ops/impls: its output type/representation
 ;; NOTE: we can constrain "every" type by using the platform.
 (define (enode-type enode ctx lookup)
-  (when debugging?
-    (printf "~a ~a ~a\n" enode ctx lookup))
   (match enode
     [(? number?) (cons 'real (platform-reprs (*active-platform*)))] ; number
     [(? repr-exists?) (get-representation enode)] ; useless but okay
