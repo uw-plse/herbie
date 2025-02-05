@@ -3,11 +3,11 @@
 (require syntax/id-set)
 (require "../utils/common.rkt"
          "../utils/errors.rkt"
-         "syntax.rkt"
-         "types.rkt")
+         "types.rkt"
+         "syntax.rkt")
 (provide assert-program!)
 
-(define (check-expression* stx vars error!)
+(define (check-expression* stx vars error! deprecated-ops)
   (let loop ([stx stx]
              [vars vars])
     (match stx
@@ -50,7 +50,7 @@
        (unless (null? args)
          (loop (last args) vars))]
       [#`(! #,props ... #,body)
-       (check-properties* props '() error!)
+       (check-properties* props '() error! deprecated-ops)
        (loop body vars)]
       [#`(cast #,arg) (loop arg vars)]
       [#`(cast #,args ...)
@@ -89,7 +89,9 @@
          [(operator-exists? f)
           (define arity (length (operator-info f 'itype)))
           (unless (= arity (length args))
-            (error! stx "Operator ~a given ~a arguments (expects ~a)" f (length args) arity))]
+            (error! stx "Operator ~a given ~a arguments (expects ~a)" f (length args) arity))
+          (when (operator-deprecated? f)
+            (set-add! deprecated-ops f))]
          [(hash-has-key? (*functions*) f)
           (match-define (list vars _ _) (hash-ref (*functions*) f))
           (unless (= (length vars) (length args))
@@ -106,7 +108,7 @@
   (unless (equal? (substring name 0 1) ":")
     (error! prop "Invalid property name ~a" prop)))
 
-(define (check-properties* props vars error!)
+(define (check-properties* props vars error! deprecated-ops)
   (define prop-dict
     (let loop ([props props]
                [out '()])
@@ -145,16 +147,17 @@
         (error! cite "Invalid :cite ~a; must be a list" cite)))
 
   (when (dict-has-key? prop-dict ':pre)
-    (check-expression* (dict-ref prop-dict ':pre) vars error!))
+    (check-expression* (dict-ref prop-dict ':pre) vars error! deprecated-ops))
 
   (when (dict-has-key? prop-dict ':alt)
-    (check-expression* (dict-ref prop-dict ':alt) vars error!))
+    (check-expression* (dict-ref prop-dict ':alt) vars error! deprecated-ops))
 
   (void))
 
 (define (check-program* stx vars props body error!)
   (unless (list? vars)
     (error! stx "Invalid arguments list ~a; must be a list" stx))
+  (define deprecated-ops (mutable-set))
   (define vars*
     (reap [sow]
           (when (list? vars)
@@ -162,14 +165,18 @@
               (match var
                 [(? identifier? x) (sow var)]
                 [#`(! #,props ... #,name)
-                 (check-properties* props (immutable-bound-id-set '()) error!)
+                 (check-properties* props (immutable-bound-id-set '()) error! deprecated-ops)
                  (cond
                    [(identifier? name) (sow name)]
                    [else (error! var "Annotated argument ~a is not a variable name" name)])])))))
   (when (check-duplicate-identifier vars*)
     (error! stx "Duplicate argument name ~a" (check-duplicate-identifier vars*)))
-  (check-properties* props (immutable-bound-id-set vars*) error!)
-  (check-expression* body (immutable-bound-id-set vars*) error!))
+  (check-properties* props (immutable-bound-id-set vars*) error! deprecated-ops)
+  (check-expression* body (immutable-bound-id-set vars*) error! deprecated-ops)
+  (for ([op (in-set deprecated-ops)])
+    (define message
+      (format (syntax->error-format-string stx) (format "operator `~a` is deprecated." op)))
+    (warn 'deprecated #:url "faq.html#deprecated-ops" message)))
 
 (define (check-fpcore* stx error!)
   (match stx
@@ -186,10 +193,11 @@
     (reap [sow]
           (define (error! stx fmt . args)
             (define args*
-              (for/list ([x (in-list args)])
-                (if (syntax? x)
-                    (syntax->datum x)
-                    x)))
+              (map (λ (x)
+                     (if (syntax? x)
+                         (syntax->datum x)
+                         x))
+                   args))
             (sow (cons stx (apply format fmt args*))))
           (check-fpcore* stx error!)))
   (unless (null? errs)
@@ -205,10 +213,11 @@
     (reap [sow]
           (define (error! stx fmt . args)
             (define args*
-              (for/list ([x (in-list args)])
-                (if (syntax? x)
-                    (syntax->datum x)
-                    x)))
+              (map (λ (x)
+                     (if (syntax? x)
+                         (syntax->datum x)
+                         x))
+                   args))
             (sow (cons stx (apply format fmt args*))))
           (check-fpcore* stx error!)))
 

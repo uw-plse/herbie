@@ -2,11 +2,8 @@
 
 (require "load-plugin.rkt"
          "syntax.rkt"
-         "platform.rkt"
          "types.rkt"
-         (only-in "platform.rkt" *active-platform* activate-platform!)
-         (submod "syntax.rkt" internals)
-         (submod "platform.rkt" internals))
+         (submod "syntax.rkt" internals))
 
 (module+ test
   (require rackunit
@@ -41,15 +38,11 @@
   (for ([(pt out) (in-dict sin-vals)])
     (check-equal? (sin-proc pt) out (format "sin(~a) = ~a" pt out)))
 
-  (define-platform test-platform [log1pmd.f64 6400] [fast-sin.f64 6400])
-  (register-platform! 'test (platform-union (*active-platform*) test-platform))
-  (activate-platform! 'test)
-
   ; get-fpcore-impl
 
   (define f64 (get-representation 'binary64))
   (define (get-impl op props itypes)
-    (get-fpcore-impl op props itypes))
+    (get-fpcore-impl op props itypes #:impls (all-operator-impls)))
 
   (check-equal? (get-impl '+ '((:precision . binary64)) (list f64 f64)) '+.f64)
   (check-equal? (get-impl '+ '((:precision . binary64)) (list f64 f64)) '+.f64)

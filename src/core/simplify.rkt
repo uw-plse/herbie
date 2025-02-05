@@ -10,14 +10,18 @@
          "batch.rkt"
          "egglog-herbie.rkt")
 
-(provide (contract-out [simplify-batch (-> egg-runner? batch? (listof (listof batchref?)))]))
+(provide simplify-batch)
 
 (module+ test
   (require rackunit
            "../syntax/load-plugin.rkt")
   (load-herbie-plugins))
 
-(define (simplify-batch runner batch)
+;; for each expression, returns a list of simplified versions corresponding to egraph iterations
+;; the last expression is the simplest unless something went wrong due to unsoundness
+;; if the input specifies proofs, it instead returns proofs for these expressions
+(define/contract (simplify-batch runner extractor)
+  (-> egg-runner? procedure? (listof (listof batchref?)))
   (timeline-push! 'inputs (map ~a (batch->progs (egg-runner-batch runner) (egg-runner-roots runner))))
   (timeline-push! 'method "egg-herbie")
   (define generate-flags (hash-ref all-flags 'generate))
@@ -46,16 +50,23 @@
   ;; set parameters
   (define vars '(x a b c))
   (*context* (make-debug-context vars))
+  (define all-simplify-rules (*simplify-rules*))
+
+  ;; check that no rules in simplify match on bare variables
+  ;; this would be bad because we don't want to match type-specific operators on a value of a different type
+  (for ([rule all-simplify-rules])
+    (check-true (not (symbol? (rule-input rule)))
+                (string-append "Rule failed: " (symbol->string (rule-name rule)))))
 
   (define (test-simplify . args)
     (define batch (progs->batch args))
     (define runner
-      (make-egraph batch
-                   (batch-roots batch)
-                   (map (lambda (_) 'real) args)
-                   `((,(*simplify-rules*) . ((node . ,(*node-limit*)))))))
-    (parameterize ([*egraph-platform-cost* #f])
-      (map (compose debatchref last) (simplify-batch runner batch))))
+      (make-egg-runner batch
+                       (batch-roots batch)
+                       (map (lambda (_) 'real) args)
+                       `((,(*simplify-rules*) . ((node . ,(*node-limit*)))))))
+    (define extractor (typed-egg-batch-extractor default-egg-cost-proc batch))
+    (map (compose debatchref last) (simplify-batch runner extractor)))
 
   (define test-exprs
     '((1 . 1) (0 . 0)

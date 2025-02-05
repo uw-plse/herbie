@@ -1,15 +1,15 @@
 #lang racket
 
-(require "../core/programs.rkt"
-         "../utils/common.rkt"
+(require "../utils/common.rkt"
          "../utils/errors.rkt"
-         "load-plugin.rkt"
-         "platform.rkt"
-         "sugar.rkt"
-         "syntax-check.rkt"
+         "../core/programs.rkt"
+         "types.rkt"
          "syntax.rkt"
+         "platform.rkt"
+         "syntax-check.rkt"
          "type-check.rkt"
-         "types.rkt")
+         "sugar.rkt"
+         "load-plugin.rkt")
 
 (provide (struct-out test)
          test-context
@@ -135,9 +135,12 @@
 
 (define (parse-platform-name ann)
   (match ann
-    [(list '! props ... body)
-     (define dict (props->dict props))
-     (dict-ref dict ':herbie-platform #f)]
+    [(list '! props ...)
+     (let loop ([props props])
+       (match props
+         [(list ':herbie-platform name _ ...) name]
+         [(list _ _ rest ...) (loop rest)]
+         [(list) #f]))]
     [_ #f]))
 
 (define (parse-test stx)
@@ -224,14 +227,14 @@
           (string-join (map ~a unused) ", "))))
 
 (define (check-weird-variables vars)
-  (for ([var (in-list vars)])
-    (define const-name (string->symbol (string-upcase (symbol->string var))))
-    (when (operator-exists? const-name)
+  (for* ([var vars]
+         [const (all-constants)])
+    (when (string-ci=? (symbol->string var) (symbol->string const))
       (warn 'strange-variable
             #:url "faq.html#strange-variable"
             "unusual variable ~a; did you mean ~a?"
             var
-            const-name))))
+            const))))
 
 (define (our-read-syntax port name)
   (parameterize ([read-decimal-as-inexact false])

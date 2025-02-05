@@ -1,30 +1,44 @@
 #!/bin/bash
 
-# exit immediately upon first error, log every command executed
+# exit immediately upon first error
 set -e -x
 
-# Seed is fixed for the whole day; this way two branches run the same seed
+# lowered number of cores from 6 to 4 to avoid pagetable error
+# caused by heavy use of FFI by eggmath.rkt
+CORES=4
 SEED=$(date "+%Y%j")
-BENCHDIR="$1"; shift
-REPORTDIR="$1"; shift
 
-mkdir -p "$REPORTDIR"
-rm -rf "reports"/* || echo "nothing to delete"
-
-# run
-dirs=""
-for bench in "$BENCHDIR"/*; do
-  name=$(basename "$bench" .fpcore)
-  rm -rf "$REPORTDIR"/"$name"
-
-  racket -y "src/main.rkt" report \
-         --seed "$SEED" \
-         "$@" \
-         "$bench" "$REPORTDIR"/"$name"
-  
-  dirs="$dirs $name";
+# determine physical directory of this script
+src="${BASH_SOURCE[0]}"
+while [ -L "$src" ]; do
+  dir="$(cd -P "$(dirname "$src")" && pwd)"
+  src="$(readlink "$src")"
+  [[ $src != /* ]] && src="$dir/$src"
 done
 
-# merge reports
-racket -y infra/merge.rkt "$REPORTDIR" $dirs
+INFRA_DIR="$(cd -P "$(dirname "$src")" && pwd)"
+BENCH_DIR="$INFRA_DIR"/../bench
+
+# check arguments
+if [ -z "$1" ]; then
+  echo "Usage: $0 <output_dir>"
+  exit 1
+else
+  OUT_DIR="$1"; shift
+  FLAGS="$@"
+fi
+
+# run
+RECURSE=1 LOG=1 \
+  bash "$INFRA_DIR"/run.sh \
+    "$BENCH_DIR" "$OUT_DIR" \
+    --profile \
+    --seed "$SEED" \
+    --threads "$CORES" \
+    $FLAGS
+
+# upload
+if [ "$?" -eq 0 ]; then
+  bash $INFRA_DIR/publish.sh upload "$OUT_DIR"
+fi
 

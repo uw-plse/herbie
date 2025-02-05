@@ -83,8 +83,10 @@
                               #;(log ,log-x ,exp-x))))
 
 (define (taylor-alts starting-exprs altns global-batch)
-  (define specs (map prog->spec starting-exprs))
-  (define free-vars (map free-variables specs))
+  (define exprs
+    (for/list ([expr (in-list starting-exprs)])
+      (prog->spec expr)))
+  (define free-vars (map free-variables exprs))
   (define vars (context-vars (*context*)))
 
   (reap [sow]
@@ -92,21 +94,22 @@
         (for* ([var (in-list vars)]
                [transform-type transforms-to-try])
           (match-define (list name f finv) transform-type)
-          (define timeline-stop! (timeline-start! 'series (~a specs) (~a var) (~a name)))
-          (define genexprs (approximate specs var #:transform (cons f finv)))
+          (define timeline-stop! (timeline-start! 'series (~a exprs) (~a var) (~a name)))
+          (define genexprs (approximate exprs var #:transform (cons f finv)))
           (for ([genexpr (in-list genexprs)]
-                [spec (in-list specs)]
-                [expr (in-list starting-exprs)]
                 [altn (in-list altns)]
                 [fv (in-list free-vars)]
-                #:when (set-member? fv var)) ; check whether var exists in expr at all
+                #:when (member var fv)) ; check whether var exists in expr at all
             (for ([i (in-range (*taylor-order-limit*))])
-              (define repr (repr-of expr (*context*)))
-              (define gen (approx spec (hole (representation-name repr) (genexpr))))
-              (define idx (mutable-batch-munge! global-batch-mutable gen)) ; Munge gen
-              (sow (alt (batchref global-batch idx) `(taylor ,name ,var) (list altn) '()))))
+              (define gen (genexpr))
+              (unless (spec-has-nan? gen)
+                (define idx (mutable-batch-munge! global-batch-mutable gen)) ; Munge gen
+                (sow (alt (batchref global-batch idx) `(taylor ,name ,var) (list altn) '())))))
           (timeline-stop!))
         (batch-copy-mutable-nodes! global-batch global-batch-mutable))) ; Update global-batch
+
+(define (spec-has-nan? expr)
+  (expr-contains? expr (lambda (term) (eq? term 'NAN))))
 
 (define (run-taylor starting-exprs altns global-batch)
   (timeline-event! 'series)
@@ -119,7 +122,7 @@
   (timeline-push! 'outputs (map ~a (map (compose debatchref alt-expr) approxs)))
   (timeline-push! 'count (length altns) (length approxs))
 
-  approxs)
+  (lower-approximations approxs global-batch))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;; Recursive Rewrite ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -127,9 +130,14 @@
   (timeline-event! 'rewrite)
 
   ; generate required rules
-  (define rules (*rules*))
+  (define rules (real-rules (*rules*)))
   (define lifting-rules (platform-lifting-rules))
   (define lowering-rules (platform-lowering-rules))
+
+  (define extractor
+    (typed-egg-batch-extractor
+     (if (*egraph-platform-cost*) platform-egg-cost-proc default-egg-cost-proc)
+     global-batch))
 
   ; egg schedule (3-phases for mathematical rewrites and implementation selection)
   (define schedule
@@ -158,7 +166,7 @@
           (for ([batchrefs (in-list batchrefss)]
                 [altn (in-list altns)])
             (for ([batchref* (in-list batchrefs)])
-              (sow (alt batchref* (list 'rr runner #f) (list altn) '()))))))
+              (sow (alt batchref* (list 'rr runner #f #f) (list altn) '()))))))
 
   (timeline-push! 'outputs (map (compose ~a debatchref alt-expr) rewritten))
   (timeline-push! 'count (length altns) (length rewritten))
@@ -175,7 +183,7 @@
   ; Starting alternatives
   (define start-altns
     (for/list ([expr (in-list exprs)]
-               [root (in-vector (batch-roots global-batch))])
+               [root (batch-roots global-batch)])
       (define repr (repr-of expr (*context*)))
       (alt (batchref global-batch root) (list 'patch expr repr) '() '())))
 
@@ -188,7 +196,7 @@
   ; Recursive rewrite
   (define rewritten
     (if (flag-set? 'generate 'rr)
-        (run-rr (append start-altns approximations) global-batch)
+        (run-rr start-altns global-batch)
         '()))
 
-  (remove-duplicates rewritten #:key (λ (x) (batchref-idx (alt-expr x)))))
+  (remove-duplicates (append approximations rewritten) #:key (λ (x) (batchref-idx (alt-expr x)))))

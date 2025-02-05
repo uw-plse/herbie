@@ -49,25 +49,21 @@
 
 (define (splice-proof-step step)
   (let/ec k
-    (let loop ([expr step]
-               [loc '()])
-      (match expr
-        [(list 'Rewrite=> rule sub)
-         (define loc* (reverse loc))
-         (k 'Rewrite=> rule loc* (location-do loc* step (λ _ sub)))]
-        [(list 'Rewrite<= rule sub)
-         (define loc* (reverse loc))
-         (k 'Rewrite<= rule loc* (location-do loc* step (λ _ sub)))]
-        [(approx spec impl)
-         (loop spec (cons 1 loc))
-         (loop impl (cons 2 loc))]
-        [(hole prec spec) (loop spec (cons 1 loc))]
-        [(list op args ...)
-         (for ([arg (in-list args)]
-               [i (in-naturals 1)])
-           (loop arg (cons i loc)))]
-        [_ (void)]))
-    (k 'Goal #f '() step)))
+          (let loop ([expr step]
+                     [loc '()])
+            (match expr
+              [(list 'Rewrite=> rule sub)
+               (define loc* (reverse loc))
+               (k 'Rewrite=> rule loc* (location-do loc* step (λ _ sub)))]
+              [(list 'Rewrite<= rule sub)
+               (define loc* (reverse loc))
+               (k 'Rewrite<= rule loc* (location-do loc* step (λ _ sub)))]
+              [(list op args ...)
+               (for ([arg (in-list args)]
+                     [i (in-naturals 1)])
+                 (loop arg (cons i loc)))]
+              [_ (void)]))
+          (k 'Goal #f '() step)))
 
 (define (altn-errors altn pcontext pcontext2 ctx)
   (define repr (context-repr ctx))
@@ -77,17 +73,16 @@
   (values (format-accuracy err repr-bits #:unit "%")
           (format "~a on training set" (format-accuracy err2 repr-bits #:unit "%"))))
 
+(define (remove-literals expr)
+  (match expr
+    [(? symbol?) expr]
+    [(? number?) expr]
+    [(? literal?) (literal-value expr)]
+    [(approx spec impl) (approx (remove-literals spec) (remove-literals impl))]
+    [(list op args ...) (cons op (map remove-literals args))]))
+
 (define (expr->fpcore expr ctx #:ident [ident #f])
-  (list 'FPCore
-        (context-vars ctx)
-        (let loop ([expr expr])
-          (match expr
-            [(? symbol?) expr]
-            [(? number?) expr]
-            [(? literal?) (literal-value expr)]
-            [(approx spec impl) (loop impl)]
-            [(hole precision spec) (loop spec)]
-            [(list op args ...) (cons op (map loop args))]))))
+  (list 'FPCore (context-vars ctx) (remove-literals expr)))
 
 (define (mixed->fpcore expr ctx)
   (define expr*
@@ -97,7 +92,6 @@
         [(? number?) expr]
         [(? literal?) (literal-value expr)]
         [(approx _ impl) (loop impl)]
-        [(hole precision spec) (loop spec)]
         [`(if ,cond ,ift ,iff)
          `(if ,(loop cond)
               ,(loop ift)
@@ -157,11 +151,11 @@
                 ,(core->tex core #:loc (and loc (cons 2 loc)) #:color "blue")
                 "\\]")))]
 
-    [(alt prog `(simplify ,loc ,input ,proof) `(,prev) _)
+    [(alt prog `(simplify ,loc ,input ,proof ,soundiness) `(,prev) _)
      (define-values (err err2) (altn-errors altn pcontext pcontext2 ctx))
      `(,@(render-history prev pcontext pcontext2 ctx)
        (li ,(if proof
-                (render-proof proof pcontext ctx)
+                (render-proof proof soundiness pcontext ctx)
                 ""))
        (li (p "Simplified" (span ((class "error") [title ,err2]) ,err))
            (div ((class "math")) "\\[\\leadsto " ,(program->tex prog ctx #:loc loc) "\\]")))]
@@ -178,19 +172,20 @@
        (li (p "Final simplification" (span ((class "error") [title ,err2]) ,err))
            (div ((class "math")) "\\[\\leadsto " ,(program->tex prog ctx) "\\]")))]
 
-    [(alt prog `(rr ,loc ,input ,proof) `(,prev) _)
+    [(alt prog `(rr ,loc ,input ,proof ,soundiness) `(,prev) _)
      (define-values (err err2) (altn-errors altn pcontext pcontext2 ctx))
      `(,@(render-history prev pcontext pcontext2 ctx)
        (li ,(if proof
-                (render-proof proof pcontext ctx)
+                (render-proof proof soundiness pcontext ctx)
                 ""))
        (li (p "Applied rewrites" (span ((class "error") [title ,err2]) ,err))
            (div ((class "math")) "\\[\\leadsto " ,(program->tex prog ctx #:loc loc) "\\]")))]))
 
-(define (render-proof proof pcontext ctx)
+(define (render-proof proof soundiness pcontext ctx)
   `(div ((class "proof"))
         (details (summary "Step-by-step derivation")
-                 (ol ,@(for/list ([step proof])
+                 (ol ,@(for/list ([step proof]
+                                  [sound soundiness])
                          (define-values (dir rule loc expr) (splice-proof-step step))
                          ;; need to handle mixed real/float expressions
                          (define-values (err prog)
@@ -200,14 +195,25 @@
                                                        (representation-total-bits (context-repr ctx)))
                                       (program->fpcore expr ctx))]
                              [else (values "N/A" (mixed->fpcore expr ctx))]))
+                         ;; soundiness
+                         (define num-increase
+                           (if sound
+                               (first sound)
+                               "N/A"))
+                         (define num-decrease
+                           (if sound
+                               (second sound)
+                               "N/A"))
                          ; the proof
                          (if (equal? dir 'Goal)
                              ""
                              `(li ,(let ([dir (match dir
                                                 ['Rewrite<= "right to left"]
-                                                ['Rewrite=> "left to right"])])
+                                                ['Rewrite=> "left to right"])]
+                                         [tag (string-append (format " ↑ ~a" num-increase)
+                                                             (format " ↓ ~a" num-decrease))])
                                      `(p (code ([title ,dir]) ,(~a rule))
-                                         (span ((class "error")) ,err)))
+                                         (span ((class "error") [title ,tag]) ,err)))
                                   (div ((class "math"))
                                        "\\[\\leadsto "
                                        ,(core->tex prog #:loc (and loc (cons 2 loc)) #:color "blue")
@@ -256,12 +262,12 @@
             (error . ,err)
             (training-error . ,err2))]
 
-    [(alt prog `(simplify ,loc ,input ,proof) `(,prev) _)
+    [(alt prog `(simplify ,loc ,input ,proof ,soundiness) `(,prev) _)
      `#hash((program . ,(fpcore->string (expr->fpcore prog ctx)))
             (type . "simplify")
             (prev . ,(render-json prev pcontext pcontext2 ctx))
             (proof . ,(if proof
-                          (render-proof-json proof pcontext ctx)
+                          (render-proof-json proof soundiness pcontext ctx)
                           (json-null)))
             (loc . ,loc)
             (error . ,err)
@@ -281,12 +287,12 @@
             (error . ,err)
             (training-error . ,err2))]
 
-    [(alt prog `(rr ,loc ,input ,proof) `(,prev) _)
+    [(alt prog `(rr ,loc ,input ,proof ,soundiness) `(,prev) _)
      `#hash((program . ,(fpcore->string (expr->fpcore prog ctx)))
             (type . "rr")
             (prev . ,(render-json prev pcontext pcontext2 ctx))
             (proof . ,(if proof
-                          (render-proof-json proof pcontext ctx)
+                          (render-proof-json proof soundiness pcontext ctx)
                           (json-null)))
             (loc . ,loc)
             (error . ,err)
@@ -300,12 +306,22 @@
             (training-error . ,err2)
             (preprocessing . ,(map (curry map symbol->string) preprocessing)))]))
 
-(define (render-proof-json proof pcontext ctx)
-  (for/list ([step proof])
+(define (render-proof-json proof soundiness pcontext ctx)
+  (for/list ([step proof]
+             [sound soundiness])
     (define-values (dir rule loc expr) (splice-proof-step step))
     (define err
       (if (impl-prog? expr)
           (errors-score (errors expr pcontext ctx))
+          "N/A"))
+
+    (define num-increase
+      (if sound
+          (first sound)
+          "N/A"))
+    (define num-decrease
+      (if sound
+          (second sound)
           "N/A"))
 
     `#hash((error . ,err)
@@ -315,4 +331,5 @@
                            ['Rewrite=> "ltr"]
                            ['Goal "goal"]))
            (rule . ,(~a rule))
-           (loc . ,loc))))
+           (loc . ,loc)
+           (tag . ,(string-append (format " ↑ ~a" num-increase) (format " ↓ ~a" num-decrease))))))

@@ -2,38 +2,31 @@
 
 (require "syntax/types.rkt"
          "utils/errors.rkt"
-         "syntax/platform.rkt"
          (submod "syntax/types.rkt" internals)
          (submod "syntax/syntax.rkt" internals)
-         (submod "syntax/platform.rkt" internals))
-
-(define-syntax-rule (define-ruleset _ ...)
-  (void))
-(define-syntax-rule (define-ruleset* _ ...)
-  (void))
-(define (register-ruleset! . args)
-  (void))
-(define (register-conversion-generator! proc)
-  (void))
+         (submod "syntax/platform.rkt" internals)
+         (submod "core/rules.rkt" internals))
 
 (provide define-type
          define-representation
          define-operator-impl
          define-operator
-         define-ruleset*
          define-ruleset
+         define-ruleset*
+         register-ruleset!
          register-operator-impl!
          register-representation!
          register-representation-alias!
          register-conversion-generator!
          register-generator!
          register-operator!
-         register-ruleset!
          (struct-out representation)
          get-representation
          warn
          define-platform
+         get-platform
          register-platform!
          platform-union
          platform-intersect
-         platform-subtract)
+         platform-subtract
+         platform-filter)

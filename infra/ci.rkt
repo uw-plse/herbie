@@ -44,7 +44,7 @@
           (override-test-precision the-test (*precision*))
           the-test))
     (define result (run-herbie 'improve the-test* #:seed seed))
-    (match-define (job-result _ test status time timeline profile warnings backend) result)
+    (match-define (job-result _ test status time timeline warnings backend) result)
     (match status
       ['success
        (match-define (improve-result preprocess pctxs start targets end bogosity) backend)
@@ -116,7 +116,9 @@
                 [("--platform")
                  platform
                  "Which platform to use for tests"
-                 (activate-platform! (string->symbol platform))]
+                 (*platform-name* (string->symbol platform))
+                 (*active-platform* (get-platform (*platform-name*)))
+                 (activate-platform! (*active-platform*))]
                 [("--precision")
                  prec
                  "Which precision to use for tests"

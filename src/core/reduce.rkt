@@ -3,15 +3,15 @@
 (require "../utils/common.rkt"
          "programs.rkt"
          "../syntax/syntax.rkt")
-(provide reduce)
+(provide simplify)
 
 ;; Cancellation's goal is to cancel (additively or multiplicatively) like terms.
 ;; It uses commutativity, identities, inverses, associativity,
 ;; distributativity, and function inverses.
 
-(define/reset reduce-cache (make-hash))
+(define/reset simplify-cache (make-hash))
 
-(define/reset reduce-node-cache (make-hash))
+(define/reset simplify-node-cache (make-hash))
 
 ;; This is a transcription of egg-herbie/src/math.rs, lines 97-149
 (define (eval-application op . args)
@@ -59,23 +59,25 @@
   (check-equal? (eval-application 'log 1) 0)
   (check-equal? (eval-application 'exp 2) #f)) ; Not exact
 
-(define (reduce expr)
-  (hash-ref! (reduce-cache) expr (λ () (reduce* expr))))
+(define (simplify expr)
+  (hash-ref! (simplify-cache) expr (λ () (simplify* expr))))
 
-(define (reduce* expr)
+(define (simplify* expr)
   (match expr
     [(? number?) expr]
     [(? symbol?) expr]
+    ; conversion (e.g. posit16->f64)
+    [(list (? cast-impl? op) body) (list op (simplify body))]
     [`(,(and (or '+ '- '*) op) ,args ...) ; v-ary
-     (define args* (map reduce args))
+     (define args* (map simplify args))
      (define val (apply eval-application op args*))
-     (or val (reduce-node (list* op args*)))]
+     (or val (simplify-node (list* op args*)))]
     [`(,op ,args ...)
-     (define args* (map reduce args))
+     (define args* (map simplify args))
      (define val (apply eval-application op args*))
-     (or val (reduce-node (list* op args*)))]))
+     (or val (simplify-node (list* op args*)))]))
 
-(define (reduce-evaluation expr)
+(define (simplify-evaluation expr)
   (match expr
     ['(sin 0) 0]
     ['(cos 0) 1]
@@ -101,7 +103,7 @@
     ['(cos (/ (PI) 4)) '(/ (sqrt 2) 2)]
     [_ expr]))
 
-(define (reduce-inverses expr)
+(define (simplify-inverses expr)
   (match expr
     [`(tanh (atanh ,x)) x]
     [`(cosh (acosh ,x)) x]
@@ -119,19 +121,19 @@
     [`(pow (cbrt ,x) 3) x]
     [_ expr]))
 
-(define (reduce-node expr)
-  (hash-ref! (reduce-node-cache) expr (λ () (reduce-node* expr))))
+(define (simplify-node expr)
+  (hash-ref! (simplify-node-cache) expr (λ () (simplify-node* expr))))
 
-(define (reduce-node* expr)
-  (match (reduce-evaluation expr)
+(define (simplify-node* expr)
+  (match (simplify-evaluation expr)
     [(? number?) expr]
     [(? variable?) expr]
     [(or `(+ ,_ ...) `(- ,_ ...) `(neg ,_))
      (make-addition-node (combine-aterms (gather-additive-terms expr)))]
     [(or `(* ,_ ...) `(/ ,_ ...) `(sqrt ,_) `(cbrt ,_) `(pow ,_ ,_))
      (make-multiplication-node (combine-mterms (gather-multiplicative-terms expr)))]
-    [`(exp (* ,c (log ,x))) (reduce-node* `(pow ,x ,c))]
-    [else (reduce-inverses expr)]))
+    [`(exp (* ,c (log ,x))) (simplify-node* `(pow ,x ,c))]
+    [else (simplify-inverses expr)]))
 
 (define (negate-term term)
   (cons (- (car term)) (cdr term)))
@@ -152,7 +154,7 @@
       [`(/ ,arg) `((1 ,expr))]
       [`(/ ,arg ,args ...)
        (for/list ([term (recurse arg)])
-         (list* (car term) (reduce-node (list* '/ (cadr term) args)) (cons label (cddr term))))]
+         (list* (car term) (simplify-node (list* '/ (cadr term) args)) (cons label (cddr term))))]
 
       [`(pow ,arg 1) `((1 1))]
       [else `((1 ,expr))])))
@@ -280,7 +282,6 @@
 
 (define (make-multiplication-node term)
   (match (cons (car term) (make-multiplication-subnode (cdr term)))
-    [`(NAN . ,e) '(NAN)]
     [`(0 . ,e) 0]
     [`(1 . ()) 1]
     [`(1 . ,e) e]

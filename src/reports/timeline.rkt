@@ -16,10 +16,6 @@
 ;; This first part handles timelines for a single Herbie run
 
 (define (make-timeline name timeline #:info [info #f] #:path [path "."])
-  (define total-memory
-    (apply +
-           (for/list ([phase (in-list timeline)])
-             (second (first (dict-ref phase 'memory))))))
   `(html (head (meta ([charset "utf-8"]))
                (title "Metrics for " ,(~a name))
                (link ([rel "stylesheet"] [type "text/css"]
@@ -31,7 +27,7 @@
                                  `(("Report" . "index.html"))
                                  `(("Details" . "graph.html"))))
                ,(if info
-                    (render-about info total-memory)
+                    (render-about info)
                     "")
                ,(render-timeline timeline)
                ,(render-profile))))
@@ -60,7 +56,7 @@
   `(div ((class ,(format "timeline-block timeline-~a" type)) [id ,(format "timeline~a" n)])
         (h3 (a ([href ,(format "#timeline~a" n)]) ,(~a type))
             (span ((class "time")) ,(format-time time) " (" ,(format-percent time total-time) ")"))
-        (dl ,@(dict-call curr render-phase-memory 'memory 'gc-time)
+        (dl ,@(dict-call curr render-phase-memory 'memory)
             ,@(dict-call curr render-phase-algorithm 'method)
             ,@(dict-call curr render-phase-locations 'locations)
             ,@(dict-call curr render-phase-accuracy 'accuracy 'oracle 'baseline 'name 'link 'repr)
@@ -317,14 +313,12 @@
               (td ,(~r (apply + (map (curryr altnum 1) '(new fresh picked done))) #:group-sep " "))
               (td ,(~r (apply + (map altnum '(new fresh picked done))) #:group-sep " "))))))))
 
-(define (render-phase-memory mem gc-time)
+(define (render-phase-memory mem)
   (match-define (list live alloc) (car mem))
   `((dt "Memory") (dd ,(~r (/ live (expt 2 20)) #:group-sep " " #:precision '(= 1))
                       "MiB live, "
                       ,(~r (/ alloc (expt 2 20)) #:group-sep " " #:precision '(= 1))
-                      "MiB allocated; "
-                      ,(format-time gc-time)
-                      " collecting garbage")))
+                      "MiB allocated")))
 
 (define (render-phase-error min-error-table)
   (match-define (list min-error repr-name) (car min-error-table))
@@ -538,14 +532,16 @@
 
 ;; This next part handles summarizing several timelines into one details section for the report page.
 
-(define (render-about info total-memory)
+(define (render-about info)
   (match-define (report-info date
                              commit
                              branch
+                             hostname
                              seed
                              flags
                              points
                              iterations
+                             note
                              tests
                              merged-cost-accuracy)
     info)
@@ -558,6 +554,7 @@
                            (substring commit 0 8)))
                   " on "
                   ,branch))
+          (tr (th "Hostname:") (td ,hostname " with Racket " ,(version)))
           (tr (th "Seed:") (td ,(~a seed)))
           (tr (th "Parameters:")
               (td ,(~a (*num-points*)) " points for " ,(~a (*num-iterations*)) " iterations"))
@@ -578,9 +575,7 @@
                                      " "
                                      ,(~a class)
                                      ":"
-                                     ,(~a flag)))))))
-          (tr (th "Memory:")
-              (td ,(~r (/ total-memory (expt 2 20)) #:group-sep " " #:precision '(= 1)) " MB"))))
+                                     ,(~a flag)))))))))
 
 (define (render-profile)
   `(section ([id "profile"]) (h1 "Profiling") (p ((class "load-text")) "Loading profile data...")))

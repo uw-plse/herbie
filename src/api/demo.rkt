@@ -4,26 +4,26 @@
 (require racket/exn)
 (require openssl/sha1
          (rename-in xml [location? xml-location?]))
-(require web-server/configuration/responders
+(require web-server/servlet
+         web-server/servlet-env
          web-server/dispatch
-         web-server/dispatch/extend
          web-server/dispatchers/dispatch
+         web-server/dispatch/extend
          web-server/http/bindings
+         web-server/configuration/responders
          web-server/managers/none
-         web-server/safety-limits
-         web-server/servlet
-         web-server/servlet-env)
+         web-server/safety-limits)
 
-(require "../config.rkt"
+(require "../utils/common.rkt"
+         "../config.rkt"
          "../syntax/read.rkt"
-         "../utils/common.rkt"
          "../utils/errors.rkt")
-(require "../core/points.rkt"
-         "../syntax/sugar.rkt")
-(require "../reports/common.rkt"
-         "../reports/core2mathjs.rkt"
+(require "../syntax/sugar.rkt"
+         "../core/points.rkt")
+(require "datafile.rkt"
          "../reports/pages.rkt"
-         "datafile.rkt"
+         "../reports/common.rkt"
+         "../reports/core2mathjs.rkt"
          "server.rkt")
 
 (provide run-demo)
@@ -106,7 +106,10 @@
     [(and (*demo-output*) (file-exists? (build-path (*demo-output*) "results.json")))
      (next-dispatcher)]
     [else
-     (define info (make-report-info (get-improve-table-data) #:seed (get-seed)))
+     (define info
+       (make-report-info (get-improve-table-data)
+                         #:seed (get-seed)
+                         #:note (if (*demo?*) "Web demo results" "Herbie results")))
      (response 200
                #"OK"
                (current-seconds)
@@ -167,8 +170,8 @@
        `(form
          ([action ,(url improve)] [method "post"] [id "formula"] [data-progress ,(url improve-start)])
          (textarea ([name "formula"] [autofocus "true"]
-                                     [placeholder "e.g. (FPCore (x) (- (sqrt (+ x 1)) (sqrt x)))"]))
-         (input ([name "formula-math"] [placeholder "e.g. sqrt(x + 1) - sqrt(x)"]))
+                                     [placeholder "(FPCore (x) (- (sqrt (+ x 1)) (sqrt x)))"]))
+         (input ([name "formula-math"] [placeholder "sqrt(x + 1) - sqrt(x)"]))
          (table ([id "input-ranges"]))
          (ul ([id "errors"]))
          (ul ([id "warnings"]))
@@ -233,34 +236,36 @@
                (a ([href "./index.html"]) " See what formulas other users submitted."))]
             [else `("all formulas submitted here are " (a ([href "./index.html"]) "logged") ".")])))))
 
-(define ((post-with-json-response fn) req)
-  (define post-body (request-post-data/raw req))
-  (define post-data
-    (cond
-      [post-body (bytes->jsexpr post-body)]
-      [#t #f]))
-  (define resp
-    (with-handlers ([exn:fail? (λ (e) (hash 'error (exn->string e)))])
-      (fn post-data)))
-  (when (hash-has-key? resp 'error)
-    (eprintf "Error handling request: ~a\n" (hash-ref resp 'error)))
-  (if (hash-has-key? resp 'error)
-      (response 500
-                #"Bad Request"
-                (current-seconds)
-                APPLICATION/JSON-MIME-TYPE
-                (list (header #"Access-Control-Allow-Origin" (string->bytes/utf-8 "*")))
-                (λ (op) (write-json resp op)))
-      (response 200
-                #"OK"
-                (current-seconds)
-                APPLICATION/JSON-MIME-TYPE
-                (filter values
-                        (list (header #"Access-Control-Allow-Origin" (string->bytes/utf-8 "*"))
-                              (and (hash-has-key? resp 'job)
-                                   (header #"X-Herbie-Job-ID"
-                                           (string->bytes/utf-8 (hash-ref resp 'job))))))
-                (λ (op) (write-json resp op)))))
+(define (post-with-json-response fn)
+  (lambda (req)
+    (define post-body (request-post-data/raw req))
+    (define post-data
+      (cond
+        [post-body (bytes->jsexpr post-body)]
+        [#t #f]))
+    (define resp
+      (with-handlers ([exn:fail? (λ (e) (hash 'error (exn->string e)))])
+        (fn post-data)))
+    (if (hash-has-key? resp 'error)
+        (eprintf "Error handling request: ~a\n" (hash-ref resp 'error))
+        (eprintf "Success handling request\n"))
+    (if (hash-has-key? resp 'error)
+        (response 500
+                  #"Bad Request"
+                  (current-seconds)
+                  APPLICATION/JSON-MIME-TYPE
+                  (list (header #"Access-Control-Allow-Origin" (string->bytes/utf-8 "*")))
+                  (λ (op) (write-json resp op)))
+        (response 200
+                  #"OK"
+                  (current-seconds)
+                  APPLICATION/JSON-MIME-TYPE
+                  (filter values
+                          (list (header #"Access-Control-Allow-Origin" (string->bytes/utf-8 "*"))
+                                (and (hash-has-key? resp 'job)
+                                     (header #"X-Herbie-Job-ID"
+                                             (string->bytes/utf-8 (hash-ref resp 'job))))))
+                  (λ (op) (write-json resp op))))))
 
 (define (response/error title body)
   (response/full 400
@@ -313,14 +318,14 @@
        (when (eof-object? formula)
          (raise-herbie-error "no formula specified"))
        (define test (parse-test formula))
-       (define job-id
-         (start-job 'improve
-                    test
-                    #:seed (get-seed)
-                    #:pcontext #f
-                    #:profile? #f
-                    #:timeline-disabled? #f))
-       (body job-id))]
+       (define command
+         (create-job 'improve
+                     test
+                     #:seed (get-seed)
+                     #:pcontext #f
+                     #:profile? #f
+                     #:timeline-disabled? #f))
+       (body command))]
     [_
      (response/error "Demo Error"
                      `(p "You didn't specify a formula (or you specified several). "
@@ -331,7 +336,8 @@
 (define (improve-start req)
   (improve-common
    req
-   (λ (job-id)
+   (λ (command)
+     (define job-id (start-job command))
      (response/full 201
                     #"Job started"
                     (current-seconds)
@@ -379,7 +385,8 @@
 
 (define (improve req)
   (improve-common req
-                  (λ (job-id)
+                  (λ (command)
+                    (define job-id (start-job command))
                     (wait-for-job job-id)
                     (redirect-to (add-prefix (format "~a.~a/graph.html" job-id *herbie-commit*))
                                  see-other))
@@ -413,11 +420,11 @@
       body ...)
     (define sync-name
       (post-with-json-response (lambda (post-data)
-                                 (define job-id (function post-data))
+                                 (define job-id (start-job (function post-data)))
                                  (wait-for-job job-id))))
     (define async-name
       (post-with-json-response (lambda (post-data)
-                                 (define job-id (function post-data))
+                                 (define job-id (start-job (function post-data)))
                                  (hasheq 'job job-id 'path (make-path job-id)))))))
 
 ; /api/sample endpoint: test in console on demo page:
@@ -426,8 +433,9 @@
  ([sample-endpoint start-sample-endpoint] post-data)
  (define test (get-test post-data))
  (define seed (parse-seed post-data))
- (start-job 'sample test #:seed seed #:pcontext #f #:profile? #f #:timeline-disabled? #t))
+ (create-job 'sample test #:seed seed #:pcontext #f #:profile? #f #:timeline-disabled? #t))
 
+; (create-job 'explanations (get-test post-data) #:seed (get-seed post-data) #:pcontext (get-pcontext post-data) #:profile? #f #:timeline-disabled? #t)
 (define (get-test post-data)
   (define formula-str (hash-ref post-data 'formula))
   (define formula (read-syntax 'web (open-input-string formula-str)))
@@ -443,62 +451,67 @@
   (json->pcontext sample (test-context test)))
 
 (define-endpoint ([explanations-endpoint start-explanations-endpoint] post-data)
-                 (start-job 'explanations
-                            (get-test post-data)
-                            #:seed (parse-seed post-data)
-                            #:pcontext (get-pcontext post-data)
-                            #:profile? #f
-                            #:timeline-disabled? #t))
+                 (create-job 'explanations
+                             (get-test post-data)
+                             #:seed (parse-seed post-data)
+                             #:pcontext (get-pcontext post-data)
+                             #:profile? #f
+                             #:timeline-disabled? #t))
 
 (define-endpoint ([analyze-endpoint start-analyze-endpoint] post-data)
-                 (start-job 'errors
-                            (get-test post-data)
-                            #:seed (parse-seed post-data)
-                            #:pcontext (get-pcontext post-data)
-                            #:profile? #f
-                            #:timeline-disabled? #t))
+                 (create-job 'errors
+                             (get-test post-data)
+                             #:seed (parse-seed post-data)
+                             #:pcontext (get-pcontext post-data)
+                             #:profile? #f
+                             #:timeline-disabled? #t))
 
 ;; (await fetch('/api/exacts', {method: 'POST', body: JSON.stringify({formula: "(FPCore (x) (- (sqrt (+ x 1))))", points: [[1, 1]]})})).json()
 (define-endpoint ([exacts-endpoint start-exacts-endpoint] post-data)
-                 (start-job 'exacts
-                            (get-test post-data)
-                            #:seed (parse-seed post-data)
-                            #:pcontext (get-pcontext post-data)
-                            #:profile? #f
-                            #:timeline-disabled? #t))
+                 (create-job 'exacts
+                             (get-test post-data)
+                             #:seed (parse-seed post-data)
+                             #:pcontext (get-pcontext post-data)
+                             #:profile? #f
+                             #:timeline-disabled? #t))
 
 (define-endpoint ([calculate-endpoint start-calculate-endpoint] post-data)
-                 (start-job 'evaluate
-                            (get-test post-data)
-                            #:seed (parse-seed post-data)
-                            #:pcontext (get-pcontext post-data)
-                            #:profile? #f
-                            #:timeline-disabled? #t))
+                 (create-job 'evaluate
+                             (get-test post-data)
+                             #:seed (parse-seed post-data)
+                             #:pcontext (get-pcontext post-data)
+                             #:profile? #f
+                             #:timeline-disabled? #t))
 
 (define-endpoint ([local-error-endpoint start-local-error-endpoint] post-data)
-                 (start-job 'local-error
-                            (get-test post-data)
-                            #:seed (parse-seed post-data)
-                            #:pcontext (get-pcontext post-data)
-                            #:profile? #f
-                            #:timeline-disabled? #t))
+                 (create-job 'local-error
+                             (get-test post-data)
+                             #:seed (parse-seed post-data)
+                             #:pcontext (get-pcontext post-data)
+                             #:profile? #f
+                             #:timeline-disabled? #t))
 
 (define-endpoint ([alternatives-endpoint start-alternatives-endpoint] post-data)
-                 (start-job 'alternatives
-                            (get-test post-data)
-                            #:seed (parse-seed post-data)
-                            #:pcontext (get-pcontext post-data)
-                            #:profile? #f
-                            #:timeline-disabled? #t))
+                 (create-job 'alternatives
+                             (get-test post-data)
+                             #:seed (parse-seed post-data)
+                             #:pcontext (get-pcontext post-data)
+                             #:profile? #f
+                             #:timeline-disabled? #t))
 
-(define-endpoint
- ([cost-endpoint start-cost-endpoint] post-data)
- (start-job 'cost (get-test post-data) #:seed #f #:pcontext #f #:profile? #f #:timeline-disabled? #f))
+(define-endpoint ([cost-endpoint start-cost-endpoint] post-data)
+                 (create-job 'cost
+                             (get-test post-data)
+                             #:seed #f
+                             #:pcontext #f
+                             #:profile? #f
+                             #:timeline-disabled? #f))
 
 (define ->mathjs-endpoint
   (post-with-json-response (lambda (post-data)
                              (define formula
                                (read-syntax 'web (open-input-string (hash-ref post-data 'formula))))
+                             (eprintf "Converting to Math.js ~a..." formula)
 
                              (define result (core->mathjs (syntax->datum formula)))
                              (hasheq 'mathjs result))))
@@ -507,7 +520,9 @@
   (post-with-json-response (lambda (post-data)
                              ; FPCore formula and target language
                              (define formula (read (open-input-string (hash-ref post-data 'formula))))
+                             (eprintf "Translating formula: ~a...\n" formula)
                              (define target-lang (hash-ref post-data 'language))
+                             (eprintf "Target language: ~a...\n" target-lang)
                              ; Select the appropriate conversion function
                              (define lang-converter
                                (case target-lang
@@ -524,6 +539,7 @@
 
                              ; convert the expression
                              (define converted (lang-converter formula "expr"))
+                             (eprintf "Converted Expression: \n~a...\n" converted)
                              (hasheq 'result converted 'language target-lang))))
 
 (define (run-demo #:quiet [quiet? #f]

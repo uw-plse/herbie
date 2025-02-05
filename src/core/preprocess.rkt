@@ -1,12 +1,18 @@
 #lang racket
 
-(require "../syntax/platform.rkt"
-         "../syntax/sugar.rkt"
+(require "egg-herbie.rkt"
+         "simplify.rkt"
+         "rules.rkt"
+         "../syntax/platform.rkt"
          "../syntax/syntax.rkt"
+         "../syntax/sugar.rkt"
          "../syntax/types.rkt"
          "../utils/alternative.rkt"
          "../utils/common.rkt"
          "../utils/errors.rkt"
+         "programs.rkt"
+         "points.rkt"
+         "../utils/timeline.rkt"
          "../utils/float.rkt"
          "batch.rkt"
          "egglog-herbie.rkt"
@@ -17,11 +23,15 @@
          remove-unnecessary-preprocessing)
 
 (define (has-fabs-neg-impls? repr)
-  (and (get-fpcore-impl '- (repr->prop repr) (list repr))
-       (get-fpcore-impl 'fabs (repr->prop repr) (list repr))))
+  (with-handlers ([exn:fail:user:herbie? (const #f)])
+    (get-fpcore-impl '- (repr->prop repr) (list repr))
+    (get-fpcore-impl 'fabs (repr->prop repr) (list repr))
+    #t))
 
 (define (has-copysign-impl? repr)
-  (get-fpcore-impl 'copysign (repr->prop repr) (list repr repr)))
+  (with-handlers ([exn:fail:user:herbie? (const #f)])
+    (get-fpcore-impl 'copysign (repr->prop repr) (list repr repr))
+    #t))
 
 ;; The even identities: f(x) = f(-x)
 ;; Requires `neg` and `fabs` operator implementations.
@@ -29,7 +39,7 @@
   (for/list ([var (in-list (context-vars ctx))]
              [repr (in-list (context-var-reprs ctx))]
              #:when (has-fabs-neg-impls? repr))
-    (cons `(abs ,var) (replace-expression spec var `(neg ,var)))))
+    (list 'even var (replace-expression spec var `(neg ,var)))))
 
 ;; The odd identities: f(x) = -f(-x)
 ;; Requires `neg` and `fabs` operator implementations.
@@ -37,18 +47,18 @@
   (for/list ([var (in-list (context-vars ctx))]
              [repr (in-list (context-var-reprs ctx))]
              #:when (and (has-fabs-neg-impls? repr) (has-copysign-impl? repr)))
-    (cons `(negabs ,var) (replace-expression `(neg ,spec) var `(neg ,var)))))
+    (list 'odd var (replace-expression `(neg ,spec) var `(neg ,var)))))
 
 ;; Swap identities: f(a, b) = f(b, a)
 (define (make-swap-identities spec ctx)
   (define pairs (combinations (context-vars ctx) 2))
   (for/list ([pair (in-list pairs)])
     (match-define (list a b) pair)
-    (cons `(swap ,a ,b) (replace-vars `((,a . ,b) (,b . ,a)) spec))))
+    (list 'swap pair (replace-vars `((,a . ,b) (,b . ,a)) spec))))
 
 ;; Initial simplify
 (define (initial-simplify expr ctx)
-  (define rules (*simplify-rules*))
+  (define rules (real-rules (*simplify-rules*)))
   (define lifting-rules (platform-lifting-rules))
   (define lowering-rules (platform-lowering-rules))
 
@@ -58,17 +68,21 @@
 
   ; egg query
   (define batch (progs->batch (list expr)))
-  (define runner (make-egraph batch (batch-roots batch) (list (context-repr ctx)) schedule))
+  (define runner (make-egg-runner batch (batch-roots batch) (list (context-repr ctx)) schedule))
 
   ; run egg
-  (define simplified (simplify-batch runner batch))
+  (define simplified
+    (simplify-batch runner
+                    (typed-egg-batch-extractor
+                     (if (*egraph-platform-cost*) platform-egg-cost-proc default-egg-cost-proc)
+                     batch)))
 
   ; alternatives
   (define start-alt (make-alt expr))
   (cons start-alt
         (remove-duplicates
          (for/list ([batchreff (rest simplified)])
-           (alt (debatchref batchreff) `(simplify () ,runner #f) (list start-alt) '()))
+           (alt (debatchref batchreff) `(simplify () ,runner #f #f) (list start-alt) '()))
          alt-equal?)))
 
 ;; See https://pavpanchekha.com/blog/symmetric-expressions.html
@@ -81,10 +95,17 @@
   (define swap-identities (make-swap-identities spec ctx))
   (define identities (append even-identities odd-identities swap-identities))
 
-  ;; make egg runner
-  (define rules (*simplify-rules*))
+  (define specs
+    (for/list ([ident (in-list identities)])
+      (match ident
+        [(list 'even _ spec) spec]
+        [(list 'odd _ spec) spec]
+        [(list 'swap _ spec) spec])))
 
-  (define batch (progs->batch (cons spec (map cdr identities))))
+  ;; make egg runner
+  (define rules (real-rules (*simplify-rules*)))
+
+  (define batch (progs->batch specs))
   (define runner
     (make-egg-runner batch
                      (batch-roots batch)
@@ -102,21 +123,17 @@
         (run-egg runner `(equal? . ,expr-pairs))))
 
   ;; collect equalities
-  (define abs-instrs
-    (for/list ([(ident spec*) (in-dict even-identities)]
-               #:when (egraph-equal? runner spec spec*))
-      ident))
+  (define abs-instrs '())
+  (define negabs-instrs '())
+  (define swaps '())
+  (for ([ident (in-list identities)]
+        [expr-equal? (in-list equal?-lst)]
+        #:when expr-equal?)
+    (match ident
+      [(list 'even var _) (set! abs-instrs (cons (list 'abs var) abs-instrs))]
+      [(list 'odd var _) (set! negabs-instrs (cons (list 'negabs var) negabs-instrs))]
+      [(list 'swap pair _) (set! swaps (cons pair swaps))]))
 
-  (define negabs-instrs
-    (for/list ([(ident spec*) (in-dict odd-identities)]
-               #:when (egraph-equal? runner spec spec*))
-      ident))
-
-  (define swaps
-    (for/list ([(ident spec*) (in-dict swap-identities)]
-               #:when (egraph-equal? runner spec spec*))
-      (match-define (list 'swap a b) ident)
-      (list a b)))
   (define components (connected-components (context-vars ctx) swaps))
   (define sort-instrs
     (for/list ([component (in-list components)]
@@ -159,9 +176,9 @@
        (error 'instruction->operator "component should always be a subsequence of variables"))
      (define indices (indexes-where variables (curryr member component)))
      (lambda (x y)
-       (define subsequence (map (curry list-ref x) indices))
-       (define sorted (sort* subsequence))
-       (values (list-set* x indices sorted) y))]
+       (let* ([subsequence (map (curry list-ref x) indices)]
+              [sorted (sort* subsequence)])
+         (values (list-set* x indices sorted) y)))]
     [(list 'abs variable)
      (define index (index-of variables variable))
      (define var-repr (context-lookup context variable))

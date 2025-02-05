@@ -4,13 +4,17 @@
          raise-herbie-syntax-error
          raise-herbie-sampling-error
          raise-herbie-missing-error
+         syntax->error-format-string
          exception->datum
          herbie-error->string
+         herbie-error-url
          (struct-out exn:fail:user:herbie)
+         (struct-out exn:fail:user:herbie:syntax)
          (struct-out exn:fail:user:herbie:sampling)
          (struct-out exn:fail:user:herbie:missing)
          warn
-         warning-log)
+         warning-log
+         *warnings-disabled*)
 
 (struct exn:fail:user:herbie exn:fail:user (url) #:extra-constructor-name make-exn:fail:user:herbie)
 
@@ -115,11 +119,13 @@
               *herbie-version*)]
      [else (old-error-display-handler message err)])))
 
+(define *warnings-disabled* (make-parameter false))
+
 (define/reset warnings (mutable-set))
 (define/reset warning-log '())
 
 (define (warn type message #:url [url #f] #:extra [extra '()] . args)
-  (unless (set-member? (warnings) type)
+  (unless (or (*warnings-disabled*) (set-member? (warnings) type))
     (eprintf "Warning: ~a\n" (apply format message args))
     (for ([line extra])
       (eprintf "  ~a\n" line))

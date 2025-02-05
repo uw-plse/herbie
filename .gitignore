@@ -6,7 +6,6 @@
 # Standard directories
 www/demo
 demo.log
-test.fpcore
 
 # Related repositories
 /reports
