@@ -33,6 +33,8 @@
   (require "../syntax/load-plugin.rkt")
   (load-herbie-builtins))
 
+(define debugging? #f)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FFI utils
 
@@ -105,18 +107,19 @@
   ; node -> natural
   ; inserts an expression into the e-graph, returning its e-class id.
 
-  #;(define h (make-hash))
+  (define h (make-hash))
   (define (insert-node! node root?)
     (define idx
       (match node
         [(list op ids ...) (egraph_add_node ptr (symbol->string op) (list->u32vec ids) root?)]
         [(? symbol? x) (egraph_add_node ptr (symbol->string x) 0-vec root?)]
         [(? number? n) (egraph_add_node ptr (number->string n) 0-vec root?)]))
-    #;(hash-ref h
+    (when debugging?
+      (hash-ref h
                 idx
                 (λ ()
                   (hash-set! h idx #t)
-                  (printf "Eclass ~a: ~a\n" idx node)))
+                  (printf "Eclass ~a: ~a\n" idx node))))
     idx)
 
   (define insert-batch (batch-remove-zombie batch roots))
@@ -125,7 +128,8 @@
   (define (remap x)
     (vector-ref mappings x))
 
-  #;(printf "Building egraph ...\n")
+  (when debugging?
+    (printf "Building egraph ...\n"))
 
   (define nodes-length (batch-length insert-batch))
 
@@ -569,6 +573,8 @@
 ;;  - ops/impls: its output type/representation
 ;; NOTE: we can constrain "every" type by using the platform.
 (define (enode-type enode ctx lookup)
+  (when debugging?
+    (printf "~a ~a ~a\n" enode ctx lookup))
   (match enode
     [(? number?) (cons 'real (platform-reprs (*active-platform*)))] ; number
     [(? repr-exists?) (get-representation enode)] ; useless but okay
@@ -578,8 +584,27 @@
      (list repr (representation-type repr))]
     [(cons f ids) ; application
      (cond
-       [(eq? f '$approx) (platform-reprs (*active-platform*))]
-       [(eq? f 'if) (all-reprs/types)]
+       [(eq? f '$approx)
+        (match-define (list _ impl) ids)
+        ; here we assume that all the enodes in an eclass have the same type
+        ; that's why we take only (car (lookup impl)), not the whole eclass to define a type
+        (define impl-type (enode-type (car (lookup impl)) ctx lookup))
+        impl-type]
+       [(eq? f 'if)
+        (match-define (list _ tru fls) ids)
+        ; here we assume that all the enodes in an eclass have the same type
+        ; that's why we take only (car (lookup tru)), not the whole eclass to define a type
+        (define tru-type
+          (enode-type (car (filter (λ (x) (not (equal? x enode))) (lookup tru))) ctx lookup))
+        (define fls-type
+          (enode-type (car (filter (λ (x) (not (equal? x enode))) (lookup fls))) ctx lookup))
+        (when (not (equal? tru-type fls-type))
+          (error (format
+                  "Rewrite is incorrect, types of children are different, ~a, true=~a, false=~a\n"
+                  enode
+                  (lookup tru)
+                  (lookup fls))))
+        tru-type]
        [(eq? f '$hole)
         (define repr-idx (car ids))
         (define repr (car (lookup repr-idx))) ; lookup is garaunteed to return eclass '(type)
@@ -661,7 +686,8 @@
   ;            | (<symbol> . <u32vector>)
   ; NOTE: nodes in typed eclasses are reversed relative
   ; to their position in untyped eclasses
-  #;(printf "Extracting egraph ...\n")
+  (when debugging?
+    (printf "Extracting egraph ...\n"))
   (for ([eid (in-u32vector eclass-ids)]
         [idx (in-naturals)])
     (define enodes (lookup-eclass eid))
@@ -675,16 +701,18 @@
                (vector-set! id->parents child-id (cons idx (vector-ref id->parents child-id)))))]
         [(? symbol?) (vector-set! id->leaf? idx #t)]
         [(? number?) (vector-set! id->leaf? idx #t)]
-        ; it was a hole expressions that got pruned
-        #;(printf "PRUNED HOLE: ~a which refers to ~a\n"
-                  enode
-                  (lookup-eclass (u32vector-ref (cdr enode) 1)))
-        [(list) enode*])
+        [(list) ; it was a hole expressions that got pruned
+         (when debugging?
+           (printf "PRUNED HOLE: ~a which refers to ~a\n"
+                   enode
+                   (lookup-eclass (u32vector-ref (cdr enode) 1))))
+         enode*])
       (unless (empty? enode*)
         (vector-set! id->eclass idx (cons enode* (vector-ref id->eclass idx)))))
     (when (empty? (vector-ref id->eclass idx))
       (error "WARNING, EMPTY ECLASS!!!"))
-    #;(printf "Eclass ~a: ~a\n" idx (vector-ref id->eclass idx)))
+    (when debugging?
+      (printf "Eclass ~a: ~a\n" idx (vector-ref id->eclass idx))))
 
   ; dedup `id->parents` values
   (for ([id (in-range n)])
@@ -781,7 +809,8 @@
                         (cons op ids*)])))
       (define type (remove-duplicates (map (λ (x) (enode-type x ctx lookup)) eclass)))
       (when (> (length type) 1)
-        #;(printf "not a single type! ~a\n" id*)
+        (when debugging?
+          (printf "not a single type! ~a, ~a, ~a\n" id* eclass type))
         (error "not a single type!"))
       (vector-set! types id* type)))
 
@@ -987,11 +1016,13 @@
 
   ; debugging
   ; ------------------------------------
-  #;(printf "\nProcessed Egraph: \n")
-  #;(for ([eclass (in-vector eclasses)]
+  (when debugging?
+    (printf "\nProcessed Egraph: \n"))
+  (when debugging?
+    (for ([eclass (in-vector eclasses)]
           [type (in-vector types)]
           [n (in-naturals)])
-      (printf "Eclass ~a: ~a, type:~a\n" n eclass type))
+      (printf "Eclass ~a: ~a, type:~a\n" n eclass type)))
   ; ------------------------------------
 
   (define n (vector-length eclasses))
@@ -1249,8 +1280,10 @@
      (remove-duplicates (for/list ([enode (vector-ref eclasses id*)])
                           (extract-enode enode type))
                         #:key batchref-idx)]
-    #;(printf "Nothing to extract\n")
-    [else (list)]))
+    [else
+     (when debugging?
+       (printf "Nothing to extract\n"))
+     (list)]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Scheduler
@@ -1446,10 +1479,12 @@
   ; commit changes to the batch
   (finalize-batch)
 
-  #;(printf "\nExpressions extracted: ...\n")
-  #;(for* ([rewrites out]
+  (when debugging?
+    (printf "\nExpressions extracted: ...\n"))
+  (when debugging?
+    (for* ([rewrites out]
            [rewrite rewrites])
-      (printf "~a\n" (debatchref rewrite)))
+      (printf "~a\n" (debatchref rewrite))))
 
   out)
 
