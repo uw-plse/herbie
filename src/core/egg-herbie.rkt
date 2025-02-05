@@ -104,18 +104,19 @@
 
   ; node -> natural
   ; inserts an expression into the e-graph, returning its e-class id.
-  (define h (make-hash))
+
+  #;(define h (make-hash))
   (define (insert-node! node root?)
     (define idx
       (match node
         [(list op ids ...) (egraph_add_node ptr (symbol->string op) (list->u32vec ids) root?)]
         [(? symbol? x) (egraph_add_node ptr (symbol->string x) 0-vec root?)]
         [(? number? n) (egraph_add_node ptr (number->string n) 0-vec root?)]))
-    (hash-ref h
-              idx
-              (λ ()
-                (hash-set! h idx #t)
-                (printf "Eclass ~a: ~a\n" idx node)))
+    #;(hash-ref h
+                idx
+                (λ ()
+                  (hash-set! h idx #t)
+                  (printf "Eclass ~a: ~a\n" idx node)))
     idx)
 
   (define insert-batch (batch-remove-zombie batch roots))
@@ -124,7 +125,7 @@
   (define (remap x)
     (vector-ref mappings x))
 
-  (printf "Building egraph ...\n")
+  #;(printf "Building egraph ...\n")
 
   (define nodes-length (batch-length insert-batch))
 
@@ -660,7 +661,7 @@
   ;            | (<symbol> . <u32vector>)
   ; NOTE: nodes in typed eclasses are reversed relative
   ; to their position in untyped eclasses
-  (printf "Extracting egraph ...\n")
+  #;(printf "Extracting egraph ...\n")
   (for ([eid (in-u32vector eclass-ids)]
         [idx (in-naturals)])
     (define enodes (lookup-eclass eid))
@@ -674,16 +675,16 @@
                (vector-set! id->parents child-id (cons idx (vector-ref id->parents child-id)))))]
         [(? symbol?) (vector-set! id->leaf? idx #t)]
         [(? number?) (vector-set! id->leaf? idx #t)]
-        [(list) ; it was a hole expressions that got pruned
-         (printf "PRUNED HOLE: ~a which refers to ~a\n"
-                 enode
-                 (lookup-eclass (u32vector-ref (cdr enode) 1)))
-         enode*])
+        ; it was a hole expressions that got pruned
+        #;(printf "PRUNED HOLE: ~a which refers to ~a\n"
+                  enode
+                  (lookup-eclass (u32vector-ref (cdr enode) 1)))
+        [(list) enode*])
       (unless (empty? enode*)
         (vector-set! id->eclass idx (cons enode* (vector-ref id->eclass idx)))))
     (when (empty? (vector-ref id->eclass idx))
       (error "WARNING, EMPTY ECLASS!!!"))
-    (printf "Eclass ~a: ~a\n" idx (vector-ref id->eclass idx)))
+    #;(printf "Eclass ~a: ~a\n" idx (vector-ref id->eclass idx)))
 
   ; dedup `id->parents` values
   (for ([id (in-range n)])
@@ -985,11 +986,11 @@
 
   ; debugging
   ; ------------------------------------
-  (printf "\nProcessed Egraph: \n")
-  (for ([eclass (in-vector eclasses)]
-        [type (in-vector types)]
-        [n (in-naturals)])
-    (printf "Eclass ~a: ~a, type:~a\n" n eclass type))
+  #;(printf "\nProcessed Egraph: \n")
+  #;(for ([eclass (in-vector eclasses)]
+          [type (in-vector types)]
+          [n (in-naturals)])
+      (printf "Eclass ~a: ~a, type:~a\n" n eclass type))
   ; ------------------------------------
 
   (define n (vector-length eclasses))
@@ -1247,9 +1248,8 @@
      (remove-duplicates (for/list ([enode (vector-ref eclasses id*)])
                           (extract-enode enode type))
                         #:key batchref-idx)]
-    [else
-     (printf "Nothing to extract\n")
-     (list)]))
+    #;(printf "Nothing to extract\n")
+    [else (list)]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Scheduler
@@ -1445,10 +1445,11 @@
   ; commit changes to the batch
   (finalize-batch)
 
-  (printf "\nExpressions extracted: ...\n")
-  (for* ([rewrites out]
-         [rewrite rewrites])
-    (printf "~a\n" (debatchref rewrite)))
+  #;(printf "\nExpressions extracted: ...\n")
+  #;(for* ([rewrites out]
+           [rewrite rewrites])
+      (printf "~a\n" (debatchref rewrite)))
+
   out)
 
 (module+ test

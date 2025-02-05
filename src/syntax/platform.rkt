@@ -513,7 +513,6 @@
           (for ([identity (in-list rules)])
             (match identity
               [(list 'exact name expr)
-
                (when (impls-supported? expr)
                  (when (not (expr-otype expr))
                    (error "Exact identity expr cannot infer type"))
