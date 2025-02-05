@@ -519,10 +519,6 @@
 (define (expand-rules rules)
   (reap
    [sow]
-   (sow
-    (cons #f (make-ffi-rule "drop-hole-of-hole" "($hole ?repr ($hole ?repr ?a))" "($hole ?repr ?a)")))
-   (sow (cons #f (make-ffi-rule "drop-var" "($var ?repr ?a)" "?a")))
-   (sow (cons #f (make-ffi-rule "drop-literal" "($literal ?a ?repr)" "?a")))
    (for ([rule (in-list rules)])
      (define egg&ffi-rules
        (hash-ref! (*egg-rule-cache*)
@@ -534,7 +530,11 @@
                         (make-ffi-rule name (rule-input egg-rule) (rule-output egg-rule)))
                       (hash-set! (*canon-names*) name (rule-name rule))
                       (cons egg-rule ffi-rule)))))
-     (for-each sow egg&ffi-rules))))
+     (for-each sow egg&ffi-rules))
+   (sow
+    (cons #f (make-ffi-rule "drop-hole-of-hole" "($hole ?repr ($hole ?repr ?a))" "($hole ?repr ?a)")))
+   (sow (cons #f (make-ffi-rule "drop-var" "($var ?repr ?a)" "?a")))
+   (sow (cons #f (make-ffi-rule "drop-literal" "($literal ?a ?repr)" "?a")))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Racket egraph
@@ -1051,8 +1051,6 @@
   (regraph-analyze regraph eclass-set-cost! #:analysis costs)
 
   (define id->spec (regraph-specs regraph))
-
-  (printf "Costs: ~a\n\n" costs)
 
   (define ctx (regraph-ctx regraph))
   (define-values (add-id add-enode finalize-batch)

@@ -359,6 +359,10 @@
 
      ; egg runner
      (define exprs (map alt-expr alts))
+     (println "Final simplify")
+     (for ([expr exprs])
+       (println expr))
+     (sleep 50)
      (define reprs (map (lambda (expr) (repr-of expr (*context*))) exprs))
      (define batch (progs->batch exprs))
      (define runner (make-egraph batch (batch-roots batch) reprs schedule))

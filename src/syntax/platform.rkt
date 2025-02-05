@@ -412,38 +412,25 @@
 ;; Synthesizes lowering rules for a given platform.
 ;; Lowering rules apply a rewrite like
 ;; ($hole binary64 (+ x y)) -> (+.f64 ($hole binary64 x) ($hole binary64 y))
-;; and
-;; ($hole binary64 (+.f64 x y)) -> (+.f64 x y)
-;; question? what to do when we may end up with ($hole binary64 ($hole binary32 x)) ?
 (define (platform-lowering-rules [pform (*active-platform*)])
   (define impls (platform-impls pform))
   (define impl-rules
-    (flatten (for/list ([impl (in-list impls)])
-               (hash-ref! (*lowering-rules*)
-                          (cons impl pform)
-                          (lambda ()
-                            (define name (sym-append 'lower- impl))
-                            (define itypes (impl-info impl 'itype))
-                            (define otype (impl-info impl 'otype))
-                            (define-values (vars spec-expr impl-expr) (impl->rule-parts impl))
-                            (define lhs `($hole ,(representation-name otype) ,spec-expr))
-                            (define rhs (replace-vars-with-holes impl-expr vars itypes))
-
-                            (define name* (sym-append 'lower-dedup-hole- impl))
-                            (define lhs* `($hole ,(representation-name otype) ,impl-expr))
-                            (define rhs* impl-expr)
-                            (cons (rule name
-                                        lhs
-                                        rhs
-                                        (map cons vars (map representation-type itypes))
-                                        (representation-type otype)
-                                        '(lowering))
-                                  (rule name*
-                                        lhs*
-                                        rhs*
-                                        (map cons vars (map representation-type itypes))
-                                        (representation-type otype)
-                                        '(lowering))))))))
+    (for/list ([impl (in-list impls)])
+      (hash-ref! (*lowering-rules*)
+                 (cons impl pform)
+                 (lambda ()
+                   (define name (sym-append 'lower- impl))
+                   (define itypes (impl-info impl 'itype))
+                   (define otype (impl-info impl 'otype))
+                   (define-values (vars spec-expr impl-expr) (impl->rule-parts impl))
+                   (define lhs `($hole ,(representation-name otype) ,spec-expr))
+                   (define rhs (replace-vars-with-holes impl-expr vars itypes))
+                   (rule name
+                         lhs
+                         rhs
+                         (map cons vars (map representation-type itypes))
+                         (representation-type otype)
+                         '(lowering))))))
 
   (define lower-approx-rule
     (rule 'lower-approx
