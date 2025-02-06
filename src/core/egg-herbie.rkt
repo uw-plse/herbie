@@ -522,24 +522,25 @@
 ;; Expand and convert the rules for egg.
 ;; Uses a cache to only expand each rule once.
 (define (expand-rules rules)
-  (reap
-   [sow]
-   (for ([rule (in-list rules)])
-     (define egg&ffi-rules
-       (hash-ref! (*egg-rule-cache*)
-                  rule
-                  (lambda ()
-                    (for/list ([egg-rule (in-list (rule->egg-rules rule))])
-                      (define name (rule-name egg-rule))
-                      (define ffi-rule
-                        (make-ffi-rule name (rule-input egg-rule) (rule-output egg-rule)))
-                      (hash-set! (*canon-names*) name (rule-name rule))
-                      (cons egg-rule ffi-rule)))))
-     (for-each sow egg&ffi-rules))
-   (sow
-    (cons #f (make-ffi-rule "drop-hole-of-hole" "($hole ?repr ($hole ?repr ?a))" "($hole ?repr ?a)")))
-   (sow (cons #f (make-ffi-rule "drop-var" "($var ?repr ?a)" "?a")))
-   (sow (cons #f (make-ffi-rule "drop-literal" "($literal ?a ?repr)" "?a")))))
+  (reap [sow]
+        (for ([rule (in-list rules)])
+          (define egg&ffi-rules
+            (hash-ref! (*egg-rule-cache*)
+                       rule
+                       (lambda ()
+                         (for/list ([egg-rule (in-list (rule->egg-rules rule))])
+                           (define name (rule-name egg-rule))
+                           (define ffi-rule
+                             (make-ffi-rule name (rule-input egg-rule) (rule-output egg-rule)))
+                           (hash-set! (*canon-names*) name (rule-name rule))
+                           (cons egg-rule ffi-rule)))))
+          (for-each sow egg&ffi-rules))
+        #;(sow (cons #f
+                     (make-ffi-rule "drop-hole-of-hole"
+                                    "($hole ?repr ($hole ?repr ?a))"
+                                    "($hole ?repr ?a)")))
+        (sow (cons #f (make-ffi-rule "drop-var" "($var ?repr ?a)" "?a")))
+        (sow (cons #f (make-ffi-rule "drop-literal" "($literal ?a ?repr)" "?a")))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Racket egraph
@@ -584,28 +585,18 @@
      (cond
        [(eq? f '$approx)
         (match-define (list _ impl) ids)
-        ; here we assume that all the enodes in an eclass have the same type
-        ; that's why we take only (car (lookup impl)), not the whole eclass to define a type
-        (define impl-type (enode-type (car (lookup impl)) ctx lookup))
+        (define impl-type (enode-type (vector-ref (lookup impl) 0) ctx lookup))
         impl-type]
        [(eq? f 'if)
         (match-define (list _ tru fls) ids)
-        ; here we assume that all the enodes in an eclass have the same type
-        ; that's why we take only (car (lookup tru)), not the whole eclass to define a type
-        (define tru-type
-          (enode-type (car (filter (λ (x) (not (equal? x enode))) (lookup tru))) ctx lookup))
-        (define fls-type
-          (enode-type (car (filter (λ (x) (not (equal? x enode))) (lookup fls))) ctx lookup))
-        (when (not (equal? tru-type fls-type))
-          (error (format
-                  "Rewrite is incorrect, types of children are different, ~a, true=~a, false=~a\n"
-                  enode
-                  (lookup tru)
-                  (lookup fls))))
-        tru-type]
+        (define repr
+          (enode-type (vector-ref (vector-filter (λ (x) (not (equal? x enode))) (lookup tru)) 0)
+                      ctx
+                      lookup))
+        repr]
        [(eq? f '$hole)
         (define repr-idx (car ids))
-        (define repr (car (lookup repr-idx))) ; lookup is garaunteed to return eclass '(type)
+        (define repr (vector-ref (lookup repr-idx) 0)) ; lookup is garaunteed to return eclass '(type)
         (list (get-representation repr))]
        [(impl-exists? f) (list (impl-info f 'otype))]
        [else (list (operator-info f 'otype))])]))
@@ -654,29 +645,25 @@
                   (lookup-id (u32vector-ref ids 2)))]
            [_ (map lookup-id (u32vector->list ids))]))])]))
 
-;; Splits untyped eclasses into typed eclasses.
-;; Nodes are duplicated across their possible types.
-(define (split-untyped-eclasses egraph-data ctx)
+;; Splits untyped eclasses into typed eclasses,
+;; keeping only the subset of enodes that are well-typed.
+(define (make-eclasses egraph-data ctx)
+  ; Remappings
   (define eclass-ids (egraph-eclasses egraph-data))
-  (define max-id
-    (for/fold ([current-max 0]) ([egg-id (in-u32vector eclass-ids)])
-      (max current-max egg-id)))
-  (define egg-id->idx (make-u32vector (+ max-id 1)))
+  (define egg-id->idx (make-hash))
   (for ([egg-id (in-u32vector eclass-ids)]
         [idx (in-naturals)])
-    (u32vector-set! egg-id->idx egg-id idx))
+    (hash-set! egg-id->idx egg-id idx))
 
-  ; maps (untyped eclass id, type) to typed eclass id
   (define (lookup-id eid)
-    (u32vector-ref egg-id->idx eid))
+    (hash-ref egg-id->idx eid))
   (define (lookup-eclass eid)
     (egraph-get-eclass egraph-data eid))
 
   ; allocate enough eclasses for every egg-id combination
   (define n (u32vector-length eclass-ids))
   (define id->eclass (make-vector n '()))
-  (define id->parents (make-vector n '()))
-  (define id->leaf? (make-vector n #f))
+  (define types (make-vector n #f))
 
   ; for each eclass, extract the enodes
   ;  <enode> ::= <symbol>
@@ -688,155 +675,36 @@
     (printf "Extracting egraph ...\n"))
   (for ([eid (in-u32vector eclass-ids)]
         [idx (in-naturals)])
-    (define enodes (lookup-eclass eid))
-    (for ([enode (in-vector enodes)])
-      (define enode* (rebuild-enode enode lookup-id lookup-eclass))
-      (match enode*
-        [(list _ ids ...)
-         (if (null? ids)
-             (vector-set! id->leaf? idx #t)
-             (for ([child-id (in-list ids)])
-               (vector-set! id->parents child-id (cons idx (vector-ref id->parents child-id)))))]
-        [(? symbol?) (vector-set! id->leaf? idx #t)]
-        [(? number?) (vector-set! id->leaf? idx #t)]
-        [(list) ; it was a hole expressions that got pruned
-         (when debugging?
-           (printf "PRUNED HOLE: ~a which refers to ~a\n"
-                   enode
-                   (lookup-eclass (u32vector-ref (cdr enode) 1))))
-         enode*])
-      (unless (empty? enode*)
-        (vector-set! id->eclass idx (cons enode* (vector-ref id->eclass idx)))))
+    (define eclass (lookup-eclass eid))
+    (define eclass*
+      (for/vector ([enode (in-vector eclass)]
+                   #:do [(define enode* (rebuild-enode enode lookup-id lookup-eclass))
+                         (when (and debugging? (empty? enode*))
+                           (printf "PRUNED HOLE: ~a which refers to ~a\n"
+                                   enode
+                                   (lookup-eclass (u32vector-ref (cdr enode) 1))))]
+                   #:unless (empty? enode*))
+        enode*))
+    (vector-set! id->eclass idx eclass*)
+
     (when (empty? (vector-ref id->eclass idx))
       (error "WARNING, EMPTY ECLASS!!!"))
     (when debugging?
       (printf "Eclass ~a: ~a\n" idx (vector-ref id->eclass idx))))
 
-  ; dedup `id->parents` values
-  (for ([id (in-range n)])
-    (vector-set! id->parents id (list->vector (remove-duplicates (vector-ref id->parents id)))))
-  (values id->eclass id->parents id->leaf? eclass-ids egg-id->idx))
-
-;; TODO: reachable from roots?
-;; Prunes e-nodes that are not well-typed.
-;; An e-class is well-typed if it has one well-typed node
-;; A node is well-typed if all of its child e-classes are well-typed.
-(define (prune-ill-typed! id->eclass id->parents id->leaf?)
-  (define n (vector-length id->eclass))
-
-  ;; is the e-class well-typed?
-  (define typed?-vec (make-vector n #f))
-  (define (eclass-well-typed? id)
-    (vector-ref typed?-vec id))
-
-  ;; is the e-node well-typed?
-  (define (enode-typed? enode)
-    (or (number? enode) (symbol? enode) (and (list? enode) (andmap eclass-well-typed? (cdr enode)))))
-
-  (define (check-typed! dirty?-vec)
-    (define dirty? #f)
-    (define dirty?-vec* (make-vector n #f))
-    (for ([id (in-range n)]
-          #:when (vector-ref dirty?-vec id))
-      (unless (eclass-well-typed? id)
-        (when (ormap enode-typed? (vector-ref id->eclass id))
-          (vector-set! typed?-vec id #t)
-          (define parent-ids (vector-ref id->parents id))
-          (unless (vector-empty? parent-ids)
-            (set! dirty? #t)
-            (for ([parent-id (in-vector parent-ids)])
-              (vector-set! dirty?-vec* parent-id #t))))))
-    (when dirty?
-      (check-typed! dirty?-vec*)))
-
-  ; mark all well-typed e-classes and prune nodes that are not well-typed
-  (check-typed! (vector-copy id->leaf?))
-  (for ([id (in-range n)])
-    (define eclass (vector-ref id->eclass id))
-    (vector-set! id->eclass id (filter enode-typed? eclass)))
-
-  ; sanity check: every child id points to a non-empty e-class
-  (for ([id (in-range n)])
-    (define eclass (vector-ref id->eclass id))
-    (for ([enode (in-list eclass)])
-      (match enode
-        [(list _ ids ...)
-         (for ([id (in-list ids)])
-           (when (null? (vector-ref id->eclass id))
-             (error 'prune-ill-typed!
-                    "eclass ~a is empty, eclasses ~a"
-                    id
-                    (for/vector #:length n
-                                ([id (in-range n)])
-                      (list id (vector-ref id->eclass id))))))]
-        [_ (void)]))))
-
-;; Rebuilds eclasses and associated data after pruning.
-(define (rebuild-eclasses id->eclass eclass-ids egg-id->idx ctx)
-  (define n (vector-length id->eclass))
-  (define remap (make-vector n #f))
-
-  ; build the id map
-  (define n* 0)
-  (for ([id (in-range n)])
-    (define eclass (vector-ref id->eclass id))
-    (unless (null? eclass)
-      (vector-set! remap id n*)
-      (set! n* (add1 n*))))
-
+  ; Define types
   (define (lookup x)
     (vector-ref id->eclass x))
+  (for ([eclass (in-vector id->eclass)]
+        [idx (in-naturals)])
+    (define type (remove-duplicates (map (λ (x) (enode-type x ctx lookup)) (vector->list eclass))))
+    (when (> (length type) 1)
+      (when debugging?
+        (printf "not a single type! ~a, ~a, ~a\n" idx eclass type))
+      (error "not a single type!"))
+    (vector-set! types idx type))
 
-  ; rebuild eclass and type vectors
-  ; transform each eclass from a list to a vector
-  (define eclasses (make-vector n* #f))
-  (define types (make-vector n* #f))
-  (for ([id (in-range n)])
-    (define id* (vector-ref remap id))
-    (when id*
-      (define eclass (vector-ref id->eclass id))
-      (vector-set! eclasses
-                   id*
-                   (for/vector #:length (length eclass)
-                               ([enode (in-list eclass)])
-                     (match enode
-                       [(? number?) enode]
-                       [(? symbol?) enode]
-                       [(list op ids ...)
-                        (define ids* (map (lambda (id) (vector-ref remap id)) ids))
-                        (cons op ids*)])))
-      (define type (remove-duplicates (map (λ (x) (enode-type x ctx lookup)) eclass)))
-      (when (> (length type) 1)
-        (when debugging?
-          (printf "not a single type! ~a, ~a, ~a\n" id* eclass type))
-        (error "not a single type!"))
-      (vector-set! types id* type)))
-
-  ; build the canonical id map
-  (define egg-id->id (make-hash))
-  (for ([eid (in-u32vector eclass-ids)])
-    (define idx (u32vector-ref egg-id->idx eid))
-    (define id* (vector-ref remap idx))
-    (when id*
-      (hash-set! egg-id->id eid id*)))
-
-  (values eclasses types egg-id->id))
-
-;; Splits untyped eclasses into typed eclasses,
-;; keeping only the subset of enodes that are well-typed.
-(define (make-typed-eclasses egraph-data ctx)
-  ;; Step 1: split Rust-eclasses by type
-  (define-values (id->eclass id->parents id->leaf? eclass-ids egg-id->idx)
-    (split-untyped-eclasses egraph-data ctx))
-
-  ;; Step 2: keep well-typed e-nodes
-  ;; An e-class is well-typed if it has one well-typed node
-  ;; A node is well-typed if all of its child e-classes are well-typed.
-  (prune-ill-typed! id->eclass id->parents id->leaf?)
-
-  ;; Step 3: remap e-classes
-  ;; Any empty e-classes must be removed, so we re-map every id
-  (rebuild-eclasses id->eclass eclass-ids egg-id->idx ctx))
+  (values id->eclass types egg-id->idx))
 
 ;; Analyzes eclasses for their properties.
 ;; The result are vector-maps from e-class ids to data.
@@ -875,7 +743,7 @@
   (define id->spec (egraph-data-id->spec egraph-data))
 
   ;; split the e-classes by type
-  (define-values (eclasses types canon) (make-typed-eclasses egraph-data ctx))
+  (define-values (eclasses types canon) (make-eclasses egraph-data ctx))
   (define n (vector-length eclasses))
 
   ;; analyze each eclass

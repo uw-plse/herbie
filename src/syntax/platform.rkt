@@ -383,6 +383,14 @@
           'real
           '(lifting)))
 
+  (define lift-approx-rule
+    (rule 'lift-approx
+          '($approx s ($hole r t))
+          '($hole r ($approx s t))
+          '((s . real) (r . real) (t . real)) ; this is ugly but works
+          'real
+          '(lifting)))
+
   (define lift-if-rule
     (rule 'lift-if
           '(if ($hole bool c)
@@ -399,7 +407,7 @@
   ;; special rule for approx nodes
   ; (define approx-rule (rule 'lift-approx (approx 'a 'b) 'a '((a . real) (b . real)) 'real))
   ; (cons approx-rule impl-rules))
-  (list* lift-var lift-if-rule lift-literal-rule impl-rules))
+  (list* lift-var lift-if-rule lift-approx-rule lift-literal-rule impl-rules))
 
 ;; Synthesizes lowering rules for a given platform.
 ;; Lowering rules apply a rewrite like
@@ -424,6 +432,14 @@
                          (representation-type otype)
                          '(lowering))))))
 
+  (define lower-approx-rule
+    (rule 'lower-approx
+          '($hole r ($approx s t))
+          '($approx s ($hole r t))
+          '((s . real) (r . real) (t . real))
+          'real
+          '(lowering)))
+
   (define lower-if-rule
     (rule 'lower-if
           '($hole r (if c t f))
@@ -434,7 +450,7 @@
           'real
           '(lowering)))
 
-  (list* lower-if-rule impl-rules))
+  (list* lower-if-rule lower-approx-rule impl-rules))
 
 (define (expr-otype expr)
   (match expr
