@@ -33,7 +33,7 @@
   (require "../syntax/load-plugin.rkt")
   (load-herbie-builtins))
 
-(define debugging? #t)
+(define debugging? #f)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FFI utils
