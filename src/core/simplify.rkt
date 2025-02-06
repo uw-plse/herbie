@@ -30,7 +30,8 @@
 
   (define simplifieds
     (if (member 'egglog generate-flags)
-        (run-egglog-single-extractor runner extractor)
+        ; (run-egglog-single-extractor runner extractor)
+        (run-egglog-multi-extractor runner extractor #:num-variants #f)
         (run-egg runner (cons 'single extractor))))
 
   (define out
