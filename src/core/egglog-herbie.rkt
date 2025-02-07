@@ -18,7 +18,7 @@
 (provide prelude
          prelude-exprs
          egglog-add-exprs
-        ;  egglog-add-exprs-mainloop
+         egglog-add-exprs-mainloop
          make-egglog-runner
          run-egglog-multi-extractor
          run-egglog-proofs
@@ -68,7 +68,6 @@
     (unless (system (format "~a ~a" egglog-path egglog-file-path))
       (begin
         (fprintf old-error-port "stdout-port ~a\n" (get-output-string stdout-port))
-        ; (fprintf old-error-port "stderr-port ~a\n" (get-output-string stderr-port))
         ; Tail the last 100 lines of the error instead of everything
         (fprintf old-error-port
                  "stderr-port ~a\n"
@@ -146,15 +145,10 @@
 
   (define curr-batch (batch-remove-zombie (egg-runner-batch runner) (egg-runner-roots runner)))
 
-  ; (define curr-program (new egglog-program%))
   (define curr-program (make-egglog-program))
 
   ;; 1. Add the Prelude
   (prelude curr-program #:mixed-egraph? #t)
-
-  ; (printf "prev program ~a\n\n" program)
-  ; (printf "prelude ~a\n\n" (reverse (send curr-program get-current-program-list)))
-  ; (printf "prev prelude ~a\n\n" (prev-prelude))
 
   ;; 2. User Rules which comes from schedule (need to be translated)
   (define tag-schedule
@@ -170,30 +164,24 @@
           [_
            (define curr-tag (string->symbol (string-append "?tag" (number->string i))))
            ;; Add rulesets
-           ;(set! program (append program `((ruleset ,curr-tag))))
-           ;  (send curr-program add! `(ruleset ,curr-tag))
            (egglog-program-add! `(ruleset ,curr-tag) curr-program)
 
            ;; Add the actual egglog rewrite rules
-           ;  (set! program (append program (egglog-rewrite-rules rule-type curr-tag)))
-           ;; TODO :  Reverse list or let it be???
-           ;  (send curr-program add-list! (egglog-rewrite-rules rule-type curr-tag))
            (egglog-program-add-list! (egglog-rewrite-rules rule-type curr-tag) curr-program)
 
            curr-tag]))
 
       (cons tag schedule-params)))
 
-  ; (printf "curr program ~a\n\n" (send curr-program get-current-program-list))
 
   ;; 3. Inserting expressions -> (egglog-add-exprs curr-batch (egglog-runner-ctx))
   ; (exprs . extract bindings)
-  (define egglog-batch-exprs (egglog-add-exprs curr-batch (egg-runner-ctx runner)))
+  ; (define egglog-batch-exprs (prev-egglog-add-exprs curr-batch (egg-runner-ctx runner)))
+
+  (define extract-bindings (egglog-add-exprs curr-batch (egg-runner-ctx runner) curr-program))
 
   ; (set! program (append program (car egglog-batch-exprs)))
-  ; (send curr-program add-list! (reverse (car egglog-batch-exprs)))
-  (egglog-program-add-list! (car egglog-batch-exprs) curr-program)
-  ; (printf "curr program ~a\n\n" (send curr-program get-current-program-list))
+  ; (egglog-program-add-list! (car egglog-batch-exprs) curr-program)
 
   ;; 4. Running the schedule
   (define run-schedule '())
@@ -225,40 +213,38 @@
          [(#f #f) `((repeat 3 ,tag))])]))
 
   ; (set! program (append program `((run-schedule ,@run-schedule))))
-  ; (send curr-program add! `(run-schedule ,@run-schedule))
   (egglog-program-add! `(run-schedule ,@run-schedule) curr-program)
-  ; (printf "curr program ~a\n\n" (send curr-program get-current-program-list))
+
 
   ;; 5. Extraction -> should just need root ids
-  (for ([binding (cdr egglog-batch-exprs)])
-    (begin
-      (define val
-        (if num-variants
-            `(extract ,binding 5)
-
-            (match domain-fns
-              [(list 'lifting) `(extract (lift ,binding))]
-              [(list 'lowering)
-               (define curr-val
-                 (symbol->string (representation-name (context-repr (egg-runner-ctx runner)))))
-               `(extract (lower ,binding ,curr-val))]
-              [_ `(extract ,binding)])))
+  (for ([binding extract-bindings])
+    (define val
+      (if num-variants
+        `(extract ,binding 5)
+        
+        (match domain-fns
+          [(list 'lifting) `(extract (lift ,binding))]
+          [(list 'lowering)
+            (define curr-val
+              (symbol->string (representation-name (context-repr (egg-runner-ctx runner)))))
+            `(extract (lower ,binding ,curr-val))]
+          [_ `(extract ,binding)])))
 
       ; (set! program (append program val))
-      ; (send curr-program add! val)
-      (egglog-program-add! val curr-program)))
+      (egglog-program-add! val curr-program))
 
-  ; (printf "PREV program ~a\n\n" program)
-
-  ; (define egglog-output (send curr-program process-egglog))
+  ;; 6. After step-by-step building the program, process it
+  ;; by running it using egglog
   (define egglog-output (process-egglog curr-program))
 
+  ;; Extract its returned value
   (define stdout-content (car egglog-output))
-  (define stderr-content (cdr egglog-output))
+  ; (define stderr-content (cdr egglog-output))
 
   (define input-batch (egg-runner-batch runner))
   (define out (batch->mutable-batch input-batch))
-
+  
+  ;; (Listof (Listof exprs))
   (define herbie-exprss
     (let ([input-port (open-input-string stdout-content)])
       (for/list ([next-expr (in-port read input-port)])
@@ -315,58 +301,119 @@
 ; ; TODO: if i have  two expressions how di i know if they are in the same e-class
 ; ; if we are outside of egglog
 (define (run-egglog-equal? runner expr-pairs) ; term equality?
-  (for/list ([i (in-range (length expr-pairs))])
-    #f))
+  (define curr-program (make-egglog-program))
 
-; (define program '())
+  ;; 1. Add the Prelude
+  (prelude curr-program #:mixed-egraph? #t)
 
-; ;; 1. Prelude
-; (set! program (append program (prelude #:mixed-egraph? #t)))
+  ;; 2. User Rules which comes from schedule (need to be translated)
+  (define tag-schedule
+    (for/list ([i (in-naturals 1)]
+               [element (in-list (egg-runner-schedule runner))])
 
-; ;; 2. User Rules which comes from schedule (need to be translated)
-; (define tag-schedule
-;   (for/list ([i (in-naturals 1)] ; Start index `i` from 1
-;              [element (in-list (egg-runner-schedule runner))])
+      (define rule-type (car element))
+      (define schedule-params (cdr element))
 
-;     (define rule-type (car element))
-;     (define schedule-params (cdr element))
+      ;; Create a custom tag
+      (define tag (string->symbol (string-append "?tag" (number->string i))))
+     
+      ;; Add rulesets
+      (egglog-program-add! `(ruleset ,tag) curr-program)
 
-;     (define curr-tag (string->symbol (string-append "?tag" (number->string i))))
+      ;; Add the actual egglog rewrite rules
+      (egglog-program-add-list! (egglog-rewrite-rules rule-type tag) curr-program)
 
-;     ;; Add rulsets
-;     (set! program (append program `((ruleset ,curr-tag))))
+      (cons tag schedule-params)))
 
-;     ;; Add the actual egglog rewrite rules
-;     (set! program (append program (egglog-rewrite-rules rule-type curr-tag)))
+  ;; 2. Adding each pair of start-expr and end-expr
+  (for ([(start-expr end-expr) (in-dict expr-pairs)]
+        [i (in-naturals 1)])
+    (define start-let
+      `(let ,(string->symbol (string-append "?e1" (number->string i))) ,(expr->e1-expr start-expr)))
+    
+    (define end-let
+      `(let ,(string->symbol (string-append "?e2" (number->string i))) ,(expr->e1-expr end-expr)))
+    
+    (egglog-program-add! `(,start-let ,end-let) curr-program))
 
-;     (cons curr-tag schedule-params)))
-; (for ([(start-expr end-expr) (in-dict expr-pairs)]
-;       [i (in-naturals 1)])
-;   (define start-let
-;     `(let ,(string->symbol (string-append "?e1" (number->string i))) ,(expr->e1-expr start-expr)))
-;   (define end-let
-;     `(let ,(string->symbol (string-append "?e2" (number->string i))) ,(expr->e1-expr end-expr)))
-;   (set! program (append program `(,start-let ,end-let))))
 
-; ;; 3. Running the schedule
-; (set! program (append program '((run-schedule (repeat 3 ?tag1) (repeat 20 const-fold)))))
+  ;; 4. Running the schedule
+  (define run-schedule `(run-schedule (repeat 3 ?tag1) (repeat 20 const-fold)))
+  (egglog-program-add! run-schedule curr-program)
 
-; ;; Running Checks
-; (for ([(start-expr end-expr) (in-dict expr-pairs)]
-;       [i (in-naturals 1)])
-;   (define start-extract `(extract ,(string->symbol (string-append "?e1" (number->string i)))))
-;   (define end-extract `(extract ,(string->symbol (string-append "?e2" (number->string i)))))
-;   (set! program (append program `(,start-extract ,end-extract))))
 
-; ;; 6. Call run-egglog-process
-; (define egglog-output (run-egglog-process (egglog-program program)))
-; (define stdout-content (car egglog-output))
+  ;; 5. Running Checks
+  (for ([i (in-naturals 1)])
+    (define start-extract `(extract ,(string->symbol (string-append "?e1" (number->string i)))))
+    (define end-extract `(extract ,(string->symbol (string-append "?e2" (number->string i)))))
+    (egglog-program-add! `(,start-extract ,end-extract) curr-program))
 
-; (define extract-results (list->vector (string-split stdout-content "\n")))
-; (define stderr-content (cdr egglog-output))
 
-; (for/list ([i (in-range 0 (vector-length extract-results) 2)])
-;   (equal? (vector-ref extract-results i) (vector-ref extract-results (+ i 1)))))
+  ;; 6. After step-by-step building the program, process it
+  ;; by running it using egglog
+  (define egglog-output (process-egglog curr-program))
+  (define stdout-content (car egglog-output))
+  ; (define stderr-content (cdr egglog-output))
+
+  ;; Extract its returned value
+  (define extract-results (list->vector (string-split stdout-content "\n")))
+
+  (for/list ([i (in-range 0 (vector-length extract-results) 2)])
+    (equal? (vector-ref extract-results i) (vector-ref extract-results (+ i 1)))))
+
+
+(define (prev-run-egglog-equal? runner expr-pairs)
+    (define program '())
+
+    ;; 1. Prelude
+    (set! program (append program (prelude #:mixed-egraph? #t)))
+
+    ;; 2. User Rules which comes from schedule (need to be translated)
+    (define tag-schedule
+      (for/list ([i (in-naturals 1)] ; Start index `i` from 1
+                [element (in-list (egg-runner-schedule runner))])
+
+        (define rule-type (car element))
+        (define schedule-params (cdr element))
+
+        (define curr-tag (string->symbol (string-append "?tag" (number->string i))))
+
+        ;; Add rulsets
+        (set! program (append program `((ruleset ,curr-tag))))
+
+        ;; Add the actual egglog rewrite rules
+        (set! program (append program (egglog-rewrite-rules rule-type curr-tag)))
+
+        (cons curr-tag schedule-params)))
+
+    (for ([(start-expr end-expr) (in-dict expr-pairs)]
+          [i (in-naturals 1)])
+      (define start-let
+        `(let ,(string->symbol (string-append "?e1" (number->string i))) ,(expr->e1-expr start-expr)))
+      (define end-let
+        `(let ,(string->symbol (string-append "?e2" (number->string i))) ,(expr->e1-expr end-expr)))
+      (set! program (append program `(,start-let ,end-let))))
+
+    ;; 3. Running the schedule
+    (set! program (append program '((run-schedule (repeat 3 ?tag1) (repeat 20 const-fold)))))
+
+    ;; Running Checks
+    (for ([(start-expr end-expr) (in-dict expr-pairs)]
+          [i (in-naturals 1)])
+      (define start-extract `(extract ,(string->symbol (string-append "?e1" (number->string i)))))
+      (define end-extract `(extract ,(string->symbol (string-append "?e2" (number->string i)))))
+      (set! program (append program `(,start-extract ,end-extract))))
+
+    ;; 6. Call run-egglog-process
+    (define egglog-output (process-egglog (egglog-program program)))
+    (define stdout-content (car egglog-output))
+
+    (define extract-results (list->vector (string-split stdout-content "\n")))
+    (define stderr-content (cdr egglog-output))
+
+    (for/list ([i (in-range 0 (vector-length extract-results) 2)])
+      (equal? (vector-ref extract-results i) (vector-ref extract-results (+ i 1)))))
+
 
 (define (prelude curr-program #:mixed-egraph? [mixed-egraph? #t])
   (load-herbie-builtins)
@@ -379,7 +426,6 @@
                (If M M M :cost 4294967295)
                ,@(platform-spec-nodes)))
 
-  ; (send curr-program add! spec-egraph)
   (egglog-program-add! spec-egraph curr-program)
 
   (define typed-graph
@@ -396,52 +442,38 @@
                (Approx M MTy)
                ,@(platform-impl-nodes pform)))
 
-  ; (send curr-program add! typed-graph)
   (egglog-program-add! typed-graph curr-program)
 
-  ; (send curr-program add! `(function lower (M String) MTy :unextractable))
   (egglog-program-add! `(function lower (M String) MTy :unextractable) curr-program)
 
-  ; (send curr-program add! `(function lift (MTy) M :unextractable))
   (egglog-program-add! `(function lift (MTy) M :unextractable) curr-program)
 
-  ; (send curr-program add! `(ruleset const-fold))
   (egglog-program-add! `(ruleset const-fold) curr-program)
 
-  ; (send curr-program add! `(ruleset lowering))
   (egglog-program-add! `(ruleset lowering) curr-program)
 
-  ; (send curr-program add! `(ruleset lifting))
   (egglog-program-add! `(ruleset lifting) curr-program)
 
   (for ([curr-expr const-fold])
-    ; (send curr-program add! curr-expr)
     (egglog-program-add! curr-expr curr-program))
 
   (for ([curr-expr (impl-lowering-rules pform)])
-    ; (send curr-program add! curr-expr))
     (egglog-program-add! curr-expr curr-program))
 
   (for ([curr-expr (impl-lifting-rules pform)])
-    ; (send curr-program add! curr-expr))
     (egglog-program-add! curr-expr curr-program))
 
   (for ([curr-expr (num-lowering-rules)])
-    ; (send curr-program add! curr-expr))
     (egglog-program-add! curr-expr curr-program))
 
   (for ([curr-expr (num-lifting-rules)])
-    ; (send curr-program add! curr-expr))
     (egglog-program-add! curr-expr curr-program))
 
   (for ([curr-expr (if-lowering-rules)])
-    ; (send curr-program add! curr-expr))
     (egglog-program-add! curr-expr curr-program))
 
-  ; (send curr-program add! (if-lifting-rule))
   (egglog-program-add! (if-lifting-rule) curr-program)
 
-  ; (send curr-program add! (approx-lifting-rule))
   (egglog-program-add! (approx-lifting-rule) curr-program)
 
   (void))
@@ -453,7 +485,6 @@
   (prelude curr-program #:mixed-egraph? #t)
 
   (get-actual-program curr-program))
-
 
 (define const-fold
   `((let ?zero (bigrat
@@ -689,14 +720,166 @@
                   :ruleset
                   ,tag))))
 
-; (define (egglog-add-exprs-mainloop batch ctx)
-;   (define curr-program (make-egglog-program))
-;   (define extract-bindings (egglog-add-exprs batch ctx curr-program))
+(define (egglog-add-exprs-mainloop batch ctx)
+  (define curr-program (make-egglog-program))
+  (define extract-bindings (egglog-add-exprs batch ctx curr-program))
 
-;   (cons (get-actual-program curr-program) extract-bindings))
+  (cons (get-actual-program curr-program) extract-bindings))
 
+(define (egglog-add-exprs batch ctx curr-program)
+  (define mappings (build-vector (batch-length batch) values))
+  (define bindings (make-hash))
+  (define vars (make-hash))
+  (define (remap x spec?)
+    (cond
+      [(hash-has-key? vars x)
+       (if spec?
+           (string->symbol (format "?~a" (hash-ref vars x)))
+           (string->symbol (format "?t~a" (hash-ref vars x))))]
+      [else (vector-ref mappings x)]))
 
-(define (egglog-add-exprs batch ctx) ;program
+  ; node -> egglog node binding
+  ; inserts an expression into the e-graph, returning binding variable.
+  (define (insert-node! node n root?)
+    (define binding
+      (if root?
+          (string->symbol (format "?r~a" n))
+          (string->symbol (format "?b~a" n))))
+    (hash-set! bindings binding node)
+    binding)
+
+  (define root-bindings '())
+  ; Inserting nodes bottom-up
+  (define root-mask (make-vector (batch-length batch) #f))
+  (define spec-mask (make-vector (batch-length batch) #f))
+  (define (spec-tag n spec?)
+    (when (not (vector-ref spec-mask n))
+      (match (vector-ref (batch-nodes batch) n)
+        [`(if ,cond ,ift ,iff)
+         (when (vector-ref spec-mask cond)
+           (vector-set! spec-mask n #t)
+           (spec-tag cond #t)
+           (spec-tag ift #t)
+           (spec-tag iff #t))]
+        [(approx spec impl)
+         (vector-set! spec-mask n #t)
+         (spec-tag spec #t)]
+        [(list impl args ...)
+         (when (hash-has-key? (id->e1) impl)
+           (vector-set! spec-mask n #t)
+           (for ([arg (in-list args)])
+             (spec-tag arg #t)))]
+        [_
+         (when spec?
+           (vector-set! spec-mask n #t))])))
+
+  (for ([n (in-range (batch-length batch))])
+    (spec-tag n #f))
+  (for ([root (in-vector (batch-roots batch))])
+    (vector-set! root-mask root #t))
+  (for ([node (in-vector (batch-nodes batch))]
+        [root? (in-vector root-mask)]
+        [spec? (in-vector spec-mask)]
+        [n (in-naturals)])
+    (define node*
+      (match node
+        [(literal v repr)
+         `(,(typed-num-id repr) (bigrat (from-string ,(number->string (numerator v)))
+                                        (from-string ,(number->string (denominator v)))))]
+        [(? number?)
+         `(Num (bigrat (from-string ,(number->string (numerator node)))
+                       (from-string ,(number->string (denominator node)))))]
+        [(? symbol?) #f]
+        [`(if ,cond ,ift ,iff)
+         `(,(if spec? 'If 'IfTy) ,(remap cond spec?) ,(remap ift spec?) ,(remap iff spec?))]
+        [(approx spec impl) `(Approx ,(remap spec #t) ,(remap impl #f))]
+        [(list impl args ...)
+         `(,(hash-ref (if spec?
+                          (id->e1)
+                          (id->e2))
+                      impl)
+           ,@(for/list ([arg (in-list args)])
+               (remap arg spec?)))]))
+
+    (if node*
+        (vector-set! mappings n (insert-node! node* n root?))
+        (hash-set! vars n node))
+    (when root?
+      (set! root-bindings (cons (vector-ref mappings n) root-bindings))))
+
+  ; Var-lowering-rules
+  (for ([var (in-list (context-vars ctx))]
+        [repr (in-list (context-var-reprs ctx))])
+
+    (define curr-var-lowering-rule
+      `(rule ((= e (Var ,(symbol->string var))))
+             ((let ty ,(symbol->string (representation-name repr))
+                )
+              (let ety (,(typed-var-id (representation-name repr))
+                        ,(symbol->string var))
+                )
+              (union (lower e ty) ety))
+             :ruleset
+             lowering))
+
+    (egglog-program-add! curr-var-lowering-rule curr-program))
+
+  ; Var-lifting-rules
+  (for ([var (in-list (context-vars ctx))]
+        [repr (in-list (context-var-reprs ctx))])
+
+    (define curr-var-lifting-rule
+      `(rule ((= e (,(typed-var-id (representation-name repr)) ,(symbol->string var))))
+             ((let se (Var
+                       ,(symbol->string var))
+                )
+              (union (lift e) se))
+             :ruleset
+             lifting))
+
+    (egglog-program-add! curr-var-lifting-rule curr-program))
+
+  ; Var-spec-bindings
+  (for ([var (in-list (context-vars ctx))])
+    (define curr-var-spec-binding
+      `(let ,(string->symbol (format "?~a" var)) (Var ,(symbol->string var))))
+
+    (egglog-program-add! curr-var-spec-binding curr-program))
+
+  ; Var-typed-bindings
+  (for ([var (in-list (context-vars ctx))]
+        [repr (in-list (context-var-reprs ctx))])
+    (define curr-var-typed-binding
+      `(let ,(string->symbol (format "?t~a" var))
+         (,(typed-var-id (representation-name repr)) ,(symbol->string var))))
+
+    (egglog-program-add! curr-var-typed-binding curr-program))
+
+  ; Binding Exprs
+  (for ([root? (in-vector root-mask)]
+        [n (in-naturals)]
+        #:when (not (hash-has-key? vars n)))
+    (define binding
+      (if root?
+          (string->symbol (format "?r~a" n))
+          (string->symbol (format "?b~a" n))))
+
+    (define curr-binding-exprs `(let ,binding ,(hash-ref bindings binding)))
+
+    (egglog-program-add! curr-binding-exprs curr-program))
+
+  ; Only thing returned -> Extract Bindings
+  (define extract-bindings
+    (for/list ([root (batch-roots batch)])
+      (if (hash-has-key? vars root)
+          (if (vector-ref spec-mask root)
+              (string->symbol (format "?~a" (hash-ref vars root)))
+              (string->symbol (format "?t~a" (hash-ref vars root))))
+          (string->symbol (format "?r~a" root)))))
+
+  extract-bindings)
+
+(define (prev-egglog-add-exprs batch ctx)
   (define egglog-exprs '())
   (define mappings (build-vector (batch-length batch) values))
   (define bindings (make-hash))
