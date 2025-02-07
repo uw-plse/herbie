@@ -539,8 +539,10 @@
                      (make-ffi-rule "drop-hole-of-hole"
                                     "($hole ?repr ($hole ?repr ?a))"
                                     "($hole ?repr ?a)")))
-        (sow (cons #f (make-ffi-rule "drop-var" "($var ?repr ?a)" "?a")))
-        (sow (cons #f (make-ffi-rule "drop-literal" "($literal ?a ?repr)" "?a")))))
+        (sow (cons (rule "drop-var" "($var repr a)" "a" '((a . real) (repr . real)) 'real '())
+                   (make-ffi-rule "drop-var" "($var ?repr ?a)" "?a")))
+        (sow (cons (rule "drop-literal" "($literal a repr)" "a" '((a . real) (repr . real)) 'real '())
+                   (make-ffi-rule "drop-literal" "($literal ?a ?repr)" "?a")))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Racket egraph
@@ -1195,18 +1197,22 @@
       ; run rules in the egraph
       (define egg-rules (expand-rules rules))
       (define-values (egg-graph* iteration-data) (egraph-run-rules egg-graph egg-rules params))
-
+      (printf "Schedule: ~a, Number of iterations: ~a\n" params (length iteration-data))
       ; get cost statistics
       (for ([iter (in-list iteration-data)]
             [i (in-naturals)])
         (define cnt (iteration-data-num-nodes iter))
-        (define cost (apply + (map (λ (id) (egraph-get-cost egg-graph* id i)) root-ids)))
+        (define cost-per-iter
+          (for/list ([id root-ids])
+            (egraph-get-cost egg-graph* id i)))
+        (define cost (apply + cost-per-iter))
         (timeline-push! 'egraph i cnt cost (iteration-data-time iter)))
-
       egg-graph*))
 
   ; root eclasses may have changed
-  (define root-ids* (map (lambda (id) (egraph-find egg-graph* id)) root-ids))
+  (define root-ids*
+    (for/list ([id root-ids])
+      (egraph-find egg-graph* id)))
   ; return what we need
   (values root-ids* egg-graph*))
 
