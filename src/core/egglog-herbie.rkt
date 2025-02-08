@@ -54,6 +54,8 @@
       (with-output-to-file temp-file #:exists 'replace (lambda () (for-each writeln curr-program)))
       temp-file))
 
+  ; (printf "file path ~a\n" egglog-file-path)
+
   (define egglog-path
     (or (find-executable-path "egglog") (error "egglog executable not found in PATH")))
 
@@ -298,8 +300,6 @@
 
 ; ; 1. ask within egglog program what is id
 ; ; 2. Extract expression from each expr
-; ; TODO: if i have  two expressions how di i know if they are in the same e-class
-; ; if we are outside of egglog
 (define (run-egglog-equal? runner expr-pairs) ; term equality?
   (define curr-program (make-egglog-program))
 
@@ -307,9 +307,8 @@
   (prelude curr-program #:mixed-egraph? #t)
 
   ;; 2. User Rules which comes from schedule (need to be translated)
-  (define tag-schedule
-    (for/list ([i (in-naturals 1)]
-               [element (in-list (egg-runner-schedule runner))])
+  (for ([i (in-naturals 1)]
+        [element (in-list (egg-runner-schedule runner))])
 
       (define rule-type (car element))
       (define schedule-params (cdr element))
@@ -321,20 +320,22 @@
       (egglog-program-add! `(ruleset ,tag) curr-program)
 
       ;; Add the actual egglog rewrite rules
-      (egglog-program-add-list! (egglog-rewrite-rules rule-type tag) curr-program)
-
-      (cons tag schedule-params)))
+      (egglog-program-add-list! (egglog-rewrite-rules rule-type tag) curr-program))
 
   ;; 2. Adding each pair of start-expr and end-expr
   (for ([(start-expr end-expr) (in-dict expr-pairs)]
-        [i (in-naturals 1)])
+        [i (in-range 1 (length expr-pairs))])
+  
     (define start-let
       `(let ,(string->symbol (string-append "?e1" (number->string i))) ,(expr->e1-expr start-expr)))
-    
+
+    (egglog-program-add! start-let curr-program)
+
+
     (define end-let
       `(let ,(string->symbol (string-append "?e2" (number->string i))) ,(expr->e1-expr end-expr)))
     
-    (egglog-program-add! `(,start-let ,end-let) curr-program))
+    (egglog-program-add! end-let curr-program))
 
 
   ;; 4. Running the schedule
@@ -343,10 +344,12 @@
 
 
   ;; 5. Running Checks
-  (for ([i (in-naturals 1)])
+  (for ([i (in-range 1 (length expr-pairs))])
     (define start-extract `(extract ,(string->symbol (string-append "?e1" (number->string i)))))
+    (egglog-program-add! start-extract curr-program)
+    
     (define end-extract `(extract ,(string->symbol (string-append "?e2" (number->string i)))))
-    (egglog-program-add! `(,start-extract ,end-extract) curr-program))
+    (egglog-program-add! end-extract curr-program))
 
 
   ;; 6. After step-by-step building the program, process it
@@ -360,59 +363,6 @@
 
   (for/list ([i (in-range 0 (vector-length extract-results) 2)])
     (equal? (vector-ref extract-results i) (vector-ref extract-results (+ i 1)))))
-
-
-(define (prev-run-egglog-equal? runner expr-pairs)
-    (define program '())
-
-    ;; 1. Prelude
-    (set! program (append program (prelude #:mixed-egraph? #t)))
-
-    ;; 2. User Rules which comes from schedule (need to be translated)
-    (define tag-schedule
-      (for/list ([i (in-naturals 1)] ; Start index `i` from 1
-                [element (in-list (egg-runner-schedule runner))])
-
-        (define rule-type (car element))
-        (define schedule-params (cdr element))
-
-        (define curr-tag (string->symbol (string-append "?tag" (number->string i))))
-
-        ;; Add rulsets
-        (set! program (append program `((ruleset ,curr-tag))))
-
-        ;; Add the actual egglog rewrite rules
-        (set! program (append program (egglog-rewrite-rules rule-type curr-tag)))
-
-        (cons curr-tag schedule-params)))
-
-    (for ([(start-expr end-expr) (in-dict expr-pairs)]
-          [i (in-naturals 1)])
-      (define start-let
-        `(let ,(string->symbol (string-append "?e1" (number->string i))) ,(expr->e1-expr start-expr)))
-      (define end-let
-        `(let ,(string->symbol (string-append "?e2" (number->string i))) ,(expr->e1-expr end-expr)))
-      (set! program (append program `(,start-let ,end-let))))
-
-    ;; 3. Running the schedule
-    (set! program (append program '((run-schedule (repeat 3 ?tag1) (repeat 20 const-fold)))))
-
-    ;; Running Checks
-    (for ([(start-expr end-expr) (in-dict expr-pairs)]
-          [i (in-naturals 1)])
-      (define start-extract `(extract ,(string->symbol (string-append "?e1" (number->string i)))))
-      (define end-extract `(extract ,(string->symbol (string-append "?e2" (number->string i)))))
-      (set! program (append program `(,start-extract ,end-extract))))
-
-    ;; 6. Call run-egglog-process
-    (define egglog-output (process-egglog (egglog-program program)))
-    (define stdout-content (car egglog-output))
-
-    (define extract-results (list->vector (string-split stdout-content "\n")))
-    (define stderr-content (cdr egglog-output))
-
-    (for/list ([i (in-range 0 (vector-length extract-results) 2)])
-      (equal? (vector-ref extract-results i) (vector-ref extract-results (+ i 1)))))
 
 
 (define (prelude curr-program #:mixed-egraph? [mixed-egraph? #t])
@@ -444,9 +394,9 @@
 
   (egglog-program-add! typed-graph curr-program)
 
-  (egglog-program-add! `(function lower (M String) MTy :unextractable) curr-program)
+  (egglog-program-add! `(constructor lower (M String) MTy :unextractable) curr-program)
 
-  (egglog-program-add! `(function lift (MTy) M :unextractable) curr-program)
+  (egglog-program-add! `(constructor lift (MTy) M :unextractable) curr-program)
 
   (egglog-program-add! `(ruleset const-fold) curr-program)
 
