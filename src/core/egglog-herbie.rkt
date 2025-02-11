@@ -41,6 +41,8 @@
 (define (all-repr-names [pform (*active-platform*)])
   (remove-duplicates (map (lambda (repr) (representation-name repr)) (platform-reprs pform))))
 
+(define file-num 1)
+
 ; Types handled
 ; - rationals
 ; - string
@@ -175,7 +177,6 @@
 
       (cons tag schedule-params)))
 
-
   ;; 3. Inserting expressions -> (egglog-add-exprs curr-batch (egglog-runner-ctx))
   ; (exprs . extract bindings)
   ; (define egglog-batch-exprs (prev-egglog-add-exprs curr-batch (egg-runner-ctx runner)))
@@ -217,23 +218,22 @@
   ; (set! program (append program `((run-schedule ,@run-schedule))))
   (egglog-program-add! `(run-schedule ,@run-schedule) curr-program)
 
-
   ;; 5. Extraction -> should just need root ids
   (for ([binding extract-bindings])
     (define val
       (if num-variants
-        `(extract ,binding 5)
-        
-        (match domain-fns
-          [(list 'lifting) `(extract (lift ,binding))]
-          [(list 'lowering)
-            (define curr-val
-              (symbol->string (representation-name (context-repr (egg-runner-ctx runner)))))
-            `(extract (lower ,binding ,curr-val))]
-          [_ `(extract ,binding)])))
+          `(extract ,binding 5)
 
-      ; (set! program (append program val))
-      (egglog-program-add! val curr-program))
+          (match domain-fns
+            [(list 'lifting) `(extract (lift ,binding))]
+            [(list 'lowering)
+             (define curr-val
+               (symbol->string (representation-name (context-repr (egg-runner-ctx runner)))))
+             `(extract (lower ,binding ,curr-val))]
+            [_ `(extract ,binding)])))
+
+    ; (set! program (append program val))
+    (egglog-program-add! val curr-program))
 
   ;; 6. After step-by-step building the program, process it
   ;; by running it using egglog
@@ -245,7 +245,7 @@
 
   (define input-batch (egg-runner-batch runner))
   (define out (batch->mutable-batch input-batch))
-  
+
   ;; (Listof (Listof exprs))
   (define herbie-exprss
     (let ([input-port (open-input-string stdout-content)])
@@ -310,47 +310,43 @@
   (for ([i (in-naturals 1)]
         [element (in-list (egg-runner-schedule runner))])
 
-      (define rule-type (car element))
-      (define schedule-params (cdr element))
+    (define rule-type (car element))
+    (define schedule-params (cdr element))
 
-      ;; Create a custom tag
-      (define tag (string->symbol (string-append "?tag" (number->string i))))
-     
-      ;; Add rulesets
-      (egglog-program-add! `(ruleset ,tag) curr-program)
+    ;; Create a custom tag
+    (define tag (string->symbol (string-append "?tag" (number->string i))))
 
-      ;; Add the actual egglog rewrite rules
-      (egglog-program-add-list! (egglog-rewrite-rules rule-type tag) curr-program))
+    ;; Add rulesets
+    (egglog-program-add! `(ruleset ,tag) curr-program)
+
+    ;; Add the actual egglog rewrite rules
+    (egglog-program-add-list! (egglog-rewrite-rules rule-type tag) curr-program))
 
   ;; 2. Adding each pair of start-expr and end-expr
   (for ([(start-expr end-expr) (in-dict expr-pairs)]
         [i (in-range 1 (length expr-pairs))])
-  
+
     (define start-let
       `(let ,(string->symbol (string-append "?e1" (number->string i))) ,(expr->e1-expr start-expr)))
 
     (egglog-program-add! start-let curr-program)
 
-
     (define end-let
       `(let ,(string->symbol (string-append "?e2" (number->string i))) ,(expr->e1-expr end-expr)))
-    
-    (egglog-program-add! end-let curr-program))
 
+    (egglog-program-add! end-let curr-program))
 
   ;; 4. Running the schedule
   (define run-schedule `(run-schedule (repeat 3 ?tag1) (repeat 20 const-fold)))
   (egglog-program-add! run-schedule curr-program)
 
-
   ;; 5. Running Checks
   (for ([i (in-range 1 (length expr-pairs))])
     (define start-extract `(extract ,(string->symbol (string-append "?e1" (number->string i)))))
     (egglog-program-add! start-extract curr-program)
-    
+
     (define end-extract `(extract ,(string->symbol (string-append "?e2" (number->string i)))))
     (egglog-program-add! end-extract curr-program))
-
 
   ;; 6. After step-by-step building the program, process it
   ;; by running it using egglog
@@ -363,7 +359,6 @@
 
   (for/list ([i (in-range 0 (vector-length extract-results) 2)])
     (equal? (vector-ref extract-results i) (vector-ref extract-results (+ i 1)))))
-
 
 (define (prelude curr-program #:mixed-egraph? [mixed-egraph? #t])
   (load-herbie-builtins)
