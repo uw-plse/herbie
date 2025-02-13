@@ -118,6 +118,8 @@
     (cost-proc expr (repr-of expr ctx)))
 
   (define (cost-opportunity subexpr children)
+    ; (printf "subexpr ~a\n" subexpr)
+
     ; start and end cost of roots
     (define start-cost (expr->cost subexpr))
     (define best-cost (expr->cost (hash-ref expr->simplest subexpr)))

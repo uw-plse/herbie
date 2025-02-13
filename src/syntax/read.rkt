@@ -152,7 +152,21 @@
       [(list 'FPCore name (list args ...) props ... body) (values name args props body)]
       [(list 'FPCore (list args ...) props ... body) (values #f args props body)]))
 
-  (define prop-dict (props->dict props))
+
+  ;; Not sure how to write this but here goes!!!
+  ;; Do not do this for the below code : (define prop-dict (props->dict props))
+  ;; Is the above more efficient? : Yes
+  ;; Does the above work? : No
+  ;; Why? : props->dict on paper makes sense but :alt is not a unique key. TO prevent
+  ;;        there from being only one Developer Target, let this inefficient code exist
+  ;;        until we find something that exists that allows duplicate keys and dict-ref
+  (define prop-dict
+    (let loop ([props props])
+      (match props
+        ['() '()]
+        [(list prop val rest ...) (cons (cons prop val) (loop rest))])))
+
+
   (define default-prec (dict-ref prop-dict ':precision (*default-precision*)))
 
   (define-values (var-names var-precs)
@@ -181,8 +195,16 @@
   (define pre* (fpcore->prog (dict-ref prop-dict ':pre 'TRUE) ctx))
 
   (define targets
+  (begin
+    ; (printf "prop-dict ~a\n\n" prop-dict)
+
     (for/list ([(key val) (in-dict prop-dict)]
                #:when (eq? key ':alt))
+
+      ; (printf "key ~a\n" key)
+      ; (printf "val ~a\n" val)
+
+
       (match (parse-platform-name val) ; plat-name is symbol or #f
         ; If plat-name extracted, check if name matches
         [(? symbol? plat-name) (cons val (equal? plat-name (*platform-name*)))]
@@ -191,7 +213,7 @@
          (with-handlers ([exn:fail:user:herbie:missing? (lambda (e) (cons val #f))])
            ; Testing if error thrown
            (fpcore->prog val ctx)
-           (cons val #t))])))
+           (cons val #t))]))))
 
   (define spec (fpcore->prog (dict-ref prop-dict ':spec body) ctx))
   (check-unused-variables var-names body* pre*)

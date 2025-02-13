@@ -26,11 +26,8 @@
   (timeline-push! 'method "egg-herbie")
   (define generate-flags (hash-ref all-flags 'generate))
 
-  ; (printf "generate-flag :~a\n " generate-flags)
-
   (define simplifieds
     (if (member 'egglog generate-flags)
-        ; (run-egglog-single-extractor runner extractor)
         (run-egglog-multi-extractor runner extractor #:num-variants #f)
         (run-egg runner (cons 'single extractor))))
 
