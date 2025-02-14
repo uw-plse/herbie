@@ -217,7 +217,7 @@
       ; (printf "sandbox  (test-output test) ~a\n" (test-output test))
       ;; When in platform, evaluate error
       (for/list ([(expr is-valid?) (in-dict (test-output test))]
-                #:when is-valid?)
+                 #:when is-valid?)
         (define target-expr (fpcore->prog expr ctx))
         (define target-train-errs (errors target-expr train-pcontext ctx))
         (define target-test-errs (errors target-expr test-pcontext* ctx))

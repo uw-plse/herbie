@@ -22,7 +22,9 @@
          make-egglog-runner
          run-egglog-multi-extractor
          run-egglog-proofs
-         run-egglog-equal?)
+         run-egglog-equal?
+         e2->expr
+         e1->expr)
 
 (module+ test
   (require rackunit)
@@ -56,7 +58,7 @@
       (with-output-to-file temp-file #:exists 'replace (lambda () (for-each writeln curr-program)))
       temp-file))
 
-  ; (printf "file path ~a\n" egglog-file-path)
+  (printf "file path ~a\n" egglog-file-path)
 
   (define egglog-path
     (or (find-executable-path "egglog") (error "egglog executable not found in PATH")))
@@ -80,7 +82,9 @@
         (fprintf old-error-port "incorrect program ~a\n" curr-program)
         (error "Failed to execute egglog"))))
 
-  (delete-file egglog-file-path)
+  ; (delete-file egglog-file-path)
+
+  ; (printf "output ~a\n" (get-output-string stdout-port))
 
   (cons (get-output-string stdout-port) (get-output-string stderr-port)))
 

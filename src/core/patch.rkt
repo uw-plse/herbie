@@ -154,11 +154,15 @@
 
   (define generate-flags (hash-ref all-flags 'generate))
 
+  (printf "before multi\n")
+
   ; batchrefss is a (listof (listof batchref))
   (define batchrefss
     (if (member 'egglog generate-flags)
         (run-egglog-multi-extractor runner extractor)
         (run-egg runner `(multi . ,extractor))))
+
+  (printf "after multi\n\n")
 
   ; apply changelists
   (define rewritten
