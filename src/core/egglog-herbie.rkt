@@ -24,7 +24,10 @@
          run-egglog-proofs
          run-egglog-equal?
          e2->expr
-         e1->expr)
+         e1->expr
+         populate-e->id-tables
+         clear-e->id-tables
+         egglog-var?)
 
 (module+ test
   (require rackunit)
@@ -43,8 +46,6 @@
 (define (all-repr-names [pform (*active-platform*)])
   (remove-duplicates (map (lambda (repr) (representation-name repr)) (platform-reprs pform))))
 
-(define file-num 1)
-
 ; Types handled
 ; - rationals
 ; - string
@@ -58,7 +59,7 @@
       (with-output-to-file temp-file #:exists 'replace (lambda () (for-each writeln curr-program)))
       temp-file))
 
-  (printf "file path ~a\n" egglog-file-path)
+  ; (printf "file path ~a\n" egglog-file-path)
 
   (define egglog-path
     (or (find-executable-path "egglog") (error "egglog executable not found in PATH")))
@@ -305,6 +306,8 @@
 ; ; 1. ask within egglog program what is id
 ; ; 2. Extract expression from each expr
 (define (run-egglog-equal? runner expr-pairs) ; term equality?
+  (printf "bruh~a\n\n" (e2->id))
+
   (define curr-program (make-egglog-program))
 
   ;; 1. Add the Prelude
@@ -1011,5 +1014,151 @@
        `(if ,(loop cond)
             ,(loop ift)
             ,(loop iff))]
-      [`(Approx ,spec ,impl) (approx (e1->expr spec) (loop impl))]
+      [`(Approx ,spec ,impl) (approx (e1->expr spec) (loop impl))] ;;; todo approx bug or not?
       [`(,impl ,args ...) `(,(hash-ref (e2->id) impl) ,@(map loop args))])))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Testing API
+;; Most calls should be done for testing purposes through these two methods
+;;  - `populate-e->id-tables`: Used for testing e1-> expr and e2-> expr.
+;;                             Populates the e1->id and e2->id tables
+;;  - `run-egglog`: takes an egglog runner and performs an extraction (exprs or proof)
+
+(define (populate-e->id-tables)
+  (begin
+
+    (for ([op (in-list (all-operators))])
+      (hash-set! (e1->id) (serialize-op op) op))
+
+    (for-each (λ (pair) (hash-set! (e2->id) (car pair) (cdr pair)))
+              '((Acosf32Ty . acos.f32) (Acosf64Ty . acos.f64)
+                                       (Acoshf32Ty . acosh.f32)
+                                       (Acoshf64Ty . acosh.f64)
+                                       (Addf32Ty . +.f32)
+                                       (Addf64Ty . +.f64)
+                                       (AndboolTy . and.bool)
+                                       (Asinf32Ty . asin.f32)
+                                       (Asinf64Ty . asin.f64)
+                                       (Asinhf32Ty . asinh.f32)
+                                       (Asinhf64Ty . asinh.f64)
+                                       (Atan2f32Ty . atan2.f32)
+                                       (Atan2f64Ty . atan2.f64)
+                                       (Atanf32Ty . atan.f32)
+                                       (Atanf64Ty . atan.f64)
+                                       (Atanhf32Ty . atanh.f32)
+                                       (Atanhf64Ty . atanh.f64)
+                                       (Cbrtf32Ty . cbrt.f32)
+                                       (Cbrtf64Ty . cbrt.f64)
+                                       (Ceilf32Ty . ceil.f32)
+                                       (Ceilf64Ty . ceil.f64)
+                                       (Copysignf32Ty . copysign.f32)
+                                       (Copysignf64Ty . copysign.f64)
+                                       (Cosf32Ty . cos.f32)
+                                       (Cosf64Ty . cos.f64)
+                                       (Coshf32Ty . cosh.f32)
+                                       (Coshf64Ty . cosh.f64)
+                                       (Divf32Ty . /.f32)
+                                       (Divf64Ty . /.f64)
+                                       (Ef32Ty . E.f32)
+                                       (Ef64Ty . E.f64)
+                                       (Eqf32Ty . ==.f32)
+                                       (Eqf64Ty . ==.f64)
+                                       (Erfcf32Ty . erfc.f32)
+                                       (Erfcf64Ty . erfc.f64)
+                                       (Erff32Ty . erf.f32)
+                                       (Erff64Ty . erf.f64)
+                                       (Exp2f32Ty . exp2.f32)
+                                       (Exp2f64Ty . exp2.f64)
+                                       (Expf32Ty . exp.f32)
+                                       (Expf64Ty . exp.f64)
+                                       (Expm1f32Ty . expm1.f32)
+                                       (Expm1f64Ty . expm1.f64)
+                                       (Fabsf32Ty . fabs.f32)
+                                       (Fabsf64Ty . fabs.f64)
+                                       (FalseboolTy . FALSE.bool)
+                                       (Fdimf32Ty . fdim.f32)
+                                       (Fdimf64Ty . fdim.f64)
+                                       (Floorf32Ty . floor.f32)
+                                       (Floorf64Ty . floor.f64)
+                                       (Fmaf32Ty . fma.f32)
+                                       (Fmaf64Ty . fma.f64)
+                                       (Fmaxf32Ty . fmax.f32)
+                                       (Fmaxf64Ty . fmax.f64)
+                                       (Fminf32Ty . fmin.f32)
+                                       (Fminf64Ty . fmin.f64)
+                                       (Fmodf32Ty . fmod.f32)
+                                       (Fmodf64Ty . fmod.f64)
+                                       (Gtef32Ty . >=.f32)
+                                       (Gtef64Ty . >=.f64)
+                                       (Gtf32Ty . >.f32)
+                                       (Gtf64Ty . >.f64)
+                                       (Hypotf32Ty . hypot.f32)
+                                       (Hypotf64Ty . hypot.f64)
+                                       (Infinityf32Ty . INFINITY.f32)
+                                       (Infinityf64Ty . INFINITY.f64)
+                                       (Lgammaf32Ty . lgamma.f32)
+                                       (Lgammaf64Ty . lgamma.f64)
+                                       (Log10f32Ty . log10.f32)
+                                       (Log10f64Ty . log10.f64)
+                                       (Log1pf32Ty . log1p.f32)
+                                       (Log1pf64Ty . log1p.f64)
+                                       (Log2f32Ty . log2.f32)
+                                       (Log2f64Ty . log2.f64)
+                                       (Logbf32Ty . logb.f32)
+                                       (Logbf64Ty . logb.f64)
+                                       (Logf32Ty . log.f32)
+                                       (Logf64Ty . log.f64)
+                                       (Ltef32Ty . <=.f32)
+                                       (Ltef64Ty . <=.f64)
+                                       (Ltf32Ty . <.f32)
+                                       (Ltf64Ty . <.f64)
+                                       (Mulf32Ty . *.f32)
+                                       (Mulf64Ty . *.f64)
+                                       (Nanf32Ty . NAN.f32)
+                                       (Nanf64Ty . NAN.f64)
+                                       (Negf32Ty . neg.f32)
+                                       (Negf64Ty . neg.f64)
+                                       (Neqf32Ty . !=.f32)
+                                       (Neqf64Ty . !=.f64)
+                                       (NotboolTy . not.bool)
+                                       (OrboolTy . or.bool)
+                                       (Pif32Ty . PI.f32)
+                                       (Pif64Ty . PI.f64)
+                                       (Powf32Ty . pow.f32)
+                                       (Powf64Ty . pow.f64)
+                                       (Remainderf32Ty . remainder.f32)
+                                       (Remainderf64Ty . remainder.f64)
+                                       (Rintf32Ty . rint.f32)
+                                       (Rintf64Ty . rint.f64)
+                                       (Roundf32Ty . round.f32)
+                                       (Roundf64Ty . round.f64)
+                                       (Sinf32Ty . sin.f32)
+                                       (Sinf64Ty . sin.f64)
+                                       (Sinhf32Ty . sinh.f32)
+                                       (Sinhf64Ty . sinh.f64)
+                                       (Sqrtf32Ty . sqrt.f32)
+                                       (Sqrtf64Ty . sqrt.f64)
+                                       (Subf32Ty . -.f32)
+                                       (Subf64Ty . -.f64)
+                                       (Tanf32Ty . tan.f32)
+                                       (Tanf64Ty . tan.f64)
+                                       (Tanhf32Ty . tanh.f32)
+                                       (Tanhf64Ty . tanh.f64)
+                                       (Tgammaf32Ty . tgamma.f32)
+                                       (Tgammaf64Ty . tgamma.f64)
+                                       (TrueboolTy . TRUE.bool)
+                                       (Truncf32Ty . trunc.f32)
+                                       (Truncf64Ty . trunc.f64)))))
+
+;; todo : get active platform activated
+
+; (void)))
+
+(define (clear-e->id-tables)
+  ; (hash-clear! e1->id)
+  ; (hash-clear! e2->id)
+  (printf "done\n\n"))
+
+; (void))
+;   (begin
+;     ))
