@@ -26,7 +26,6 @@
          e2->expr
          e1->expr
          populate-e->id-tables
-         clear-e->id-tables
          egglog-var?)
 
 (module+ test
@@ -306,8 +305,6 @@
 ; ; 1. ask within egglog program what is id
 ; ; 2. Extract expression from each expr
 (define (run-egglog-equal? runner expr-pairs) ; term equality?
-  (printf "bruh~a\n\n" (e2->id))
-
   (define curr-program (make-egglog-program))
 
   ;; 1. Add the Prelude
@@ -1149,16 +1146,3 @@
                                        (TrueboolTy . TRUE.bool)
                                        (Truncf32Ty . trunc.f32)
                                        (Truncf64Ty . trunc.f64)))))
-
-;; todo : get active platform activated
-
-; (void)))
-
-(define (clear-e->id-tables)
-  ; (hash-clear! e1->id)
-  ; (hash-clear! e2->id)
-  (printf "done\n\n"))
-
-; (void))
-;   (begin
-;     ))
