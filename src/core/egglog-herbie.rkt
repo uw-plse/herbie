@@ -82,7 +82,7 @@
         (fprintf old-error-port "incorrect program ~a\n" curr-program)
         (error "Failed to execute egglog"))))
 
-  ; (delete-file egglog-file-path)
+  (delete-file egglog-file-path)
 
   ; (printf "output ~a\n" (get-output-string stdout-port))
 
