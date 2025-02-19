@@ -12,17 +12,21 @@
          "../syntax/load-plugin.rkt"
          "../utils/timeline.rkt"
          "batch.rkt"
-         "egg-herbie.rkt")
+         "egg-herbie.rkt"
+         "egglog-program.rkt")
 
 (provide prelude
+         prelude-exprs
          egglog-add-exprs
-         run-egglog-process
-         (struct-out egglog-program)
+         egglog-add-exprs-mainloop
          make-egglog-runner
-         run-egglog-single-extractor
          run-egglog-multi-extractor
          run-egglog-proofs
-         run-egglog-equal?)
+         run-egglog-equal?
+         e2->expr
+         e1->expr
+         populate-e->id-tables
+         egglog-var?)
 
 (module+ test
   (require rackunit)
@@ -41,17 +45,17 @@
 (define (all-repr-names [pform (*active-platform*)])
   (remove-duplicates (map (lambda (repr) (representation-name repr)) (platform-reprs pform))))
 
-;; Track the entire Egglog program in one go by "converting" into racket based code
-;; TODO : prelude, rules, expressions, extractions
-(struct egglog-program (program) #:prefab)
-
 ; Types handled
 ; - rationals
 ; - string
+
+;; High-level function that writes the program to a file, runs it then returns output
 (define (process-egglog program)
+  (define curr-program (get-actual-program program))
+
   (define egglog-file-path
     (let ([temp-file (make-temporary-file "program-to-egglog-~a.egg")])
-      (with-output-to-file temp-file #:exists 'replace (lambda () (for-each writeln program)))
+      (with-output-to-file temp-file #:exists 'replace (lambda () (for-each writeln curr-program)))
       temp-file))
 
   (define egglog-path
@@ -59,9 +63,6 @@
 
   (define stdout-port (open-output-string))
   (define stderr-port (open-output-string))
-
-  ; (printf "egglog-path : ~a\n" egglog-path)
-  ; (printf "egglog-file-path : ~a\n\n" egglog-file-path)
 
   (define old-error-port (current-error-port))
 
@@ -71,7 +72,12 @@
     (unless (system (format "~a ~a" egglog-path egglog-file-path))
       (begin
         (fprintf old-error-port "stdout-port ~a\n" (get-output-string stdout-port))
-        (fprintf old-error-port "stderr-port ~a\n" (get-output-string stderr-port))
+        ; Tail the last 100 lines of the error instead of everything
+        (fprintf old-error-port
+                 "stderr-port ~a\n"
+                 (string-join (take-right (string-split (get-output-string stderr-port) "\n") 100)
+                              "\n"))
+        (fprintf old-error-port "incorrect program ~a\n" curr-program)
         (error "Failed to execute egglog"))))
 
   (delete-file egglog-file-path)
@@ -80,11 +86,6 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Public API
-;;
-;; High-level function that writes the program to a file, runs it then returns output
-(define (run-egglog-process program-struct)
-  (process-egglog (egglog-program-program program-struct)))
-
 ;; Most calls to egglog should be done through this interface.
 ;;  - `make-egglog-runner`: creates a struct that describes a _reproducible_ egglog instance
 ;;  - `run-egglog`: takes an egglog runner and performs an extraction (exprs or proof)
@@ -140,23 +141,19 @@
 ;;  - multi extraction: `(multi . <extractor>)`
 ;;  - proofs: `(proofs . ((<start> . <end>) ...))`
 
-;; TODO : Need to run egglog to get the actual ids per
-(define (run-egglog-single-extractor runner extractor) ; single expression extraction
-  ; (printf "reached here single\n")
-  (run-egglog-multi-extractor runner extractor #:num-variants 1))
-
-
 ;; TODO : Need to run egglog to get the actual ids
 ;; very hard - per id recruse one level and ger simplest child
 (define (run-egglog-multi-extractor runner
                                     extractor
-                                    #:num-variants [num-variants 5]) ; multi expression extraction
-
-  (printf "num-variants : ~a\n" num-variants)
+                                    #:num-variants [num-variants #t]) ; multi expression extraction
 
   (define curr-batch (batch-remove-zombie (egg-runner-batch runner) (egg-runner-roots runner)))
-  (define program '())
-  (set! program (append program (prelude #:mixed-egraph? #t)))
+
+  (define curr-program (make-egglog-program))
+
+  ;; 1. Add the Prelude
+  (prelude curr-program #:mixed-egraph? #t)
+
   ;; 2. User Rules which comes from schedule (need to be translated)
   (define tag-schedule
     (for/list ([i (in-naturals 1)]
@@ -170,11 +167,11 @@
           ['lower 'lowering]
           [_
            (define curr-tag (string->symbol (string-append "?tag" (number->string i))))
-           ;; Add rulsets
-           (set! program (append program `((ruleset ,curr-tag))))
+           ;; Add rulesets
+           (egglog-program-add! `(ruleset ,curr-tag) curr-program)
 
            ;; Add the actual egglog rewrite rules
-           (set! program (append program (egglog-rewrite-rules rule-type curr-tag)))
+           (egglog-program-add-list! (egglog-rewrite-rules rule-type curr-tag) curr-program)
 
            curr-tag]))
 
@@ -182,8 +179,12 @@
 
   ;; 3. Inserting expressions -> (egglog-add-exprs curr-batch (egglog-runner-ctx))
   ; (exprs . extract bindings)
-  (define egglog-batch-exprs (egglog-add-exprs curr-batch (egg-runner-ctx runner)))
-  (set! program (append program (car egglog-batch-exprs)))
+  ; (define egglog-batch-exprs (prev-egglog-add-exprs curr-batch (egg-runner-ctx runner)))
+
+  (define extract-bindings (egglog-add-exprs curr-batch (egg-runner-ctx runner) curr-program))
+
+  ; (set! program (append program (car egglog-batch-exprs)))
+  ; (egglog-program-add-list! (car egglog-batch-exprs) curr-program)
 
   ;; 4. Running the schedule
   (define run-schedule '())
@@ -214,102 +215,56 @@
 
          [(#f #f) `((repeat 3 ,tag))])]))
 
-  (set! program (append program `((run-schedule ,@run-schedule))))
+  ; (set! program (append program `((run-schedule ,@run-schedule))))
+  (egglog-program-add! `(run-schedule ,@run-schedule) curr-program)
 
   ;; 5. Extraction -> should just need root ids
-  (for ([binding (cdr egglog-batch-exprs)])
-    (set! program
-          (append program
-                  (if (> num-variants 1)
-                      (list `(extract ,binding ,num-variants))
+  (for ([binding extract-bindings])
+    (define val
+      (if num-variants
+          `(extract ,binding 5)
 
-                      (match domain-fns
-                        [(list 'lifting) 
-                            (list `(extract (lift ,binding)))]
-                        [(list 'lowering)
-                            (define curr-val
-                              (symbol->string (representation-name (context-repr (egg-runner-ctx runner)))))
-                            (list `(extract (lower ,binding ,curr-val)))]
-                        [_ 
-                            (list `(extract ,binding))])))))
+          (match domain-fns
+            [(list 'lifting) `(extract (lift ,binding))]
+            [(list 'lowering)
+             (define curr-val
+               (symbol->string (representation-name (context-repr (egg-runner-ctx runner)))))
+             `(extract (lower ,binding ,curr-val))]
+            [_ `(extract ,binding)])))
 
+    ; (set! program (append program val))
+    (egglog-program-add! val curr-program))
 
-  (define egglog-output (run-egglog-process (egglog-program program)))
+  ;; 6. After step-by-step building the program, process it
+  ;; by running it using egglog
+  (define egglog-output (process-egglog curr-program))
+
+  ;; Extract its returned value
   (define stdout-content (car egglog-output))
-  (define stderr-content (cdr egglog-output))
+  ; (define stderr-content (cdr egglog-output))
 
   (define input-batch (egg-runner-batch runner))
   (define out (batch->mutable-batch input-batch))
 
-  ; (match num-variants
-  ;   [1
-  ;    (define egglog-exprs-split (string-split stdout-content "\n"))
+  ;; (Listof (Listof exprs))
+  (define herbie-exprss
+    (let ([input-port (open-input-string stdout-content)])
+      (for/list ([next-expr (in-port read input-port)])
+        (if num-variants
+            (map e2->expr next-expr)
+            (list (e2->expr next-expr))))))
 
-  ;    ;; listof exprs
-  ;    (define herbie-exprs
-  ;      (map (lambda (line) (e2->expr (with-input-from-string line read))) egglog-exprs-split))
+  (define result
+    (for/list ([variants (in-list herbie-exprss)])
+      (remove-duplicates
+       (for/list ([v (in-list variants)])
+         (egglog->batchref v input-batch out (context-repr (egg-runner-ctx runner))))
+       #:key batchref-idx)))
 
-  ;    (define result
-  ;      (for/list ([expr (in-list herbie-exprs)])
-  ;        (list (egglog->batchref expr input-batch out (context-repr (egg-runner-ctx runner))))))
+  (batch-copy-mutable-nodes! input-batch out)
 
-  ;    (batch-copy-mutable-nodes! input-batch out)
-  ;    ;; (Listof (Listof batchref))
-  ;    result]
-
-  ;   [_
-  ;    (define herbie-exprss
-  ;      (let ([input-port (open-input-string stdout-content)])
-  ;        (for/list ([next-expr (in-port read input-port)])
-  ;          (map e2->expr
-  ;               (if (list? next-expr)
-  ;                   next-expr
-  ;                   (list next-expr))))))
-
-  ;    (define result
-  ;      (for/list ([variants (in-list herbie-exprss)])
-  ;        (remove-duplicates
-  ;         (for/list ([v (in-list variants)])
-  ;           (egglog->batchref v input-batch out (context-repr (egg-runner-ctx runner))))
-  ;         #:key batchref-idx)))
-
-  ;    (batch-copy-mutable-nodes! input-batch out)
-
-  ;    ;; (Listof (Listof batchref))
-  ;    result]))
-
-  (define egglog-exprs-split (string-split stdout-content "\n"))
-
-  ;; listof exprs
-  (define herbie-exprs
-    (map (lambda (line) 
-      (begin
-        (define val (with-input-from-string line read))
-        (printf "prev-next-val ~a\n" val)
-        (e2->expr val))) 
-        
-      egglog-exprs-split))
-
-(define herbie-exprss
-  (let ([input-port (open-input-string stdout-content)])
-    (for/list ([next-expr (in-port read input-port)])
-      (printf "next-expr ~a\n" next-expr)
-      (map e2->expr
-          (if (list? next-expr)
-              next-expr
-              (list next-expr))))))
-
-(define result
-  (for/list ([variants (in-list herbie-exprss)])
-    (remove-duplicates
-     (for/list ([v (in-list variants)])
-       (egglog->batchref v input-batch out (context-repr (egg-runner-ctx runner))))
-     #:key batchref-idx)))
-
-(batch-copy-mutable-nodes! input-batch out)
-
-;; (Listof (Listof batchref))
-result)
+  ;; (Listof (Listof batchref))
+  result)
 
 (define (egglog->batchref expr input-batch out type)
   (define idx
@@ -345,71 +300,79 @@ result)
 
 ; ; 1. ask within egglog program what is id
 ; ; 2. Extract expression from each expr
-; ; TODO: if i have  two expressions how di i know if they are in the same e-class
-; ; if we are outside of egglog
 (define (run-egglog-equal? runner expr-pairs) ; term equality?
+  (define curr-program (make-egglog-program))
 
-  (define program '())
-
-  ;; 1. Prelude
-  (set! program (append program (prelude #:mixed-egraph? #t)))
+  ;; 1. Add the Prelude
+  (prelude curr-program #:mixed-egraph? #t)
 
   ;; 2. User Rules which comes from schedule (need to be translated)
-  (define tag-schedule
-    (for/list ([i (in-naturals 1)] ; Start index `i` from 1
-               [element (in-list (egg-runner-schedule runner))])
+  (for ([i (in-naturals 1)]
+        [element (in-list (egg-runner-schedule runner))])
 
-      (define rule-type (car element))
-      (define schedule-params (cdr element))
+    (define rule-type (car element))
+    (define schedule-params (cdr element))
 
-      (define curr-tag (string->symbol (string-append "?tag" (number->string i))))
+    ;; Create a custom tag
+    (define tag (string->symbol (string-append "?tag" (number->string i))))
 
-      ;; Add rulsets
-      (set! program (append program `((ruleset ,curr-tag))))
+    ;; Add rulesets
+    (egglog-program-add! `(ruleset ,tag) curr-program)
 
-      ;; Add the actual egglog rewrite rules
-      (set! program (append program (egglog-rewrite-rules rule-type curr-tag)))
+    ;; Add the actual egglog rewrite rules
+    (egglog-program-add-list! (egglog-rewrite-rules rule-type tag) curr-program))
 
-      (cons curr-tag schedule-params)))
+  ;; 2. Adding each pair of start-expr and end-expr
   (for ([(start-expr end-expr) (in-dict expr-pairs)]
-        [i (in-naturals 1)])
+        [i (in-range 1 (length expr-pairs))])
+
     (define start-let
       `(let ,(string->symbol (string-append "?e1" (number->string i))) ,(expr->e1-expr start-expr)))
+
+    (egglog-program-add! start-let curr-program)
+
     (define end-let
       `(let ,(string->symbol (string-append "?e2" (number->string i))) ,(expr->e1-expr end-expr)))
-    (set! program (append program `(,start-let ,end-let))))
 
-  ;; 3. Running the schedule
-  (set! program (append program '((run-schedule (repeat 3 ?tag1) (repeat 20 const-fold)))))
+    (egglog-program-add! end-let curr-program))
 
-  ;; Running Checks
-  (for ([(start-expr end-expr) (in-dict expr-pairs)]
-        [i (in-naturals 1)])
+  ;; 4. Running the schedule
+  (define run-schedule `(run-schedule (repeat 3 ?tag1) (repeat 20 const-fold)))
+  (egglog-program-add! run-schedule curr-program)
+
+  ;; 5. Running Checks
+  (for ([i (in-range 1 (length expr-pairs))])
     (define start-extract `(extract ,(string->symbol (string-append "?e1" (number->string i)))))
+    (egglog-program-add! start-extract curr-program)
+
     (define end-extract `(extract ,(string->symbol (string-append "?e2" (number->string i)))))
-    (set! program (append program `(,start-extract ,end-extract))))
+    (egglog-program-add! end-extract curr-program))
 
-  ;; 6. Call run-egglog-process
-  (define egglog-output (run-egglog-process (egglog-program program)))
+  ;; 6. After step-by-step building the program, process it
+  ;; by running it using egglog
+  (define egglog-output (process-egglog curr-program))
   (define stdout-content (car egglog-output))
+  ; (define stderr-content (cdr egglog-output))
 
+  ;; Extract its returned value
   (define extract-results (list->vector (string-split stdout-content "\n")))
-  (define stderr-content (cdr egglog-output))
 
   (for/list ([i (in-range 0 (vector-length extract-results) 2)])
     (equal? (vector-ref extract-results i) (vector-ref extract-results (+ i 1)))))
 
-(define (prelude #:mixed-egraph? [mixed-egraph? #t])
+(define (prelude curr-program #:mixed-egraph? [mixed-egraph? #t])
   (load-herbie-builtins)
   (define pform (*active-platform*))
-  (define prelude-exprs '())
+
   (define spec-egraph
     `(datatype M
                (Num BigRat :cost 4294967295)
                (Var String :cost 4294967295)
                (If M M M :cost 4294967295)
                ,@(platform-spec-nodes)))
-  (set! prelude-exprs (append prelude-exprs (list spec-egraph)))
+
+  (egglog-program-add! spec-egraph curr-program)
+
   (define typed-graph
     `(datatype MTy
                ,@(num-typed-nodes pform)
@@ -423,29 +386,50 @@ result)
                         [`(sum ,n) n]))
                (Approx M MTy)
                ,@(platform-impl-nodes pform)))
-  (set! prelude-exprs (append prelude-exprs (list typed-graph)))
-  (define lower-fn `(function lower (M String) MTy :unextractable))
-  (set! prelude-exprs (append prelude-exprs (list lower-fn)))
-  (define lift-fn `(function lift (MTy) M :unextractable))
-  (set! prelude-exprs (append prelude-exprs (list lift-fn)))
-  (set! prelude-exprs
-        (append prelude-exprs (list `(ruleset const-fold) `(ruleset lowering) `(ruleset lifting))))
-  (set! prelude-exprs (append prelude-exprs const-fold))
-  (define impl-lowering (impl-lowering-rules pform))
-  (set! prelude-exprs (append prelude-exprs impl-lowering))
-  (define impl-lifting (impl-lifting-rules pform))
-  (set! prelude-exprs (append prelude-exprs impl-lifting))
-  (define num-lowering (num-lowering-rules))
-  (set! prelude-exprs (append prelude-exprs num-lowering))
-  (define num-lifting (num-lifting-rules))
-  (set! prelude-exprs (append prelude-exprs num-lifting))
-  (define if-lowering (if-lowering-rules))
-  (set! prelude-exprs (append prelude-exprs if-lowering))
-  (define if-lifting (if-lifting-rule))
-  (set! prelude-exprs (append prelude-exprs (list if-lifting)))
-  (define approx-lifting (approx-lifting-rule))
-  (set! prelude-exprs (append prelude-exprs (list approx-lifting)))
-  prelude-exprs)
+
+  (egglog-program-add! typed-graph curr-program)
+
+  (egglog-program-add! `(constructor lower (M String) MTy :unextractable) curr-program)
+
+  (egglog-program-add! `(constructor lift (MTy) M :unextractable) curr-program)
+
+  (egglog-program-add! `(ruleset const-fold) curr-program)
+
+  (egglog-program-add! `(ruleset lowering) curr-program)
+
+  (egglog-program-add! `(ruleset lifting) curr-program)
+
+  (for ([curr-expr const-fold])
+    (egglog-program-add! curr-expr curr-program))
+
+  (for ([curr-expr (impl-lowering-rules pform)])
+    (egglog-program-add! curr-expr curr-program))
+
+  (for ([curr-expr (impl-lifting-rules pform)])
+    (egglog-program-add! curr-expr curr-program))
+
+  (for ([curr-expr (num-lowering-rules)])
+    (egglog-program-add! curr-expr curr-program))
+
+  (for ([curr-expr (num-lifting-rules)])
+    (egglog-program-add! curr-expr curr-program))
+
+  (for ([curr-expr (if-lowering-rules)])
+    (egglog-program-add! curr-expr curr-program))
+
+  (egglog-program-add! (if-lifting-rule) curr-program)
+
+  (egglog-program-add! (approx-lifting-rule) curr-program)
+
+  (void))
+
+(define (prelude-exprs #:mixed-egraph? [mixed-egraph? #t])
+  ; (define curr-program (new egglog-program%))
+  (define curr-program (make-egglog-program))
+
+  (prelude curr-program #:mixed-egraph? #t)
+
+  (get-actual-program curr-program))
 
 (define const-fold
   `((let ?zero (bigrat
@@ -681,7 +665,166 @@ result)
                   :ruleset
                   ,tag))))
 
-(define (egglog-add-exprs batch ctx)
+(define (egglog-add-exprs-mainloop batch ctx)
+  (define curr-program (make-egglog-program))
+  (define extract-bindings (egglog-add-exprs batch ctx curr-program))
+
+  (cons (get-actual-program curr-program) extract-bindings))
+
+(define (egglog-add-exprs batch ctx curr-program)
+  (define mappings (build-vector (batch-length batch) values))
+  (define bindings (make-hash))
+  (define vars (make-hash))
+  (define (remap x spec?)
+    (cond
+      [(hash-has-key? vars x)
+       (if spec?
+           (string->symbol (format "?~a" (hash-ref vars x)))
+           (string->symbol (format "?t~a" (hash-ref vars x))))]
+      [else (vector-ref mappings x)]))
+
+  ; node -> egglog node binding
+  ; inserts an expression into the e-graph, returning binding variable.
+  (define (insert-node! node n root?)
+    (define binding
+      (if root?
+          (string->symbol (format "?r~a" n))
+          (string->symbol (format "?b~a" n))))
+    (hash-set! bindings binding node)
+    binding)
+
+  (define root-bindings '())
+  ; Inserting nodes bottom-up
+  (define root-mask (make-vector (batch-length batch) #f))
+  (define spec-mask (make-vector (batch-length batch) #f))
+  (define (spec-tag n spec?)
+    (when (not (vector-ref spec-mask n))
+      (match (vector-ref (batch-nodes batch) n)
+        [`(if ,cond ,ift ,iff)
+         (when (vector-ref spec-mask cond)
+           (vector-set! spec-mask n #t)
+           (spec-tag cond #t)
+           (spec-tag ift #t)
+           (spec-tag iff #t))]
+        [(approx spec impl)
+         (vector-set! spec-mask n #t)
+         (spec-tag spec #t)]
+        [(list impl args ...)
+         (when (hash-has-key? (id->e1) impl)
+           (vector-set! spec-mask n #t)
+           (for ([arg (in-list args)])
+             (spec-tag arg #t)))]
+        [_
+         (when spec?
+           (vector-set! spec-mask n #t))])))
+
+  (for ([n (in-range (batch-length batch))])
+    (spec-tag n #f))
+  (for ([root (in-vector (batch-roots batch))])
+    (vector-set! root-mask root #t))
+  (for ([node (in-vector (batch-nodes batch))]
+        [root? (in-vector root-mask)]
+        [spec? (in-vector spec-mask)]
+        [n (in-naturals)])
+    (define node*
+      (match node
+        [(literal v repr)
+         `(,(typed-num-id repr) (bigrat (from-string ,(number->string (numerator v)))
+                                        (from-string ,(number->string (denominator v)))))]
+        [(? number?)
+         `(Num (bigrat (from-string ,(number->string (numerator node)))
+                       (from-string ,(number->string (denominator node)))))]
+        [(? symbol?) #f]
+        [`(if ,cond ,ift ,iff)
+         `(,(if spec? 'If 'IfTy) ,(remap cond spec?) ,(remap ift spec?) ,(remap iff spec?))]
+        [(approx spec impl) `(Approx ,(remap spec #t) ,(remap impl #f))]
+        [(list impl args ...)
+         `(,(hash-ref (if spec?
+                          (id->e1)
+                          (id->e2))
+                      impl)
+           ,@(for/list ([arg (in-list args)])
+               (remap arg spec?)))]))
+
+    (if node*
+        (vector-set! mappings n (insert-node! node* n root?))
+        (hash-set! vars n node))
+    (when root?
+      (set! root-bindings (cons (vector-ref mappings n) root-bindings))))
+
+  ; Var-lowering-rules
+  (for ([var (in-list (context-vars ctx))]
+        [repr (in-list (context-var-reprs ctx))])
+
+    (define curr-var-lowering-rule
+      `(rule ((= e (Var ,(symbol->string var))))
+             ((let ty ,(symbol->string (representation-name repr))
+                )
+              (let ety (,(typed-var-id (representation-name repr))
+                        ,(symbol->string var))
+                )
+              (union (lower e ty) ety))
+             :ruleset
+             lowering))
+
+    (egglog-program-add! curr-var-lowering-rule curr-program))
+
+  ; Var-lifting-rules
+  (for ([var (in-list (context-vars ctx))]
+        [repr (in-list (context-var-reprs ctx))])
+
+    (define curr-var-lifting-rule
+      `(rule ((= e (,(typed-var-id (representation-name repr)) ,(symbol->string var))))
+             ((let se (Var
+                       ,(symbol->string var))
+                )
+              (union (lift e) se))
+             :ruleset
+             lifting))
+
+    (egglog-program-add! curr-var-lifting-rule curr-program))
+
+  ; Var-spec-bindings
+  (for ([var (in-list (context-vars ctx))])
+    (define curr-var-spec-binding
+      `(let ,(string->symbol (format "?~a" var)) (Var ,(symbol->string var))))
+
+    (egglog-program-add! curr-var-spec-binding curr-program))
+
+  ; Var-typed-bindings
+  (for ([var (in-list (context-vars ctx))]
+        [repr (in-list (context-var-reprs ctx))])
+    (define curr-var-typed-binding
+      `(let ,(string->symbol (format "?t~a" var))
+         (,(typed-var-id (representation-name repr)) ,(symbol->string var))))
+
+    (egglog-program-add! curr-var-typed-binding curr-program))
+
+  ; Binding Exprs
+  (for ([root? (in-vector root-mask)]
+        [n (in-naturals)]
+        #:when (not (hash-has-key? vars n)))
+    (define binding
+      (if root?
+          (string->symbol (format "?r~a" n))
+          (string->symbol (format "?b~a" n))))
+
+    (define curr-binding-exprs `(let ,binding ,(hash-ref bindings binding)))
+
+    (egglog-program-add! curr-binding-exprs curr-program))
+
+  ; Only thing returned -> Extract Bindings
+  (define extract-bindings
+    (for/list ([root (batch-roots batch)])
+      (if (hash-has-key? vars root)
+          (if (vector-ref spec-mask root)
+              (string->symbol (format "?~a" (hash-ref vars root)))
+              (string->symbol (format "?t~a" (hash-ref vars root))))
+          (string->symbol (format "?r~a" root)))))
+
+  extract-bindings)
+
+(define (prev-egglog-add-exprs batch ctx)
   (define egglog-exprs '())
   (define mappings (build-vector (batch-length batch) values))
   (define bindings (make-hash))
@@ -855,8 +998,6 @@ result)
       [`(,op ,args ...) `(,(hash-ref (e1->id) op) ,@(map loop args))])))
 
 (define (e2->expr expr)
-  (printf "e2->expr ~a\n\n" expr)
-
   (let loop ([expr expr])
     (match expr
       [`(,(? egglog-num? num) (bigrat (from-string ,n) (from-string ,d)))
@@ -866,5 +1007,138 @@ result)
        `(if ,(loop cond)
             ,(loop ift)
             ,(loop iff))]
-      [`(Approx ,spec ,impl) (approx (e1->expr spec) (loop impl))]
+      [`(Approx ,spec ,impl) (approx (e1->expr spec) (loop impl))] ;;; todo approx bug or not?
       [`(,impl ,args ...) `(,(hash-ref (e2->id) impl) ,@(map loop args))])))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Testing API
+;; Most calls should be done for testing purposes through these two methods
+;;  - `populate-e->id-tables`: Used for testing e1-> expr and e2-> expr.
+;;                             Populates the e1->id and e2->id tables
+;;  - `run-egglog`: takes an egglog runner and performs an extraction (exprs or proof)
+
+(define (populate-e->id-tables)
+  (begin
+
+    (for ([op (in-list (all-operators))])
+      (hash-set! (e1->id) (serialize-op op) op))
+
+    (for-each (λ (pair) (hash-set! (e2->id) (car pair) (cdr pair)))
+              '((Acosf32Ty . acos.f32) (Acosf64Ty . acos.f64)
+                                       (Acoshf32Ty . acosh.f32)
+                                       (Acoshf64Ty . acosh.f64)
+                                       (Addf32Ty . +.f32)
+                                       (Addf64Ty . +.f64)
+                                       (AndboolTy . and.bool)
+                                       (Asinf32Ty . asin.f32)
+                                       (Asinf64Ty . asin.f64)
+                                       (Asinhf32Ty . asinh.f32)
+                                       (Asinhf64Ty . asinh.f64)
+                                       (Atan2f32Ty . atan2.f32)
+                                       (Atan2f64Ty . atan2.f64)
+                                       (Atanf32Ty . atan.f32)
+                                       (Atanf64Ty . atan.f64)
+                                       (Atanhf32Ty . atanh.f32)
+                                       (Atanhf64Ty . atanh.f64)
+                                       (Cbrtf32Ty . cbrt.f32)
+                                       (Cbrtf64Ty . cbrt.f64)
+                                       (Ceilf32Ty . ceil.f32)
+                                       (Ceilf64Ty . ceil.f64)
+                                       (Copysignf32Ty . copysign.f32)
+                                       (Copysignf64Ty . copysign.f64)
+                                       (Cosf32Ty . cos.f32)
+                                       (Cosf64Ty . cos.f64)
+                                       (Coshf32Ty . cosh.f32)
+                                       (Coshf64Ty . cosh.f64)
+                                       (Divf32Ty . /.f32)
+                                       (Divf64Ty . /.f64)
+                                       (Ef32Ty . E.f32)
+                                       (Ef64Ty . E.f64)
+                                       (Eqf32Ty . ==.f32)
+                                       (Eqf64Ty . ==.f64)
+                                       (Erfcf32Ty . erfc.f32)
+                                       (Erfcf64Ty . erfc.f64)
+                                       (Erff32Ty . erf.f32)
+                                       (Erff64Ty . erf.f64)
+                                       (Exp2f32Ty . exp2.f32)
+                                       (Exp2f64Ty . exp2.f64)
+                                       (Expf32Ty . exp.f32)
+                                       (Expf64Ty . exp.f64)
+                                       (Expm1f32Ty . expm1.f32)
+                                       (Expm1f64Ty . expm1.f64)
+                                       (Fabsf32Ty . fabs.f32)
+                                       (Fabsf64Ty . fabs.f64)
+                                       (FalseboolTy . FALSE.bool)
+                                       (Fdimf32Ty . fdim.f32)
+                                       (Fdimf64Ty . fdim.f64)
+                                       (Floorf32Ty . floor.f32)
+                                       (Floorf64Ty . floor.f64)
+                                       (Fmaf32Ty . fma.f32)
+                                       (Fmaf64Ty . fma.f64)
+                                       (Fmaxf32Ty . fmax.f32)
+                                       (Fmaxf64Ty . fmax.f64)
+                                       (Fminf32Ty . fmin.f32)
+                                       (Fminf64Ty . fmin.f64)
+                                       (Fmodf32Ty . fmod.f32)
+                                       (Fmodf64Ty . fmod.f64)
+                                       (Gtef32Ty . >=.f32)
+                                       (Gtef64Ty . >=.f64)
+                                       (Gtf32Ty . >.f32)
+                                       (Gtf64Ty . >.f64)
+                                       (Hypotf32Ty . hypot.f32)
+                                       (Hypotf64Ty . hypot.f64)
+                                       (Infinityf32Ty . INFINITY.f32)
+                                       (Infinityf64Ty . INFINITY.f64)
+                                       (Lgammaf32Ty . lgamma.f32)
+                                       (Lgammaf64Ty . lgamma.f64)
+                                       (Log10f32Ty . log10.f32)
+                                       (Log10f64Ty . log10.f64)
+                                       (Log1pf32Ty . log1p.f32)
+                                       (Log1pf64Ty . log1p.f64)
+                                       (Log2f32Ty . log2.f32)
+                                       (Log2f64Ty . log2.f64)
+                                       (Logbf32Ty . logb.f32)
+                                       (Logbf64Ty . logb.f64)
+                                       (Logf32Ty . log.f32)
+                                       (Logf64Ty . log.f64)
+                                       (Ltef32Ty . <=.f32)
+                                       (Ltef64Ty . <=.f64)
+                                       (Ltf32Ty . <.f32)
+                                       (Ltf64Ty . <.f64)
+                                       (Mulf32Ty . *.f32)
+                                       (Mulf64Ty . *.f64)
+                                       (Nanf32Ty . NAN.f32)
+                                       (Nanf64Ty . NAN.f64)
+                                       (Negf32Ty . neg.f32)
+                                       (Negf64Ty . neg.f64)
+                                       (Neqf32Ty . !=.f32)
+                                       (Neqf64Ty . !=.f64)
+                                       (NotboolTy . not.bool)
+                                       (OrboolTy . or.bool)
+                                       (Pif32Ty . PI.f32)
+                                       (Pif64Ty . PI.f64)
+                                       (Powf32Ty . pow.f32)
+                                       (Powf64Ty . pow.f64)
+                                       (Remainderf32Ty . remainder.f32)
+                                       (Remainderf64Ty . remainder.f64)
+                                       (Rintf32Ty . rint.f32)
+                                       (Rintf64Ty . rint.f64)
+                                       (Roundf32Ty . round.f32)
+                                       (Roundf64Ty . round.f64)
+                                       (Sinf32Ty . sin.f32)
+                                       (Sinf64Ty . sin.f64)
+                                       (Sinhf32Ty . sinh.f32)
+                                       (Sinhf64Ty . sinh.f64)
+                                       (Sqrtf32Ty . sqrt.f32)
+                                       (Sqrtf64Ty . sqrt.f64)
+                                       (Subf32Ty . -.f32)
+                                       (Subf64Ty . -.f64)
+                                       (Tanf32Ty . tan.f32)
+                                       (Tanf64Ty . tan.f64)
+                                       (Tanhf32Ty . tanh.f32)
+                                       (Tanhf64Ty . tanh.f64)
+                                       (Tgammaf32Ty . tgamma.f32)
+                                       (Tgammaf64Ty . tgamma.f64)
+                                       (TrueboolTy . TRUE.bool)
+                                       (Truncf32Ty . trunc.f32)
+                                       (Truncf64Ty . trunc.f64)))))
