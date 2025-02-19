@@ -20,7 +20,7 @@ function getFreePort() {
 const PORT = await getFreePort();
 
 console.log("Spawning server on port " + PORT)
-const child = spawn('racket', ['-y', 'src/main.rkt', 'web', '--quiet', '--port', ""+PORT]);
+const child = spawn('racket', ['-y', 'src/main.rkt', 'web', '--threads', '2', '--quiet', '--port', ""+PORT]);
 
 child.stdout.on('data', (data) => {
     console.log(""+data);

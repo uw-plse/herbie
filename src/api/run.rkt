@@ -63,8 +63,7 @@
 (define (merge-profile-jsons ps)
   (profile->json (apply profile-merge (map json->profile (dict-values ps)))))
 
-(define (generate-bench-report job-id bench-name test-number dir number-of-test)
-  (define result (wait-for-job job-id))
+(define (generate-bench-report result bench-name test-number dir total-tests)
   (define report-path (bench-folder-path bench-name test-number))
   (define report-directory (build-path dir report-path))
   (unless (directory-exists? report-directory)
@@ -79,7 +78,7 @@
                                (make-page page out result #t #f)))))
 
   (define table-data (get-table-data-from-hash result report-path))
-  (print-test-result (+ test-number 1) number-of-test table-data)
+  (print-test-result (+ test-number 1) total-tests table-data)
   table-data)
 
 (define (run-tests tests #:dir dir #:threads threads)
@@ -96,7 +95,7 @@
     (for/list ([job-id (in-list job-ids)]
                [test (in-list tests)]
                [test-number (in-naturals)])
-      (generate-bench-report job-id (test-name test) test-number dir (length tests))))
+      (generate-bench-report (wait-for-job job-id) (test-name test) test-number dir (length tests))))
 
   (define info (make-report-info results #:seed seed))
   (write-datafile (build-path dir "results.json") info)
