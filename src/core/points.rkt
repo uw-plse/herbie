@@ -63,7 +63,7 @@
   (apply average (map ulps->bits e)))
 
 (define (errors expr pcontext ctx)
-  (map first (batch-errors (list expr) pcontext ctx)))
+  (first (batch-errors (list expr) pcontext ctx)))
 
 (define (batch-errors exprs pcontext ctx)
   (define fn (compile-progs exprs ctx))
@@ -71,11 +71,17 @@
   (define special? (representation-special-value? repr))
   (define max-error (+ 1 (expt 2 (representation-total-bits repr))))
 
-  (for/list ([(point exact) (in-pcontext pcontext)])
-    (for/list ([out (in-vector (apply fn point))])
-      (if (special? out)
-          max-error
-          (ulp-difference out exact repr)))))
+  ;; This generates the errors array in reverse because that's how lists work
+  (define num-points (pcontext-length pcontext))
+  (for/fold ([result (make-list (length exprs) '())])
+            ([point (in-vector (pcontext-points pcontext) (- num-points 1) -1 -1)]
+             [exact (in-vector (pcontext-exacts pcontext) (- num-points 1) -1 -1)])
+    (for/list ([out (in-vector (apply fn point))]
+               [rest (in-list result)])
+      (cons (if (special? out)
+                max-error
+                (ulp-difference out exact repr))
+            rest))))
 
 ;; Herbie <=> JSON conversion for pcontext
 ;; A JSON pcontext is just a list of lists

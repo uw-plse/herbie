@@ -134,8 +134,7 @@
                  [*gensym-collisions* 1]
                  [*gensym-fix-name* fix-name])
     ; make compiler context
-    (define ctx
-      (ctx-update-props (make-compiler-ctx) (append '(:precision binary64 :round nearestEven))))
+    (define ctx (ctx-update-props (make-compiler-ctx) '(:precision binary64 :round nearestEven)))
 
     ; translate
     (define p (open-output-string))

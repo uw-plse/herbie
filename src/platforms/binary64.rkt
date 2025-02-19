@@ -83,26 +83,22 @@
                        [sub-fold (-.f64 a 0) a]
                        [sub0-neg (-.f64 0 a) (neg.f64 a)]
                        [sub-neg (-.f64 a b) (+.f64 a (neg.f64 b))]))
-(define-operator-impl
- (*.f64 [x : binary64] [y : binary64])
- binary64
- #:spec (* x y)
- #:fpcore (! :precision binary64 (* x y))
- #:fl *
- #:commutes
- #:identities ([distribute-lft-neg-out (*.f64 (neg.f64 a) b) (neg.f64 (*.f64 a b))]
-               [distribute-rgt-neg-out (*.f64 a (neg.f64 b)) (neg.f64 (*.f64 a b))]
-               [mul0-lft (*.f64 0 a) 0]
-               [mul0-rgt (*.f64 a 0) 0]
-               [*-lft-identity (*.f64 1 a) a]
-               [*-rgt-identity (*.f64 a 1) a]
-               [mul-1-neg (*.f64 -1 a) (neg.f64 a)]
-               [*-un-lft-identity a (*.f64 1 a)]
-               [sqr-neg (*.f64 (neg.f64 a) (neg.f64 a)) (*.f64 a a)]
-               [sqr-abs (*.f64 (fabs.f64 a) (fabs.f64 a)) (*.f64 a a)]
-               [mul-fabs (*.f64 (fabs.f64 a) (fabs.f64 b)) (fabs.f64 (*.f64 a b))]
-               [sqr-sin-b (*.f64 (sin.f64 x) (sin.f64 x)) (-.f64 1 (*.f64 (cos.f64 x) (cos.f64 x)))]
-               [sqr-cos-b (*.f64 (cos.f64 x) (cos.f64 x)) (-.f64 1 (*.f64 (sin.f64 x) (sin.f64 x)))]))
+(define-operator-impl (*.f64 [x : binary64] [y : binary64])
+                      binary64
+                      #:spec (* x y)
+                      #:fpcore (! :precision binary64 (* x y))
+                      #:fl *
+                      #:commutes
+                      #:identities
+                      ([distribute-lft-neg-out (*.f64 (neg.f64 a) b) (neg.f64 (*.f64 a b))]
+                       [distribute-rgt-neg-out (*.f64 a (neg.f64 b)) (neg.f64 (*.f64 a b))]
+                       [*-lft-identity (*.f64 1 a) a]
+                       [*-rgt-identity (*.f64 a 1) a]
+                       [mul-1-neg (*.f64 -1 a) (neg.f64 a)]
+                       [*-un-lft-identity a (*.f64 1 a)]
+                       [sqr-neg (*.f64 (neg.f64 a) (neg.f64 a)) (*.f64 a a)]
+                       [sqr-abs (*.f64 (fabs.f64 a) (fabs.f64 a)) (*.f64 a a)]
+                       [mul-fabs (*.f64 (fabs.f64 a) (fabs.f64 b)) (fabs.f64 (*.f64 a b))]))
 (define-operator-impl (/.f64 [x : binary64] [y : binary64])
                       binary64
                       #:spec (/ x y)
@@ -111,11 +107,8 @@
                       #:identities
                       ([distribute-frac-neg (/.f64 (neg.f64 a) b) (neg.f64 (/.f64 a b))]
                        [distribute-frac-neg2 (/.f64 a (neg.f64 b)) (neg.f64 (/.f64 a b))]
-                       [div0 (/.f64 0 a) 0]
-                       [*-inverses (/.f64 a a) 1]
                        [/-rgt-identity (/.f64 a 1) a]
-                       [div-fabs (/.f64 (fabs.f64 a) (fabs.f64 b)) (fabs.f64 (/.f64 a b))]
-                       [inv-pow (/.f64 1 a) (pow.f64 a -1)]))
+                       [div-fabs (/.f64 (fabs.f64 a) (fabs.f64 b)) (fabs.f64 (/.f64 a b))]))
 
 (define-libm-impl/binary64 fabs
                            (binary64)

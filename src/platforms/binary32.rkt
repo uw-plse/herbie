@@ -1,8 +1,8 @@
 #lang racket
 
-;; Builtin single-precision plugin (:precision binary32)
-
-(require math/bigfloat)
+;; A 32-bit float is emulated in Racket as a 64-bit float,
+(require math/bigfloat
+         math/flonum)
 (require "runtime/float32.rkt"
          "runtime/utils.rkt"
          "runtime/libm.rkt")
@@ -12,8 +12,7 @@
   )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; representation ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(define-representation (binary32 real float32?)
+(define-representation (binary32 real flonum?)
                        bigfloat->float32
                        bf
                        (shift 31 ordinal->float32)
@@ -24,10 +23,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; constants ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-constants binary32
-                  [PI PI.f32 (->float32 pi)]
-                  [E E.f32 (->float32 (exp 1.0))]
-                  [INFINITY INFINITY.f32 (->float32 +inf.0)]
-                  [NAN NAN.f32 (->float32 +nan.0)])
+                  [PI PI.f32 (flsingle pi)]
+                  [E E.f32 (flsingle (exp 1.0))]
+                  [INFINITY INFINITY.f32 +inf.0]
+                  [NAN NAN.f32 +nan.0])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; operators ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -86,26 +85,22 @@
                        [sub0-neg (-.f32 0 a) (neg.f32 a)]
                        [sub-neg (-.f32 a b) (+.f32 a (neg.f32 b))]))
 
-(define-operator-impl
- (*.f32 [x : binary32] [y : binary32])
- binary32
- #:spec (* x y)
- #:fpcore (! :precision binary32 (* x y))
- #:fl fl32*
- #:commutes
- #:identities ([distribute-lft-neg-out (*.f32 (neg.f32 x) y) (neg.f32 (*.f32 x y))]
-               [distribute-rgt-neg-out (*.f32 x (neg.f32 y)) (neg.f32 (*.f32 x y))]
-               [mul0-lft (*.f32 0 a) 0]
-               [mul0-rgt (*.f32 a 0) 0]
-               [*-lft-identity (*.f32 1 a) a]
-               [*-rgt-identity (*.f32 a 1) a]
-               [mul-1-neg (*.f32 -1 a) (neg.f32 a)]
-               [*-un-lft-identity a (*.f32 1 a)]
-               [sqr-neg (*.f32 (neg.f32 x) (neg.f32 x)) (*.f32 x x)]
-               [sqr-abs (*.f32 (fabs.f32 x) (fabs.f32 x)) (*.f32 x x)]
-               [mul-fabs (*.f32 (fabs.f32 a) (fabs.f32 b)) (fabs.f32 (*.f32 a b))]
-               [sqr-sin-b (*.f32 (sin.f32 x) (sin.f32 x)) (-.f32 1 (*.f32 (cos.f32 x) (cos.f32 x)))]
-               [sqr-cos-b (*.f32 (cos.f32 x) (cos.f32 x)) (-.f32 1 (*.f32 (sin.f32 x) (sin.f32 x)))]))
+(define-operator-impl (*.f32 [x : binary32] [y : binary32])
+                      binary32
+                      #:spec (* x y)
+                      #:fpcore (! :precision binary32 (* x y))
+                      #:fl fl32*
+                      #:commutes
+                      #:identities
+                      ([distribute-lft-neg-out (*.f32 (neg.f32 x) y) (neg.f32 (*.f32 x y))]
+                       [distribute-rgt-neg-out (*.f32 x (neg.f32 y)) (neg.f32 (*.f32 x y))]
+                       [*-lft-identity (*.f32 1 a) a]
+                       [*-rgt-identity (*.f32 a 1) a]
+                       [mul-1-neg (*.f32 -1 a) (neg.f32 a)]
+                       [*-un-lft-identity a (*.f32 1 a)]
+                       [sqr-neg (*.f32 (neg.f32 x) (neg.f32 x)) (*.f32 x x)]
+                       [sqr-abs (*.f32 (fabs.f32 x) (fabs.f32 x)) (*.f32 x x)]
+                       [mul-fabs (*.f32 (fabs.f32 a) (fabs.f32 b)) (fabs.f32 (*.f32 a b))]))
 
 (define-operator-impl (/.f32 [x : binary32] [y : binary32])
                       binary32
@@ -114,10 +109,7 @@
                       #:fl fl32/
                       #:identities ([distribute-frac-neg (/.f32 (neg.f32 x) y) (neg.f32 (/.f32 x y))]
                                     [distribute-frac-neg2 (/.f32 x (neg.f32 y)) (neg.f32 (/.f32 x y))]
-                                    [div0 (/.f32 0 a) 0]
-                                    [*-inverses (/.f32 a a) 1]
-                                    [/-rgt-identity (/.f32 a 1) a]
-                                    [inv-pow (/.f32 1 a) (pow.f32 a -1)]))
+                                    [/-rgt-identity (/.f32 a 1) a]))
 
 (define-libm-impl/binary32 fabs
                            (binary32)
@@ -210,11 +202,11 @@
                             [(binary32 binary32 binary32)
                              (atan2 copysign fdim fmax fmin fmod pow remainder)])
 
-(define-libm c_erfcf (erfc float float))
-(define-libm c_expm1f (expm1 float float))
-(define-libm c_log1pf (log1p float float))
-(define-libm c_hypotf (hypot float float float))
-(define-libm c_fmaf (fma float float float float))
+(define-libm c_erfcf (erfcf float float))
+(define-libm c_expm1f (expm1f float float))
+(define-libm c_log1pf (log1pf float float))
+(define-libm c_hypotf (hypotf float float float))
+(define-libm c_fmaf (fmaf float float float float))
 
 (when c_erfcf
   (define-operator-impl (erfc.f32 [x : binary32])
@@ -255,7 +247,7 @@
                       binary32
                       #:spec x
                       #:fpcore (! :precision binary32 (cast x))
-                      #:fl (curryr ->float32))
+                      #:fl flsingle)
 
 (define-operator-impl (binary32->binary64 [x : binary32])
                       binary64

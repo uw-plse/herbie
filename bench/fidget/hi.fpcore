@@ -1,0 +1,4 @@
+(FPCore (x y)
+  :name "The letters hi in the upper-right quadrant"
+  :precision binary64
+  (fmin (fmin (fmin (fmin (fmax (fmax (fmax (- y 0.55) (- y)) (- x 0.825)) (- 0.725 x)) (- (sqrt (+ (pow (- y 0.7) 2) (pow (- x 0.775) 2))) 0.075)) (fmax (fmax (fmax (- y) (- y 0.275)) (- x 0.55)) (- 0.45 x))) (fmax (fmax (fmax (- y) (- y 1)) (- x 0.1)) (- x))) (fmax (fmax (fmax (fmax (fmax (- y 0.55) (- x 0.55)) (- x)) (- 0.275 y)) (- 0.175 (sqrt (+ (pow (- y 0.275) 2) (pow (- x 0.275) 2))))) (- (sqrt (+ (pow (- y 0.275) 2) (pow (- x 0.275) 2))) 0.275))))

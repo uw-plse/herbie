@@ -8,35 +8,27 @@
          "matcher.rkt"
          "types.rkt")
 
-(provide (rename-out [operator-or-impl? operator?])
-         (struct-out literal)
+(provide (struct-out literal)
          (struct-out approx)
+         (struct-out hole)
          variable?
          constant-operator?
          operator-exists?
-         operator-deprecated?
          operator-info
          all-operators
-         all-constants
+
+         prog->spec
+
          impl-exists?
          impl-info
-         all-operator-impls
-         (rename-out [all-active-operator-impls active-operator-impls])
-         activate-operator-impl!
-         clear-active-operator-impls!
          *functions*
-         register-function!
-         get-fpcore-impl
-         get-cast-impl
-         generate-cast-impl
-         cast-impl?)
+         register-function!)
 
 (module+ internals
   (provide define-operator-impl
            register-operator-impl!
            define-operator
            register-operator!
-           register-conversion-generator!
            variable?))
 
 (module+ test
@@ -54,8 +46,7 @@
 ;; A real operator requires
 ;;  - a (unique) name
 ;;  - input and output types
-;;  - optionally a deprecated? flag [#f by default]
-(struct operator (name itype otype deprecated))
+(struct operator (name itype otype))
 
 ;; All real operators
 (define operators (make-hasheq))
@@ -64,20 +55,9 @@
 (define (operator-exists? op)
   (hash-has-key? operators op))
 
-;; Checks if an operator has been registered as deprecated.
-(define (operator-deprecated? op)
-  (operator-deprecated (hash-ref operators op)))
-
 ;; Returns all operators.
 (define (all-operators)
   (sort (hash-keys operators) symbol<?))
-
-;; Returns all constant operators (operators with no arguments).
-(define (all-constants)
-  (sort (for/list ([(name rec) (in-hash operators)]
-                   #:when (null? (operator-itype rec)))
-          name)
-        symbol<?))
 
 ;; Looks up a property `field` of an real operator `op`.
 ;; Panics if the operator is not found.
@@ -90,32 +70,19 @@
     [(itype) (operator-itype info)]
     [(otype) (operator-otype info)]))
 
-;; Registers an operator with an attribute mapping.
-;; Panics if an operator with name `name` has already been registered.
-;; By default, the input types are specified by `itypes`, the output type
-;; is specified by `otype`, and the operator is not deprecated; but
-;; `attrib-dict` can override these properties.
-(define (register-operator! name itypes otype attrib-dict)
+;; Registers an operator. Panics if the operator already exists.
+(define (register-operator! name itypes otype)
   (when (hash-has-key? operators name)
     (error 'register-operator! "operator already registered: ~a" name))
-  ; extract relevant fields and update tables
-  (define itypes* (dict-ref attrib-dict 'itype itypes))
-  (define otype* (dict-ref attrib-dict 'otype otype))
-  (define deprecated? (dict-ref attrib-dict 'deprecated #f))
-  (define info (operator name itypes* otype* deprecated?))
-  (hash-set! operators name info))
+  (hash-set! operators name (operator name itypes otype)))
 
 ;; Syntactic form for `register-operator!`
 (define-syntax (define-operator stx)
-  (define (bad! why [what #f])
-    (raise-syntax-error 'define-operator why stx what))
   (syntax-case stx ()
-    [(_ (id itype ...) otype [key val] ...)
-     (let ([id #'id])
-       (unless (identifier? id)
-         (bad! "expected identifier" id))
-       (with-syntax ([id id])
-         #'(register-operator! 'id '(itype ...) 'otype (list (cons 'key val) ...))))]))
+    [(_ (id itype ...) otype _ ...) ; The _ ... is for backwards-compatibility
+     (unless (identifier? #'id)
+       (raise-syntax-error 'define-operator stx "expected identifier" #'id))
+     #'(register-operator! 'id '(itype ...) 'otype)]))
 
 (define-syntax define-operators
   (syntax-rules (: ->)
@@ -229,11 +196,6 @@
 ;; Tracks implementations that are loaded into Racket's runtime
 (define operator-impls (make-hasheq))
 
-;; "Active" operator set
-;; Tracks implementations that will be used by Herbie during the improvement loop.
-;; Guaranteed to be a subset of the `operator-impls` table.
-(define active-operator-impls (mutable-set))
-
 ;; Looks up a property `field` of an real operator `op`.
 ;; Panics if the operator is not found.
 (define/contract (impl-info impl field)
@@ -249,27 +211,6 @@
     [(fpcore) (operator-impl-fpcore info)]
     [(fl) (operator-impl-fl info)]
     [(identities) (operator-impl-identities info)]))
-
-;; Returns all operator implementations.
-(define (all-operator-impls)
-  (sort (hash-keys operator-impls) symbol<?))
-
-;; Returns all active operator implementations.
-(define (all-active-operator-impls)
-  (sort (set->list active-operator-impls) symbol<?))
-
-;; Activates an implementation.
-;; Panics if the operator is not found.
-(define (activate-operator-impl! name)
-  (unless (hash-has-key? operator-impls name)
-    (raise-herbie-missing-error "Unknown operator implementation ~a" name))
-  (set-add! active-operator-impls name))
-
-;; Clears the table of active implementations.
-(define (clear-active-operator-impls!)
-  (set-clear! active-operator-impls))
-
-;; Collects all operators
 
 ;; Checks a specification.
 (define (check-spec! name ctx spec)
@@ -532,95 +473,10 @@
            [_ (oops! "bad syntax" fields)])))]
     [_ (oops! "bad syntax")]))
 
-;; Extracts the `fpcore` field of an operator implementation
-;; as a property dictionary and expression.
-(define (impl->fpcore impl)
-  (match (impl-info impl 'fpcore)
-    [(list '! props ... body) (values (props->dict props) body)]
-    [body (values '() body)]))
-
-;; For a given FPCore operator, rounding context, and input representations,
-;; finds the best operator implementation. Panics if none can be found.
-(define/contract (get-fpcore-impl op prop-dict ireprs #:impls [all-impls (all-active-operator-impls)])
-  (->* (symbol? prop-dict/c (listof representation?)) (#:impls (listof symbol?)) symbol?)
-  ; gather all implementations that have the same spec, input representations,
-  ; and its FPCore translation has properties that are found in `prop-dict`
-  (define impls
-    (reap [sow]
-          (for ([impl (in-list all-impls)])
-            (when (equal? ireprs (impl-info impl 'itype))
-              (define-values (prop-dict* expr) (impl->fpcore impl))
-              (define pattern (cons op (map (lambda (_) (gensym)) ireprs)))
-              (when (and (andmap (lambda (prop) (member prop prop-dict)) prop-dict*)
-                         (pattern-match pattern expr))
-                (sow impl))))))
-  ; check that we have any matching impls
-  (when (null? impls)
-    (raise-herbie-missing-error
-     "No implementation for `~a` under rounding context `~a` with types `~a`"
-     op
-     prop-dict
-     (string-join (map (λ (r) (format "<~a>" (representation-name r))) ireprs) " ")))
-  ; ; we rank implementations and select the highest scoring one
-  (define scores
-    (for/list ([impl (in-list impls)])
-      (define-values (prop-dict* _) (impl->fpcore impl))
-      (define num-matching (count (lambda (prop) (member prop prop-dict*)) prop-dict))
-      (cons num-matching (- (length prop-dict) num-matching))))
-  ; select the best implementation
-  ; sort first by the number of matched properties,
-  ; then tie break on the number of extraneous properties
-  (match-define (list (cons _ best) _ ...)
-    (sort (map cons scores impls)
-          (lambda (x y)
-            (cond
-              [(> (car x) (car y)) #t]
-              [(< (car x) (car y)) #f]
-              [else (> (cdr x) (cdr y))]))
-          #:key car))
-  best)
-
-;; Casts and precision changes
-
-(define (cast-impl? x)
-  (and (symbol? x)
-       (impl-exists? x)
-       (match (impl-info x 'vars)
-         [(list v)
-          #:when (eq? (impl-info x 'spec) v)
-          #t]
-         [_ #f])))
-
-(define (get-cast-impl irepr orepr #:impls [impls (all-active-operator-impls)])
-  (get-fpcore-impl 'cast (repr->prop orepr) (list irepr) #:impls impls))
-
-; Similar to representation generators, conversion generators
-; allow Herbie to query plugins for optimized implementations
-; of representation conversions, rather than the default
-; bigfloat implementation
-(define conversion-generators '())
-
-(define/contract (register-conversion-generator! proc)
-  (-> (-> any/c any/c boolean?) void?)
-  (unless (set-member? conversion-generators proc)
-    (set! conversion-generators (cons proc conversion-generators))))
-
-(define (generate-cast-impl irepr orepr)
-  (match (get-cast-impl irepr orepr)
-    [#f
-     (for/first ([gen (in-list conversion-generators)])
-       (gen (representation-name irepr) (representation-name orepr)))]
-    [impl impl]))
-
 ;; Expression predicates ;;
 
 (define (impl-exists? op)
   (hash-has-key? operator-impls op))
-
-(define (operator-or-impl? op)
-  (and (symbol? op)
-       (not (equal? op 'if))
-       (or (hash-has-key? operators op) (hash-has-key? operator-impls op))))
 
 (define (constant-operator? op)
   (and (symbol? op)
@@ -638,11 +494,33 @@
 (struct literal (value precision) #:prefab)
 
 ;; An approximation of a specification by
-;; an arbitrary floating-point expression.
+;; a floating-point expression.
 (struct approx (spec impl) #:prefab)
+
+;; An unknown floating-point expression that implements a given spec
+(struct hole (precision spec) #:prefab)
 
 ;; name -> (vars repr body)	;; name -> (vars prec body)
 (define *functions* (make-parameter (make-hasheq)))
 
 (define (register-function! name args repr body) ;; Adds a function definition.
   (hash-set! (*functions*) name (list args repr body)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; LImpl -> LSpec
+
+;; Translates an LImpl to a LSpec.
+(define (prog->spec expr)
+  (match expr
+    [(? literal?) (literal-value expr)]
+    [(? variable?) expr]
+    [(approx spec _) spec]
+    [`(if ,cond ,ift ,iff)
+     `(if ,(prog->spec cond)
+          ,(prog->spec ift)
+          ,(prog->spec iff))]
+    [`(,impl ,args ...)
+     (define vars (impl-info impl 'vars))
+     (define spec (impl-info impl 'spec))
+     (define env (map cons vars (map prog->spec args)))
+     (pattern-substitute spec env)]))

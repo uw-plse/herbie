@@ -17,59 +17,6 @@
 
 (provide generate-candidates)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;; Simplify ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(define (lower-approximations approxs global-batch)
-  (timeline-event! 'simplify)
-
-  (define reprs
-    (for/list ([approx (in-list approxs)])
-      (define prev (car (alt-prevs approx)))
-      (repr-of (debatchref (alt-expr prev)) (*context*))))
-
-  ; generate real rules
-  (define rules (real-rules (*simplify-rules*)))
-  (define lowering-rules (platform-lowering-rules))
-
-  ; egg runner
-  (define schedule
-    (if (flag-set? 'generate 'simplify)
-        ; if simplify enabled, 2-phases for real rewrites and implementation selection
-        `((,rules . ((node . ,(*node-limit*)))) (lower . ((iteration . 1) (scheduler . simple))))
-        ; if disabled, only implementation selection
-        `((lower . ((iteration . 1) (scheduler . simple))))))
-
-  (define roots
-    (for/vector ([approx (in-list approxs)])
-      (batchref-idx (alt-expr approx))))
-
-  ; run egg
-  (define runner (make-egg-runner global-batch roots reprs schedule))
-  (define simplification-options
-    (simplify-batch runner
-                    (typed-egg-batch-extractor
-                     (if (*egraph-platform-cost*) platform-egg-cost-proc default-egg-cost-proc)
-                     global-batch)))
-
-  ; convert to altns
-  (define simplified
-    (reap [sow]
-          (define global-batch-mutable (batch->mutable-batch global-batch)) ; Create mutable batch
-          (for ([altn (in-list approxs)]
-                [outputs (in-list simplification-options)])
-            (match-define (cons _ simplified) outputs)
-            (define prev (car (alt-prevs altn)))
-            (for ([batchreff (in-list simplified)])
-              (define spec (prog->spec (debatchref (alt-expr prev))))
-              (define idx ; Munge
-                (mutable-batch-push! global-batch-mutable
-                                     (approx (mutable-batch-munge! global-batch-mutable spec)
-                                             (batchref-idx batchreff))))
-              (sow (alt (batchref global-batch idx) `(simplify ,runner #f #f) (list altn) '()))))
-          (batch-copy-mutable-nodes! global-batch global-batch-mutable))) ; Update global-batch
-  (timeline-push! 'count (length approxs) (length simplified))
-  simplified)
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;; Taylor ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define transforms-to-try
@@ -83,10 +30,8 @@
                               #;(log ,log-x ,exp-x))))
 
 (define (taylor-alts starting-exprs altns global-batch)
-  (define exprs
-    (for/list ([expr (in-list starting-exprs)])
-      (prog->spec expr)))
-  (define free-vars (map free-variables exprs))
+  (define specs (map prog->spec starting-exprs))
+  (define free-vars (map free-variables specs))
   (define vars (context-vars (*context*)))
 
   (reap [sow]
@@ -94,22 +39,21 @@
         (for* ([var (in-list vars)]
                [transform-type transforms-to-try])
           (match-define (list name f finv) transform-type)
-          (define timeline-stop! (timeline-start! 'series (~a exprs) (~a var) (~a name)))
-          (define genexprs (approximate exprs var #:transform (cons f finv)))
+          (define timeline-stop! (timeline-start! 'series (~a specs) (~a var) (~a name)))
+          (define genexprs (approximate specs var #:transform (cons f finv)))
           (for ([genexpr (in-list genexprs)]
+                [spec (in-list specs)]
+                [expr (in-list starting-exprs)]
                 [altn (in-list altns)]
                 [fv (in-list free-vars)]
-                #:when (member var fv)) ; check whether var exists in expr at all
+                #:when (set-member? fv var)) ; check whether var exists in expr at all
             (for ([i (in-range (*taylor-order-limit*))])
-              (define gen (genexpr))
-              (unless (spec-has-nan? gen)
-                (define idx (mutable-batch-munge! global-batch-mutable gen)) ; Munge gen
-                (sow (alt (batchref global-batch idx) `(taylor ,name ,var) (list altn) '())))))
+              (define repr (repr-of expr (*context*)))
+              (define gen (approx spec (hole (representation-name repr) (genexpr))))
+              (define idx (mutable-batch-munge! global-batch-mutable gen)) ; Munge gen
+              (sow (alt (batchref global-batch idx) `(taylor ,name ,var) (list altn) '()))))
           (timeline-stop!))
         (batch-copy-mutable-nodes! global-batch global-batch-mutable))) ; Update global-batch
-
-(define (spec-has-nan? expr)
-  (expr-contains? expr (lambda (term) (eq? term 'NAN))))
 
 (define (run-taylor starting-exprs altns global-batch)
   (timeline-event! 'series)
@@ -122,7 +66,7 @@
   (timeline-push! 'outputs (map ~a (map (compose debatchref alt-expr) approxs)))
   (timeline-push! 'count (length altns) (length approxs))
 
-  (lower-approximations approxs global-batch))
+  approxs)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;; Recursive Rewrite ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -130,14 +74,9 @@
   (timeline-event! 'rewrite)
 
   ; generate required rules
-  (define rules (real-rules (*rules*)))
+  (define rules (*rules*))
   (define lifting-rules (platform-lifting-rules))
   (define lowering-rules (platform-lowering-rules))
-
-  (define extractor
-    (typed-egg-batch-extractor
-     (if (*egraph-platform-cost*) platform-egg-cost-proc default-egg-cost-proc)
-     global-batch))
 
   ; egg schedule (3-phases for mathematical rewrites and implementation selection)
   (define schedule
@@ -150,15 +89,9 @@
   (define roots (list->vector (map (compose batchref-idx alt-expr) altns)))
   (define reprs (map (curryr repr-of (*context*)) exprs))
   (timeline-push! 'inputs (map ~a exprs))
-  (define runner (make-egg-runner global-batch roots reprs schedule #:context (*context*)))
-
-  (define generate-flags (hash-ref all-flags 'generate))
-
+  (define runner (make-egraph global-batch roots reprs schedule))
   ; batchrefss is a (listof (listof batchref))
-  (define batchrefss
-    (if (member 'egglog generate-flags)
-        (run-egglog-multi-extractor runner extractor)
-        (run-egg runner `(multi . ,extractor))))
+  (define batchrefss (egraph-variations runner global-batch))
 
   ; apply changelists
   (define rewritten
@@ -166,7 +99,7 @@
           (for ([batchrefs (in-list batchrefss)]
                 [altn (in-list altns)])
             (for ([batchref* (in-list batchrefs)])
-              (sow (alt batchref* (list 'rr runner #f #f) (list altn) '()))))))
+              (sow (alt batchref* (list 'rr runner #f) (list altn) '()))))))
 
   (timeline-push! 'outputs (map (compose ~a debatchref alt-expr) rewritten))
   (timeline-push! 'count (length altns) (length rewritten))
@@ -183,7 +116,7 @@
   ; Starting alternatives
   (define start-altns
     (for/list ([expr (in-list exprs)]
-               [root (batch-roots global-batch)])
+               [root (in-vector (batch-roots global-batch))])
       (define repr (repr-of expr (*context*)))
       (alt (batchref global-batch root) (list 'patch expr repr) '() '())))
 
@@ -196,7 +129,7 @@
   ; Recursive rewrite
   (define rewritten
     (if (flag-set? 'generate 'rr)
-        (run-rr start-altns global-batch)
+        (run-rr (append start-altns approximations) global-batch)
         '()))
 
-  (remove-duplicates (append approximations rewritten) #:key (λ (x) (batchref-idx (alt-expr x)))))
+  (remove-duplicates rewritten #:key (λ (x) (batchref-idx (alt-expr x)))))

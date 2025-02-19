@@ -9,7 +9,6 @@ precision_step = 8;
 
 key = undefined;
 used_branch = {};
-used_tag = {};
 
 function get_point(tr) {
     var tests = tr.children[4].textContent.split("/");
@@ -17,11 +16,7 @@ function get_point(tr) {
     var flags = tr.children[3].getAttribute("title");
     flags = flags !== "" ? flags.split(" ") : [];
 
-    var note = tr.getElementsByClassName("note")[0];
-    var trtag = note && note.textContent;
-    
     return {
-        tag: trtag,
         tests: { got: +tests[0], total: +tests[1]},
         bits: { got: +bits[0], total: +bits[1] },
         branch: tr.children[2].textContent,
@@ -36,7 +31,6 @@ function get_data(table) {
     var data = Array.prototype.slice.call(table.querySelectorAll("tbody tr")).map(get_point);
     data.forEach(function(pt) {
         if (pt.tag && pt.branch) used_branch[pt.branch] = (used_branch[pt.branch] || 0) + 1;
-        if (pt.tag) used_tag[pt.tag] = (used_tag[pt.tag] || 0) + 1;
     });
     data.sort(function(a,b) {return a.time - b.time});
     return data;
@@ -168,27 +162,26 @@ function make_speed_graph(node, data) {
 
 }
 
-function select_data(data, options, tag) {
+function select_data(data, options) {
     return data = DATA.filter(function(x) {
         var out = true;
         for (var flag in options) {
             out = out && (x.flags.indexOf(flag) !== -1) == OPTIONS[flag];
         }
-        return out && x.tag == tag;
+        return out;
     });
 }
 
-function render(node1, node2, data, options, tag) {
+function render(node1, node2, data, options) {
     node1.selectAll("*").remove();
     node2.selectAll("*").remove();
     // Update classes
     var olds = Array.prototype.slice.call(document.getElementsByClassName("selected"));
     olds.forEach(function(old) { old.classList.remove("selected") })
-    document.getElementById("suite-" + tag).classList.add("selected");
     for (var flag in options) {
         if (options[flag]) document.getElementById("flag-" + flag).classList.add("selected");
     }
-    var data = select_data(data, options, tag);
+    var data = select_data(data, options);
     make_accuracy_graph(node1, data, "bits");
     make_speed_graph(node2, data);
 }
@@ -196,40 +189,15 @@ function render(node1, node2, data, options, tag) {
 function draw_results(node1, node2) {
     DATA = get_data(document.getElementById("reports"));
     OPTIONS = {"rules:numerics": true};
-    TAG = null;
     NODE1 = node1;
     NODE2 = node2;
-
-    function toggle_tag(tag) {
-        return function(evt) {
-            TAG = tag;
-            render(NODE1, NODE2, DATA, OPTIONS, TAG);
-        }
-    }
 
     function toggle_flag(flag) {
         return function(evt) {
             OPTIONS[flag] = !OPTIONS[flag];
-            render(NODE1, NODE2, DATA, OPTIONS, TAG);
+            render(NODE1, NODE2, DATA, OPTIONS);
         }
     }
-
-    var best_type = null;
-    var type_list = document.getElementById("suites");
-    for (var type in used_tag) {
-        if (!type) continue;
-        if ((!best_type || used_tag[type] > used_tag[best_type]) && type !== "tutorial") best_type = type;
-        var li = document.createElement("li");
-        var a = document.createElement("a");
-        a.href = "#" + type;
-        a.textContent = type;
-        a.addEventListener("click", toggle_tag(type));
-        li.id = "suite-" + type;
-        li.appendChild(a);
-        type_list.appendChild(li)
-    }
-    TAG = best_type;
-    if (!TAG) return;
 
     var flag_list = document.getElementById("classes");
     for (var flag in OPTIONS) {
@@ -251,7 +219,7 @@ function draw_results(node1, node2) {
     }
     key = d3.scale.category20().domain(branches);
 
-    render(NODE1, NODE2, DATA, OPTIONS, TAG);
+    render(NODE1, NODE2, DATA, OPTIONS);
 
     var branches = [];
     var toclinks = document.getElementById("toc").querySelectorAll("li a");

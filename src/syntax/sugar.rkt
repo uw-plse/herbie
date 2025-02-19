@@ -61,13 +61,14 @@
 
 (require "../core/programs.rkt"
          "../utils/common.rkt"
+         "../utils/errors.rkt"
+         "platform.rkt"
          "matcher.rkt"
          "syntax.rkt"
          "types.rkt")
 
 (provide fpcore->prog
-         prog->fpcore
-         prog->spec)
+         prog->fpcore)
 
 ;; Expression pre-processing for normalizing expressions.
 ;; Used for conversion from FPCore to other IRs.
@@ -147,11 +148,19 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FPCore -> LImpl
 
+(define (assert-fpcore-impl op prop-dict ireprs)
+  (or (get-fpcore-impl op prop-dict ireprs)
+      (raise-herbie-missing-error
+       "No implementation for `~a` under rounding context `~a` with types `~a`"
+       op
+       prop-dict
+       (string-join (map (λ (r) (format "<~a>" (representation-name r))) ireprs) " "))))
+
 ;; Translates an FPCore operator application into
 ;; an LImpl operator application.
 (define (fpcore->impl-app op prop-dict args ctx)
   (define ireprs (map (lambda (arg) (repr-of arg ctx)) args))
-  (define impl (get-fpcore-impl op prop-dict ireprs))
+  (define impl (assert-fpcore-impl op prop-dict ireprs))
   (define vars (impl-info impl 'vars))
   (define pattern
     (match (impl-info impl 'fpcore)
@@ -180,7 +189,7 @@
       [(list '! props ... body)
        (loop body
              (if (not (null? props))
-                 (apply dict-set prop-dict props)
+                 (apply dict-set* prop-dict props)
                  prop-dict))]
       [(list 'neg arg) ; non-standard but useful [TODO: remove]
        (define arg* (loop arg prop-dict))
@@ -271,9 +280,9 @@
               (if (not (null? props))
                   (apply dict-set prop-dict props)
                   prop-dict))
-            (get-fpcore-impl op prop-dict* (impl-info impl 'itype))]
+            (assert-fpcore-impl op prop-dict* (impl-info impl 'itype))]
            ; rounding context inherited from parent context
-           [(list op _ ...) (get-fpcore-impl op prop-dict (impl-info impl 'itype))]))
+           [(list op _ ...) (assert-fpcore-impl op prop-dict (impl-info impl 'itype))]))
        (cond
          [(equal? impl impl*) ; inlining is safe
           (define expr* (loop expr prop-dict))
@@ -362,22 +371,3 @@
   ; step 3: construct the actual FPCore expression from
   ; the remaining let-bindings and body
   (build-expr body ivec ctx))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; LImpl -> LSpec
-
-;; Translates an LImpl to a LSpec.
-(define (prog->spec expr)
-  (match expr
-    [(? literal?) (literal-value expr)]
-    [(? variable?) expr]
-    [(approx spec _) spec]
-    [`(if ,cond ,ift ,iff)
-     `(if ,(prog->spec cond)
-          ,(prog->spec ift)
-          ,(prog->spec iff))]
-    [`(,impl ,args ...)
-     (define vars (impl-info impl 'vars))
-     (define spec (impl-info impl 'spec))
-     (define env (map cons vars (map prog->spec args)))
-     (replace-vars env spec)]))

@@ -198,6 +198,15 @@ pub unsafe extern "C" fn egraph_run(
             .run(&context.rules);
     }
 
+    // Prune all e-nodes with children where its e-class has a leaf node (with no children). Pruning
+    // safely improves performance because pruning occurs right before extraction and leaf e-nodes
+    // always have a lower cost.
+    context.runner.egraph.classes_mut().for_each(|eclass| {
+        if eclass.nodes.iter().any(|n| n.is_leaf()) {
+            eclass.nodes.retain(|n| n.is_leaf());
+        }
+    });
+
     let iterations = context
         .runner
         .iterations

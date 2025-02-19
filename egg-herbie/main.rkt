@@ -43,17 +43,14 @@
 
 ; Note, this message should not be reached.
 (define fallback-message
-  (string-join `("Error: unable to load the 'egg-math' library"
-                 "Please file a bug at https://github.com/herbie-fp/herbie/issues")
-               "\n"))
+  (string-append "Error: unable to load the 'egg-math' library\n"
+                 "Please file a bug at https://github.com/herbie-fp/herbie/issues"))
 
 ; Note, refering to ARM as Apple Silicon to match Racket download page.
 (define rosetta-message
-  (string-join '("Error: You are running the 'x86' version of Racket via 'Rosetta'"
-                 "emulation. To run Herbie, you need to use the 'Apple Silicon'"
-                 "version of Racket."
-                 "You can install it here: https://download.racket-lang.org")
-               "\n"))
+  (string-append "Error: You are running the 'x86' version of Racket via 'Rosetta' emulation.\n"
+                 "  Please use the 'Apple Silicon' version of Racket instead.\n"
+                 "You can install it from https://download.racket-lang.org"))
 
 (define (handle-eggmath-import-failure)
   (define error-message (if (running-on-rosetta?) rosetta-message fallback-message))

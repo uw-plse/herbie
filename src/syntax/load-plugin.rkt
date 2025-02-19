@@ -1,6 +1,6 @@
 #lang racket
-(require setup/getinfo
-         racket/runtime-path)
+(require racket/runtime-path
+         setup/getinfo)
 (require "../config.rkt"
          "platform.rkt"
          "types.rkt")
@@ -33,8 +33,7 @@
   (dynamic-require default-platform #f)
   (dynamic-require math-platform #f)
   ; activate the required platform
-  (*active-platform* (get-platform (*platform-name*)))
-  (activate-platform! (*active-platform*)))
+  (activate-platform! (*platform-name*)))
 
 (define (load-herbie-plugins)
   (load-herbie-builtins)
@@ -51,8 +50,7 @@
   (for ([path (in-list (*loose-plugins*))])
     (dynamic-require path #f))
   ; activate the actual requred platform
-  (*active-platform* (get-platform (*platform-name*)))
-  (activate-platform! (*active-platform*)))
+  (activate-platform! (*platform-name*)))
 
 (define (make-debug-context vars)
   (load-herbie-builtins)

@@ -1,22 +1,21 @@
 #lang racket
 
 (require json)
-(require "../utils/common.rkt"
+(require "../reports/common.rkt"
+         "../reports/pages.rkt"
+         "../reports/timeline.rkt"
          "../syntax/read.rkt"
          "../syntax/sugar.rkt"
-         "datafile.rkt"
          "../syntax/types.rkt"
+         "../utils/common.rkt"
          "../utils/profile.rkt"
          "../utils/timeline.rkt"
-         "../core/sampling.rkt"
-         "../reports/pages.rkt"
-         "thread-pool.rkt"
-         "../reports/timeline.rkt"
-         "../reports/common.rkt")
+         "datafile.rkt"
+         "sandbox.rkt"
+         "server.rkt")
 
 (provide make-report
-         rerun-report
-         diff-report)
+         rerun-report)
 
 (define (extract-test row)
   (define vars (table-row-vars row))
@@ -37,18 +36,18 @@
           (cons k (representation-name v)))
         (table-row-conversions row)))
 
-(define (make-report bench-dirs #:dir dir #:note note #:threads threads)
+(define (make-report bench-dirs #:dir dir #:threads threads)
   (define tests (reverse (sort (append-map load-tests bench-dirs) test<?)))
-  (run-tests tests #:dir dir #:note note #:threads threads))
+  (run-tests tests #:dir dir #:threads threads))
 
-(define (rerun-report json-file #:dir dir #:note note #:threads threads)
-  (define data (read-datafile json-file))
+(define (rerun-report json-file #:dir dir #:threads threads)
+  (define data (call-with-input-file json-file read-datafile))
   (define tests (map extract-test (report-info-tests data)))
   (*flags* (report-info-flags data))
   (set-seed! (report-info-seed data))
   (*num-points* (report-info-points data))
   (*num-iterations* (report-info-iterations data))
-  (run-tests tests #:dir dir #:note note #:threads threads))
+  (run-tests tests #:dir dir #:threads threads))
 
 (define (read-json-files info dir name)
   (filter identity
@@ -64,14 +63,42 @@
 (define (merge-profile-jsons ps)
   (profile->json (apply profile-merge (map json->profile (dict-values ps)))))
 
-(define (run-tests tests #:dir dir #:note note #:threads threads)
+(define (generate-bench-report job-id bench-name test-number dir number-of-test)
+  (define result (wait-for-job job-id))
+  (define report-path (bench-folder-path bench-name test-number))
+  (define report-directory (build-path dir report-path))
+  (unless (directory-exists? report-directory)
+    (make-directory report-directory))
+
+  (for ([page (all-pages result)])
+    (call-with-output-file (build-path report-directory page)
+                           #:exists 'replace
+                           (λ (out)
+                             (with-handlers ([exn:fail? (λ (e)
+                                                          ((page-error-handler result page out) e))])
+                               (make-page page out result #t #f)))))
+
+  (define table-data (get-table-data-from-hash result report-path))
+  (print-test-result (+ test-number 1) number-of-test table-data)
+  table-data)
+
+(define (run-tests tests #:dir dir #:threads threads)
   (define seed (get-seed))
-  (when (not (directory-exists? dir))
+  (unless (directory-exists? dir)
     (make-directory dir))
 
-  (define results (get-test-results tests #:threads threads #:seed seed #:profile true #:dir dir))
-  (define info (make-report-info (filter values results) #:note note #:seed seed))
+  (start-job-server threads)
+  (define job-ids
+    (for/list ([test (in-list tests)])
+      (start-job 'improve test #:seed seed #:pcontext #f #:profile? #t #:timeline-disabled? #f)))
 
+  (define results
+    (for/list ([job-id (in-list job-ids)]
+               [test (in-list tests)]
+               [test-number (in-naturals)])
+      (generate-bench-report job-id (test-name test) test-number dir (length tests))))
+
+  (define info (make-report-info results #:seed seed))
   (write-datafile (build-path dir "results.json") info)
   (copy-file (web-resource "report-page.js") (build-path dir "report-page.js") #t)
   (copy-file (web-resource "report.js") (build-path dir "report.js") #t)
@@ -91,14 +118,14 @@
    (λ (out) (write-html (make-timeline "Herbie run" timeline #:info info #:path ".") out)))
 
   ; Delete old files
-  (let* ([expected-dirs (map string->path
-                             (filter identity (map table-row-link (report-info-tests info))))]
-         [actual-dirs (filter (λ (name) (directory-exists? (build-path dir name)))
-                              (directory-list dir))]
-         [extra-dirs (filter (λ (name) (not (member name expected-dirs))) actual-dirs)])
-    (for ([subdir extra-dirs])
-      (with-handlers ([exn:fail:filesystem? (const true)])
-        (delete-directory/files (build-path dir subdir))))))
+  (define expected-dirs
+    (map string->path (filter identity (map table-row-link (report-info-tests info)))))
+  (define actual-dirs
+    (filter (λ (name) (directory-exists? (build-path dir name))) (directory-list dir)))
+  (define extra-dirs (filter (λ (name) (not (member name expected-dirs))) actual-dirs))
+  (for ([subdir extra-dirs])
+    (with-handlers ([exn:fail:filesystem? (const true)])
+      (delete-directory/files (build-path dir subdir)))))
 
 (define (test<? t1 t2)
   (cond
@@ -107,8 +134,21 @@
     ; Put things with an output first
     [else (test-output t1)]))
 
-(define (diff-report old new)
-  (define df
-    (diff-datafiles (read-datafile (build-path old "results.json"))
-                    (read-datafile (build-path new "results.json"))))
-  (copy-file (web-resource "report.html") (build-path new "index.html") #t))
+;; Generate a path for a given benchmark name
+(define (bench-folder-path bench-name index)
+  (define replaced (string-replace bench-name #px"\\W+" ""))
+  (format "~a-~a" index (substring replaced 0 (min (string-length replaced) 50))))
+
+(define (print-test-result i n data)
+  (eprintf "~a/~a\t" (~a i #:width 3 #:align 'right) n)
+  (define bits (representation-total-bits (get-representation (table-row-precision data))))
+  (match (table-row-status data)
+    ["error" (eprintf "[ ERROR ]\t\t~a\n" (table-row-name data))]
+    ["crash" (eprintf "[ CRASH ]\t\t~a\n" (table-row-name data))]
+    ["timeout" (eprintf "[TIMEOUT]\t\t~a\n" (table-row-name data))]
+    [_
+     (eprintf "[~as]  ~a% → ~a%\t~a\n"
+              (~r (/ (table-row-time data) 1000) #:min-width 6 #:precision '(= 1))
+              (~r (* 100 (- 1 (/ (table-row-start data) bits))) #:min-width 3 #:precision 0)
+              (~r (* 100 (- 1 (/ (table-row-result data) bits))) #:min-width 3 #:precision 0)
+              (table-row-name data))]))
