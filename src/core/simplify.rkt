@@ -20,7 +20,22 @@
 (define (simplify-batch runner batch)
   (timeline-push! 'inputs (map ~a (batch->progs (egg-runner-batch runner) (egg-runner-roots runner))))
 
+  ; (timeline-push! 'method "egg-herbie")
+
+  (define generate-flags (hash-ref all-flags 'generate))
+
+  (if (member 'egglog generate-flags)
+    (begin
+      (printf "reached simp\n")
+      (printf "runner : ~a\n\n" runner))
+
+    (printf "did not reach simp\n"))
+
+
   (define simplifieds (egraph-best runner batch))
+
+  (printf "simplifiedss : ~a\n\n" simplifieds)
+
   (define out
     (for/list ([simplified (in-list simplifieds)]
                [root (egg-runner-roots runner)])

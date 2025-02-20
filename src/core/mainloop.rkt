@@ -42,7 +42,7 @@
 ;; - Final steps: regimes, final simplify, derivations, and remove preprocessing
 
 (define (run-improve! initial specification context pcontext)
-  (prelude)
+  (prelude-exprs)
   (explain! initial context pcontext)
   (timeline-event! 'preprocess)
   (define-values (simplified preprocessing) (find-preprocessing initial specification context))
