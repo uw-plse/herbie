@@ -66,6 +66,8 @@
   (define batch (progs->batch (list expr)))
   (define runner (make-egraph batch (batch-roots batch) (list (context-repr ctx)) schedule))
 
+  (printf "before preprocess \n\n")
+
   ; run egg
   (define simplified (simplify-batch runner batch))
 

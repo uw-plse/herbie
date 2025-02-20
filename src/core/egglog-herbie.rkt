@@ -66,6 +66,8 @@
 
   (define old-error-port (current-error-port))
 
+  (printf "file path : ~a\n " egglog-file-path)
+
   ;; Run egglog and capture output
   (parameterize ([current-output-port stdout-port]
                  [current-error-port stderr-port])
@@ -150,6 +152,8 @@
   (define curr-batch (batch-remove-zombie (egg-runner-batch runner) (egg-runner-roots runner)))
 
   (define curr-program (make-egglog-program))
+
+  (printf "schedule : ~a\n\n" (egg-runner-schedule runner))
 
   ;; 1. Add the Prelude
   (prelude curr-program #:mixed-egraph? #t)

@@ -90,8 +90,16 @@
   (define reprs (map (curryr repr-of (*context*)) exprs))
   (timeline-push! 'inputs (map ~a exprs))
   (define runner (make-egraph global-batch roots reprs schedule))
+
+  (printf "before patch\n\n")
+
+  (define generate-flags (hash-ref all-flags 'generate))
+
   ; batchrefss is a (listof (listof batchref))
-  (define batchrefss (egraph-variations runner global-batch))
+  (define batchrefss
+    (if (member 'egglog generate-flags)
+        (run-egglog-multi-extractor runner batch)
+        (egraph-variations runner global-batch)))
 
   ; apply changelists
   (define rewritten

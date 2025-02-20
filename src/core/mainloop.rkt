@@ -304,7 +304,13 @@
      (define exprs (map alt-expr alts))
      (define reprs (map (lambda (expr) (repr-of expr (*context*))) exprs))
      (define batch (progs->batch exprs))
+
+     ;; TODO : do we still need this???
+     (egglog-add-exprs-mainloop batch (*context*))
+
      (define runner (make-egraph batch (batch-roots batch) reprs schedule))
+
+     (printf "before mainloop \n\n")
 
      ; run egg
      (define simplified (map (compose debatchref last) (simplify-batch runner batch)))
