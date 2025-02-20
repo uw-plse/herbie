@@ -505,8 +505,12 @@
           (for ([impl (in-list (platform-impls (*active-platform*)))]
                 #:when (equal? ireprs (impl-info impl 'itype)))
             (define-values (prop-dict* expr) (impl->fpcore impl))
+            (define expr*
+              (if (symbol? expr)
+                  (list expr)
+                  expr)) ; Handle named constants
             (define pattern (cons op (map (lambda (_) (gensym)) ireprs)))
-            (when (and (subset? prop-dict* prop-dict) (pattern-match pattern expr))
+            (when (and (subset? prop-dict* prop-dict) (pattern-match pattern expr*))
               (sow impl)))))
   ; check that we have any matching impls
   (cond
