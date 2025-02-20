@@ -64,14 +64,41 @@
 (define (merge-profile-jsons ps)
   (profile->json (apply profile-merge (map json->profile (dict-values ps)))))
 
-(define (run-tests tests #:dir dir #:note note #:threads threads)
+(define (generate-bench-report result bench-name test-number dir total-tests)
+  (define report-path (bench-folder-path bench-name test-number))
+  (define report-directory (build-path dir report-path))
+  (unless (directory-exists? report-directory)
+    (make-directory report-directory))
+
+  (for ([page (all-pages result)])
+    (call-with-output-file (build-path report-directory page)
+                           #:exists 'replace
+                           (λ (out)
+                             (with-handlers ([exn:fail? (λ (e)
+                                                          ((page-error-handler result page out) e))])
+                               (make-page page out result #t #f)))))
+
+  (define table-data (get-table-data-from-hash result report-path))
+  (print-test-result (+ test-number 1) total-tests table-data)
+  table-data)
+
+(define (run-tests tests #:dir dir #:threads threads)
   (define seed (get-seed))
   (when (not (directory-exists? dir))
     (make-directory dir))
 
-  (define results (get-test-results tests #:threads threads #:seed seed #:profile true #:dir dir))
-  (define info (make-report-info (filter values results) #:note note #:seed seed))
+  (start-job-server threads)
+  (define job-ids
+    (for/list ([test (in-list tests)])
+      (start-job 'improve test #:seed seed #:pcontext #f #:profile? #t #:timeline-disabled? #f)))
 
+  (define results
+    (for/list ([job-id (in-list job-ids)]
+               [test (in-list tests)]
+               [test-number (in-naturals)])
+      (generate-bench-report job-id (test-name test) test-number dir (length tests))))
+
+  (define info (make-report-info results #:seed seed))
   (write-datafile (build-path dir "results.json") info)
   (copy-file (web-resource "report-page.js") (build-path dir "report-page.js") #t)
   (copy-file (web-resource "report.js") (build-path dir "report.js") #t)

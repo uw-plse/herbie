@@ -28,6 +28,7 @@
 
 (provide run-demo)
 
+(define *demo?* (make-parameter false))
 (define *demo-prefix* (make-parameter "/"))
 (define *demo-log* (make-parameter false))
 
