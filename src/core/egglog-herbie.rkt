@@ -66,7 +66,7 @@
 
   (define old-error-port (current-error-port))
 
-  (printf "file path : ~a\n " egglog-file-path)
+  ; (printf "file path : ~a\n " egglog-file-path)
 
   ;; Run egglog and capture output
   (parameterize ([current-output-port stdout-port]
@@ -153,7 +153,7 @@
 
   (define curr-program (make-egglog-program))
 
-  (printf "schedule : ~a\n\n" (egg-runner-schedule runner))
+  ; (printf "schedule : ~a\n\n" (egg-runner-schedule runner))
 
   ;; 1. Add the Prelude
   (prelude curr-program #:mixed-egraph? #t)
@@ -175,7 +175,8 @@
            (egglog-program-add! `(ruleset ,curr-tag) curr-program)
 
            ;; Add the actual egglog rewrite rules
-           (egglog-program-add-list! (egglog-rewrite-rules rule-type curr-tag) curr-program)
+           (define curr-rewrite-val (egglog-rewrite-rules rule-type curr-tag))
+           (egglog-program-add-list! (remove-duplicates curr-rewrite-val) curr-program)
 
            curr-tag]))
 
@@ -183,8 +184,6 @@
 
   ;; 3. Inserting expressions -> (egglog-add-exprs curr-batch (egglog-runner-ctx))
   ; (exprs . extract bindings)
-  ; (define egglog-batch-exprs (prev-egglog-add-exprs curr-batch (egg-runner-ctx runner)))
-
   (define extract-bindings (egglog-add-exprs curr-batch (egg-runner-ctx runner) curr-program))
 
   ; (set! program (append program (car egglog-batch-exprs)))
@@ -726,10 +725,18 @@
     (spec-tag n #f))
   (for ([root (in-vector (batch-roots batch))])
     (vector-set! root-mask root #t))
+
+  (printf "reached here 1\n")
+
+  (printf "batch-nodes : ~a\n\n" (batch-nodes batch))
+
   (for ([node (in-vector (batch-nodes batch))]
         [root? (in-vector root-mask)]
         [spec? (in-vector spec-mask)]
         [n (in-naturals)])
+
+    ; (printf "reached here 2.1\n")
+
     (define node*
       (match node
         [(literal v repr)
@@ -748,13 +755,20 @@
                           (id->e2))
                       impl)
            ,@(for/list ([arg (in-list args)])
-               (remap arg spec?)))]))
+               (remap arg spec?)))]
+        
+        ;; TODO : what would type = {binary64, binary32, ...} map to???
+        [(hole ty spec) `(lower ,(remap spec #t) ,(typed-var-id ty))]))
+
+    ; (printf "reached here 2.2\n\n")
 
     (if node*
         (vector-set! mappings n (insert-node! node* n root?))
         (hash-set! vars n node))
     (when root?
       (set! root-bindings (cons (vector-ref mappings n) root-bindings))))
+
+  (printf "reached here 3\n")
 
   ; Var-lowering-rules
   (for ([var (in-list (context-vars ctx))]
@@ -826,153 +840,9 @@
               (string->symbol (format "?t~a" (hash-ref vars root))))
           (string->symbol (format "?r~a" root)))))
 
+  (printf "reached end 3\n")
+
   extract-bindings)
-
-(define (prev-egglog-add-exprs batch ctx)
-  (define egglog-exprs '())
-  (define mappings (build-vector (batch-length batch) values))
-  (define bindings (make-hash))
-  (define vars (make-hash))
-  (define (remap x spec?)
-    (cond
-      [(hash-has-key? vars x)
-       (if spec?
-           (string->symbol (format "?~a" (hash-ref vars x)))
-           (string->symbol (format "?t~a" (hash-ref vars x))))]
-      [else (vector-ref mappings x)]))
-
-  ; node -> egglog node binding
-  ; inserts an expression into the e-graph, returning binding variable.
-  (define (insert-node! node n root?)
-    (define binding
-      (if root?
-          (string->symbol (format "?r~a" n))
-          (string->symbol (format "?b~a" n))))
-    (hash-set! bindings binding node)
-    binding)
-
-  (define root-bindings '())
-  ; Inserting nodes bottom-up
-  (define root-mask (make-vector (batch-length batch) #f))
-  (define spec-mask (make-vector (batch-length batch) #f))
-  (define (spec-tag n spec?)
-    (when (not (vector-ref spec-mask n))
-      (match (vector-ref (batch-nodes batch) n)
-        [`(if ,cond ,ift ,iff)
-         (when (vector-ref spec-mask cond)
-           (vector-set! spec-mask n #t)
-           (spec-tag cond #t)
-           (spec-tag ift #t)
-           (spec-tag iff #t))]
-        [(approx spec impl)
-         (vector-set! spec-mask n #t)
-         (spec-tag spec #t)]
-        [(list impl args ...)
-         (when (hash-has-key? (id->e1) impl)
-           (vector-set! spec-mask n #t)
-           (for ([arg (in-list args)])
-             (spec-tag arg #t)))]
-        [_
-         (when spec?
-           (vector-set! spec-mask n #t))])))
-
-  (for ([n (in-range (batch-length batch))])
-    (spec-tag n #f))
-  (for ([root (in-vector (batch-roots batch))])
-    (vector-set! root-mask root #t))
-  (for ([node (in-vector (batch-nodes batch))]
-        [root? (in-vector root-mask)]
-        [spec? (in-vector spec-mask)]
-        [n (in-naturals)])
-    (define node*
-      (match node
-        [(literal v repr)
-         `(,(typed-num-id repr) (bigrat (from-string ,(number->string (numerator v)))
-                                        (from-string ,(number->string (denominator v)))))]
-        [(? number?)
-         `(Num (bigrat (from-string ,(number->string (numerator node)))
-                       (from-string ,(number->string (denominator node)))))]
-        [(? symbol?) #f]
-        [`(if ,cond ,ift ,iff)
-         `(,(if spec? 'If 'IfTy) ,(remap cond spec?) ,(remap ift spec?) ,(remap iff spec?))]
-        [(approx spec impl) `(Approx ,(remap spec #t) ,(remap impl #f))]
-        [(list impl args ...)
-         `(,(hash-ref (if spec?
-                          (id->e1)
-                          (id->e2))
-                      impl)
-           ,@(for/list ([arg (in-list args)])
-               (remap arg spec?)))]))
-
-    (if node*
-        (vector-set! mappings n (insert-node! node* n root?))
-        (hash-set! vars n node))
-    (when root?
-      (set! root-bindings (cons (vector-ref mappings n) root-bindings))))
-
-  ; Var rules
-  (define var-lowering-rules
-    (for/list ([var (in-list (context-vars ctx))]
-               [repr (in-list (context-var-reprs ctx))])
-      `(rule ((= e (Var ,(symbol->string var))))
-             ((let ty ,(symbol->string (representation-name repr))
-                )
-              (let ety (,(typed-var-id (representation-name repr))
-                        ,(symbol->string var))
-                )
-              (union (lower e ty) ety))
-             :ruleset
-             lowering)))
-
-  (set! egglog-exprs (append egglog-exprs var-lowering-rules))
-
-  (define var-lifting-rules
-    (for/list ([var (in-list (context-vars ctx))]
-               [repr (in-list (context-var-reprs ctx))])
-      `(rule ((= e (,(typed-var-id (representation-name repr)) ,(symbol->string var))))
-             ((let se (Var
-                       ,(symbol->string var))
-                )
-              (union (lift e) se))
-             :ruleset
-             lifting)))
-
-  (set! egglog-exprs (append egglog-exprs var-lifting-rules))
-
-  (define var-spec-bindings
-    (for/list ([var (in-list (context-vars ctx))])
-      `(let ,(string->symbol (format "?~a" var)) (Var ,(symbol->string var)))))
-
-  (set! egglog-exprs (append egglog-exprs var-spec-bindings))
-
-  (define var-typed-bindings
-    (for/list ([var (in-list (context-vars ctx))]
-               [repr (in-list (context-var-reprs ctx))])
-      `(let ,(string->symbol (format "?t~a" var))
-         (,(typed-var-id (representation-name repr)) ,(symbol->string var)))))
-  (set! egglog-exprs (append egglog-exprs var-typed-bindings))
-
-  (define binding-exprs
-    (for/list ([root? (in-vector root-mask)]
-               [n (in-naturals)]
-               #:when (not (hash-has-key? vars n)))
-      (define binding
-        (if root?
-            (string->symbol (format "?r~a" n))
-            (string->symbol (format "?b~a" n))))
-      `(let ,binding ,(hash-ref bindings binding))))
-
-  (define extract-bindings
-    (for/list ([root (batch-roots batch)])
-      (if (hash-has-key? vars root)
-          (if (vector-ref spec-mask root)
-              (string->symbol (format "?~a" (hash-ref vars root)))
-              (string->symbol (format "?t~a" (hash-ref vars root))))
-          (string->symbol (format "?r~a" root)))))
-
-  (set! egglog-exprs (append egglog-exprs binding-exprs))
-
-  (cons egglog-exprs extract-bindings))
 
 (define (egglog-num? id)
   (string-prefix? (symbol->string id) "Num"))

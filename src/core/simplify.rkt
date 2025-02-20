@@ -24,14 +24,7 @@
 
   (define generate-flags (hash-ref all-flags 'generate))
 
-  ; (if (member 'egglog generate-flags)
-  ;   (begin
-  ;     (printf "reached simp\n")
-  ;     (printf "runner : ~a\n\n" runner))
-
-  ;   (printf "did not reach simp\n"))
-
-  ; (define simplifieds (egraph-best runner batch))
+  (printf "simplify\n\n")
 
   (define simplifieds
     (if (member 'egglog generate-flags)
