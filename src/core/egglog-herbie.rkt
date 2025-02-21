@@ -66,7 +66,7 @@
 
   (define old-error-port (current-error-port))
 
-  ; (printf "file path : ~a\n " egglog-file-path)
+  (printf "file path : ~a\n " egglog-file-path)
 
   ;; Run egglog and capture output
   (parameterize ([current-output-port stdout-port]
@@ -82,7 +82,7 @@
         (fprintf old-error-port "incorrect program ~a\n" curr-program)
         (error "Failed to execute egglog"))))
 
-  (delete-file egglog-file-path)
+  ; (delete-file egglog-file-path)
 
   (cons (get-output-string stdout-port) (get-output-string stderr-port)))
 
@@ -214,9 +214,9 @@
           (set! run-schedule (append run-schedule `((repeat ,iter-amt ,tag))))]
 
          [((? nonnegative-integer? node-amt) #f)
-          (set! run-schedule (append run-schedule `((repeat 3 ,tag))))]
+          (set! run-schedule (append run-schedule `((repeat 10 ,tag))))]
 
-         [(#f #f) `((repeat 3 ,tag))])]))
+         [(#f #f) `((repeat 10 ,tag))])]))
 
   ; (set! program (append program `((run-schedule ,@run-schedule))))
   (egglog-program-add! `(run-schedule ,@run-schedule) curr-program)
@@ -340,7 +340,7 @@
     (egglog-program-add! end-let curr-program))
 
   ;; 4. Running the schedule
-  (define run-schedule `(run-schedule (repeat 3 ?tag1) (repeat 20 const-fold)))
+  (define run-schedule `((run-schedule 10 ?tag1) (repeat 20 const-fold)))
   (egglog-program-add! run-schedule curr-program)
 
   ;; 5. Running Checks
@@ -756,9 +756,9 @@
                       impl)
            ,@(for/list ([arg (in-list args)])
                (remap arg spec?)))]
-        
+
         ;; TODO : what would type = {binary64, binary32, ...} map to???
-        [(hole ty spec) `(lower ,(remap spec #t) ,(typed-var-id ty))]))
+        [(hole ty spec) `(lower ,(remap spec #t) ,(symbol->string ty))]))
 
     ; (printf "reached here 2.2\n\n")
 
