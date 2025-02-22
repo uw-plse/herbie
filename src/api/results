@@ -1,0 +1,100 @@
+Error score: 0.0 Impl: (*.f64 z0 z0) Spec: (* z0 z0)  Herbie count: 10735
+Error score: 0.0 Impl: (*.f64 z0 #s(literal 10 binary64)) Spec: (* z0 10)  Herbie count: 10
+Error score: 0.0 Impl: (*.f32 (floor.f32 z0) z1) Spec: (* (floor z0) z1)  Herbie count: 2399
+Error score: 0.0 Impl: (-.f64 #s(literal 1 binary64) z0) Spec: (- 1 z0)  Herbie count: 1
+Error score: 0.11328125 Impl: (*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z0) z1)) Spec: (* (* (floor z0) z1) (* (floor z0) z1))  Herbie count: 964
+Error score: 0.0 Impl: (*.f64 #s(literal 2 binary64) z0) Spec: (* 2 z0)  Herbie count: 2
+Error score: 0.0 Impl: (*.f32 z0 (floor.f32 z1)) Spec: (* z0 (floor z1))  Herbie count: 857
+Error score: 0.10546875 Impl: (pow.f32 (*.f32 z0 (floor.f32 z1)) #s(literal 2 binary32)) Spec: (pow (* z0 (floor z1)) 2)  Herbie count: 2
+Error score: 0.0 Impl: (/.f64 #s(literal 1 binary64) z0) Spec: (/ 1 z0)  Herbie count: 1
+Error score: 0.0 Impl: (pow.f64 z0 #s(literal 3 binary64)) Spec: (pow z0 3)  Herbie count: 3
+Error score: 0.0 Impl: (*.f32 z0 z0) Spec: (* z0 z0)  Herbie count: 680
+Error score: 0.0 Impl: (-.f64 z0 #s(literal -1 binary64)) Spec: (- z0 -1)  Herbie count: 676
+Error score: 0.0 Impl: (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) Spec: (pow (floor z0) 2)  Herbie count: 2
+Error score: 1.6614862108096164 Impl: (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z1) Spec: (* (pow (floor z0) 2) z1)  Herbie count: 2
+Error score: 0.0 Impl: (-.f32 #s(literal 1 binary32) z0) Spec: (- 1 z0)  Herbie count: 1
+Error score: 0.2265625 Impl: (*.f64 (PI.f64) z0) Spec: (* (PI) z0)  Herbie count: 560
+Error score: 0.046875 Impl: (+.f64 #s(literal 7/2 binary64) (*.f64 z0 #s(literal 10 binary64))) Spec: (+ 7/2 (* z0 10))  Herbie count: 7
+Error score: 0.0 Impl: (pow.f64 z0 #s(literal 4 binary64)) Spec: (pow z0 4)  Herbie count: 4
+Error score: 0.05859375 Impl: (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z0 #s(literal 10 binary64)))) Spec: (neg (+ 7/2 (* z0 10)))  Herbie count: 7
+Error score: 0.0 Impl: (/.f64 z0 #s(literal 180 binary64)) Spec: (/ z0 180)  Herbie count: 180
+Error score: 0.0 Impl: (*.f64 #s(literal 1/2 binary64) z0) Spec: (* 1/2 z0)  Herbie count: 1
+Error score: 8.045758583956573 Impl: (*.f64 (*.f64 z0 z0) z1) Spec: (* (* z0 z0) z1)  Herbie count: 454
+Error score: 0.0 Impl: (-.f64 z0 #s(literal 1 binary64)) Spec: (- z0 1)  Herbie count: 1
+Error score: 0.0 Impl: (*.f64 #s(literal -4 binary64) z0) Spec: (* -4 z0)  Herbie count: 435
+Error score: 0.0 Impl: (*.f64 (neg.f64 z0) z1) Spec: (* (neg z0) z1)  Herbie count: 433
+Error score: 0.08984375 Impl: (+.f32 (*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z0) z1)) (*.f32 (*.f32 (floor.f32 z2) z3) (*.f32 (floor.f32 z2) z3))) Spec: (+ (* (* (floor z0) z1) (* (floor z0) z1)) (* (* (floor z2) z3) (* (floor z2) z3)))  Herbie count: 431
+Error score: 0.02734375 Impl: (+.f64 #s(literal 1 binary64) (*.f64 z0 #s(literal 10 binary64))) Spec: (+ 1 (* z0 10))  Herbie count: 1
+Error score: 7.655000490634765 Impl: (/.f64 (*.f64 z0 z0) z1) Spec: (/ (* z0 z0) z1)  Herbie count: 404
+Error score: 0.0 Impl: (/.f64 (neg.f64 z0) z1) Spec: (/ (neg z0) z1)  Herbie count: 380
+Error score: 0.0 Impl: (*.f64 #s(literal -1/2 binary64) z0) Spec: (* -1/2 z0)  Herbie count: 356
+Error score: 0.2578097476055602 Impl: (fma.f64 (*.f64 #s(literal -4 binary64) z0) z1 (*.f64 z2 z2)) Spec: (+ (* (* -4 z0) z1) (* z2 z2))  Herbie count: 349
+Error score: 0.0 Impl: (+.f64 #s(literal 1 binary64) z0) Spec: (+ 1 z0)  Herbie count: 1
+Error score: 2.7842856011970105 Impl: (*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z1) z1) Spec: (* (* (pow (floor z0) 2) z1) z1)  Herbie count: 2
+Error score: 0.0 Impl: (*.f64 z0-scale z0-scale) Spec: (* z0-scale z0-scale)  Herbie count: 332
+Error score: 0.0 Impl: (/.f64 #s(literal 1/2 binary64) z0) Spec: (/ 1/2 z0)  Herbie count: 1
+Error score: 0.0 Impl: (*.f64 z0 #s(literal 2 binary64)) Spec: (* z0 2)  Herbie count: 2
+Error score: 0.00390625 Impl: (fma.f64 z0 z0 (*.f64 z1 z1)) Spec: (+ (* z0 z0) (* z1 z1))  Herbie count: 289
+Error score: 3.6830371081174236 Impl: (fma.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z1) z1 (*.f32 (*.f32 (pow.f32 (floor.f32 z2) #s(literal 2 binary32)) z3) z3)) Spec: (+ (* (* (pow (floor z0) 2) z1) z1) (* (* (pow (floor z2) 2) z3) z3))  Herbie count: 2
+Error score: 0.3515625 Impl: (*.f64 (/.f64 z0 #s(literal 180 binary64)) (PI.f64)) Spec: (* (/ z0 180) (PI))  Herbie count: 180
+Error score: 0.05859375 Impl: (+.f64 #s(literal 5/2 binary64) (*.f64 z0 #s(literal 10 binary64))) Spec: (+ 5/2 (* z0 10))  Herbie count: 5
+Error score: 0.0 Impl: (+.f64 z0 z0) Spec: (+ z0 z0)  Herbie count: 243
+Error score: 4.596174555081791 Impl: (/.f64 (*.f64 z0 z1) z2) Spec: (/ (* z0 z1) z2)  Herbie count: 234
+Error score: 0.260761279305326 Impl: (pow.f64 (sin.f64 z0) #s(literal 2 binary64)) Spec: (pow (sin z0) 2)  Herbie count: 2
+Error score: 0.0 Impl: (*.f64 (neg.f64 z0) z0) Spec: (* (neg z0) z0)  Herbie count: 228
+Error score: 0.0 Impl: (+.f64 z0 #s(literal 1 binary64)) Spec: (+ z0 1)  Herbie count: 1
+Error score: 0.0234375 Impl: (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 9 binary64)) Spec: (- (* z0 10) 9)  Herbie count: 10
+Error score: 0.0 Impl: (*.f64 z0 #s(literal 3 binary64)) Spec: (* z0 3)  Herbie count: 3
+Error score: 0.0 Impl: (*.f64 #s(literal 3 binary64) z0) Spec: (* 3 z0)  Herbie count: 3
+Error score: 0.0 Impl: (/.f64 #s(literal 2 binary64) z0) Spec: (/ 2 z0)  Herbie count: 2
+Error score: 0.0 Impl: (*.f64 (-.f64 z0 z1) z2) Spec: (* (- z0 z1) z2)  Herbie count: 216
+Error score: 8.11277842723163 Impl: (/.f64 z0 (*.f64 z1 z1)) Spec: (/ z0 (* z1 z1))  Herbie count: 214
+Error score: 0.0 Impl: (pow.f64 z0 #s(literal 2 binary64)) Spec: (pow z0 2)  Herbie count: 2
+Error score: 0.0 Impl: (/.f64 (-.f64 z0 z1) #s(literal 2 binary64)) Spec: (/ (- z0 z1) 2)  Herbie count: 2
+Error score: 0.0 Impl: (/.f64 z0 #s(literal 2 binary64)) Spec: (/ z0 2)  Herbie count: 2
+Error score: 3.219692902697135 Impl: (*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z2) z3)) Spec: (* (* (floor z0) z1) (* (floor z2) z3))  Herbie count: 202
+Error score: 0.13347626953688402 Impl: (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z0 #s(literal 10 binary64))) #s(literal 2 binary64)) Spec: (pow (+ 1 (* z0 10)) 2)  Herbie count: 1
+Error score: 0.00390625 Impl: (/.f64 (-.f64 z0 z1) z2) Spec: (/ (- z0 z1) z2)  Herbie count: 201
+Error score: 0.11003876953688403 Impl: (+.f32 (pow.f32 (*.f32 z0 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z2 (floor.f32 z3)) #s(literal 2 binary32))) Spec: (+ (pow (* z0 (floor z1)) 2) (pow (* z2 (floor z3)) 2))  Herbie count: 2
+Error score: 24.25770578022734 Impl: (sqrt.f64 (fma.f64 (*.f64 #s(literal -4 binary64) z0) z1 (*.f64 z2 z2))) Spec: (sqrt (+ (* (* -4 z0) z1) (* z2 z2)))  Herbie count: 187
+Error score: 15.28030766738164 Impl: (sin.f64 (/.f64 (-.f64 z0 z1) #s(literal 2 binary64))) Spec: (sin (/ (- z0 z1) 2))  Herbie count: 2
+Error score: 0.125 Impl: (sqrt.f64 (/.f64 #s(literal 1 binary64) z0)) Spec: (sqrt (/ 1 z0))  Herbie count: 1
+Error score: 0.36328125 Impl: (*.f64 (PI.f64) (/.f64 z0 #s(literal 180 binary64))) Spec: (* (PI) (/ z0 180))  Herbie count: 180
+Error score: 0.11947250976844201 Impl: (pow.f64 (+.f64 #s(literal 63/20 binary64) (*.f64 z0 #s(literal 10 binary64))) #s(literal 2 binary64)) Spec: (pow (+ 63/20 (* z0 10)) 2)  Herbie count: 63
+Error score: 0.05859375 Impl: (+.f64 #s(literal 63/20 binary64) (*.f64 z0 #s(literal 10 binary64))) Spec: (+ 63/20 (* z0 10))  Herbie count: 63
+Error score: 0.0 Impl: (*.f64 z0 #s(literal 30 binary64)) Spec: (* z0 30)  Herbie count: 30
+Error score: 0.00390625 Impl: (+.f64 (+.f64 z0 z1) z2) Spec: (+ (+ z0 z1) z2)  Herbie count: 180
+Error score: 0.0 Impl: (-.f64 z0 #s(literal 1/2 binary64)) Spec: (- z0 1/2)  Herbie count: 1
+Error score: 0.08984375 Impl: (fmax.f64 (fmax.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 41/10 binary64)) (-.f64 #s(literal 17/5 binary64) (*.f64 z0 #s(literal 10 binary64)))) (+.f64 #s(literal 5/2 binary64) (*.f64 z1 #s(literal 10 binary64)))) Spec: (fmax (fmax (- (* z0 10) 41/10) (- 17/5 (* z0 10))) (+ 5/2 (* z1 10)))  Herbie count: 10
+Error score: 0.046875 Impl: (fmax.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 41/10 binary64)) (-.f64 #s(literal 17/5 binary64) (*.f64 z0 #s(literal 10 binary64)))) Spec: (fmax (- (* z0 10) 41/10) (- 17/5 (* z0 10)))  Herbie count: 10
+Error score: 0.02734375 Impl: (-.f64 #s(literal 17/5 binary64) (*.f64 z0 #s(literal 10 binary64))) Spec: (- 17/5 (* z0 10))  Herbie count: 17
+Error score: 0.08984375 Impl: (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 41/10 binary64)) Spec: (- (* z0 10) 41/10)  Herbie count: 10
+Error score: 0.0 Impl: (*.f64 #s(literal 4 binary64) z0) Spec: (* 4 z0)  Herbie count: 4
+Error score: 0.0 Impl: (*.f64 #s(literal -2 binary64) z0) Spec: (* -2 z0)  Herbie count: 175
+Error score: 0.296875 Impl: (*.f64 (*.f64 (PI.f64) z0) #s(literal 1/180 binary64)) Spec: (* (* (PI) z0) 1/180)  Herbie count: 1
+Error score: 0.12890625 Impl: (*.f64 (sin.f64 z0) z1) Spec: (* (sin z0) z1)  Herbie count: 174
+Error score: 0.2890625 Impl: (*.f32 (PI.f32) z0) Spec: (* (PI) z0)  Herbie count: 171
+Error score: 0.2890625 Impl: (*.f64 #s(literal -1/180 binary64) (*.f64 (PI.f64) z0)) Spec: (* -1/180 (* (PI) z0))  Herbie count: 168
+Error score: 5.60536146448168 Impl: (*.f64 (*.f64 z0 z1) z2) Spec: (* (* z0 z1) z2)  Herbie count: 167
+Error score: 25.657240200998583 Impl: (sin.f64 (*.f64 (*.f64 (PI.f64) z0) #s(literal 1/180 binary64))) Spec: (sin (* (* (PI) z0) 1/180))  Herbie count: 1
+Error score: 0.08203125 Impl: (fmax.f32 (+.f32 (*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z0) z1)) (*.f32 (*.f32 (floor.f32 z2) z3) (*.f32 (floor.f32 z2) z3))) (+.f32 (*.f32 (*.f32 (floor.f32 z0) z4) (*.f32 (floor.f32 z0) z4)) (*.f32 (*.f32 (floor.f32 z2) z5) (*.f32 (floor.f32 z2) z5)))) Spec: (fmax (+ (* (* (floor z0) z1) (* (floor z0) z1)) (* (* (floor z2) z3) (* (floor z2) z3))) (+ (* (* (floor z0) z4) (* (floor z0) z4)) (* (* (floor z2) z5) (* (floor z2) z5))))  Herbie count: 166
+Error score: 0.0 Impl: (fma.f64 z0 z1 z2) Spec: (+ (* z0 z1) z2)  Herbie count: 160 ;;remove this
+Error score: 22.681786636962663 Impl: (cos.f64 (*.f64 #s(literal -1/180 binary64) (*.f64 (PI.f64) z0))) Spec: (cos (* -1/180 (* (PI) z0)))  Herbie count: 159
+Error score: 0.0 Impl: (exp.f64 (neg.f64 z0)) Spec: (exp (neg z0))  Herbie count: 157
+Error score: 0.0078125 Impl: (+.f64 (*.f64 z0 z0) (*.f64 z1 z1)) Spec: (+ (* z0 z0) (* z1 z1))  Herbie count: 153
+Error score: 0.45931625976844204 Impl: (pow.f64 (log.f64 z0) #s(literal 2 binary64)) Spec: (pow (log z0) 2)  Herbie count: 2
+Error score: 0.27734375 Impl: (*.f32 z0 (PI.f32)) Spec: (* z0 (PI))  Herbie count: 152
+Error score: 5.685353847940369 Impl: (*.f64 (/.f64 z0 z1) z2) Spec: (* (/ z0 z1) z2)  Herbie count: 152
+Error score: 0.234375 Impl: (pow.f64 (/.f64 z0 z1) #s(literal 2 binary64)) Spec: (pow (/ z0 z1) 2)  Herbie count: 2
+Error score: 24.08346903466019 Impl: (pow.f64 (sin.f64 (*.f64 (*.f64 (PI.f64) z0) #s(literal 1/180 binary64))) #s(literal 2 binary64)) Spec: (pow (sin (* (* (PI) z0) 1/180)) 2)  Herbie count: 1
+Error score: 30.181215864350197 Impl: (-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 1 binary64)) Spec: (- (- 1 z0) 1)  Herbie count: 1
+Error score: 23.999692397180876 Impl: (pow.f64 (cos.f64 (*.f64 #s(literal -1/180 binary64) (*.f64 (PI.f64) z0))) #s(literal 2 binary64)) Spec: (pow (cos (* -1/180 (* (PI) z0))) 2)  Herbie count: 2
+Error score: 0.0 Impl: (pow.f64 z0 #s(literal 6 binary64)) Spec: (pow z0 6)  Herbie count: 6
+Error score: 0.1328125 Impl: (*.f64 (cos.f64 z0) z1) Spec: (* (cos z0) z1)  Herbie count: 144
+Error score: 0.04296875 Impl: (*.f64 (*.f64 z0 z0) z0) Spec: (* (* z0 z0) z0)  Herbie count: 144
+Error score: 0.0 Impl: (*.f64 (+.f64 z0 z1) (-.f64 z0 z1)) Spec: (* (+ z0 z1) (- z0 z1))  Herbie count: 140 ;;!
+Error score: 0.01953125 Impl: (/.f64 z0 (-.f64 z1 z2)) Spec: (/ z0 (- z1 z2))  Herbie count: 137
+Error score: 28.807855706967924 Impl: (cos.f64 (*.f64 (/.f64 z0 #s(literal 180 binary64)) (PI.f64))) Spec: (cos (* (/ z0 180) (PI)))  Herbie count: 180
+Error score: 0.125 Impl: (*.f64 (*.f64 z0 z0) (*.f64 z0 z0)) Spec: (* (* z0 z0) (* z0 z0))  Herbie count: 136
+Error score: 0.25 Impl: (fma.f64 #s(literal 3275911/10000000 binary64) z0 #s(literal 1 binary64)) Spec: (+ (* 3275911/10000000 z0) 1)  Herbie count: 3275911
+Error score: 0.0859375 Impl: (*.f64 (cos.f64 z0) (cos.f64 z1)) Spec: (* (cos z0) (cos z1))  Herbie count: 133

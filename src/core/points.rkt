@@ -66,6 +66,9 @@
   (first (batch-errors (list expr) pcontext ctx)))
 
 (define (batch-errors exprs pcontext ctx)
+;;; (displayln exprs)
+;;; (displayln pcontext)
+;;; (displayln ctx)
   (define fn (compile-progs exprs ctx))
   (define repr (context-repr ctx))
   (define special? (representation-special-value? repr))

@@ -1,0 +1,281 @@
+0.0 , (*.f64 z0 #s(literal 10 binary64)) , (* z0 10)  , 6505
+0.0 , (*.f64 z0 z0) , (* z0 z0)  , 2469
+0.0 , (*.f32 (floor.f32 z0) z1) , (* (floor z0) z1)  , 1360
+0.045540241011860924 , (+.f64 #s(literal 7/2 binary64) (*.f64 z0 #s(literal 10 binary64))) , (+ 7/2 (* z0 10))  , 528
+0.0495 , (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z0 #s(literal 10 binary64)))) , (neg (+ 7/2 (* z0 10)))  , 496
+0.1070543234384916 , (*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z0) z1)) , (* (* (floor z0) z1) (* (floor z0) z1))  , 456
+0.05132312031259014 , (+.f64 #s(literal 1 binary64) (*.f64 z0 #s(literal 10 binary64))) , (+ 1 (* z0 10))  , 400
+0.0 , (-.f64 #s(literal 1 binary64) z0) , (- 1 z0)  , 365
+0.0 , (*.f32 z0 (floor.f32 z1)) , (* z0 (floor z1))  , 348
+0.0 , (*.f64 #s(literal 2 binary64) z0) , (* 2 z0)  , 336
+0.11244116562662264 , (pow.f32 (*.f32 z0 (floor.f32 z1)) #s(literal 2 binary32)) , (pow (* z0 (floor z1)) 2)  , 297
+0.001625 , (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) , (pow (floor z0) 2)  , 297
+2.7555769068164846 , (*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z1) z1) , (* (* (pow (floor z0) 2) z1) z1)  , 293
+1.7427257116095116 , (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z1) , (* (pow (floor z0) 2) z1)  , 293
+0.0487259193652572 , (+.f64 #s(literal 5/2 binary64) (*.f64 z0 #s(literal 10 binary64))) , (+ 5/2 (* z0 10))  , 256
+0.11328552656439309 , (pow.f32 (*.f32 (floor.f32 z0) z1) #s(literal 2 binary32)) , (pow (* (floor z0) z1) 2)  , 230
+0.05157028030302763 , (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 9 binary64)) , (- (* z0 10) 9)  , 224
+0.0 , (-.f64 z0 #s(literal -1 binary64)) , (- z0 -1)  , 217
+0.11368176718957335 , (+.f32 (*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z0) z1)) (*.f32 (*.f32 (floor.f32 z2) z3) (*.f32 (floor.f32 z2) z3))) , (+ (* (* (floor z0) z1) (* (floor z0) z1)) (* (* (floor z2) z3) (* (floor z2) z3)))  , 212
+0.00025 , (pow.f64 z0 #s(literal 4 binary64)) , (pow z0 4)  , 207
+0.0 , (*.f32 z0 z0) , (* z0 z0)  , 193
+0.13144605312878613 , (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z0 #s(literal 10 binary64))) #s(literal 2 binary64)) , (pow (+ 1 (* z0 10)) 2)  , 192
+0.0 , (/.f64 #s(literal 1 binary64) z0) , (/ 1 z0)  , 192
+0.0715 , (fmax.f64 (fmax.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 41/10 binary64)) (-.f64 #s(literal 17/5 binary64) (*.f64 z0 #s(literal 10 binary64)))) (+.f64 #s(literal 5/2 binary64) (*.f64 z1 #s(literal 10 binary64)))) , (fmax (fmax (- (* z0 10) 41/10) (- 17/5 (* z0 10))) (+ 5/2 (* z1 10)))  , 176
+0.0576009193652572 , (fmax.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 41/10 binary64)) (-.f64 #s(literal 17/5 binary64) (*.f64 z0 #s(literal 10 binary64)))) , (fmax (- (* z0 10) 41/10) (- 17/5 (* z0 10)))  , 176
+0.05782312031259014 , (-.f64 #s(literal 17/5 binary64) (*.f64 z0 #s(literal 10 binary64))) , (- 17/5 (* z0 10))  , 176
+0.06676515121455116 , (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 41/10 binary64)) , (- (* z0 10) 41/10)  , 176
+0.14575997851690903 , (pow.f64 (+.f64 #s(literal 63/20 binary64) (*.f64 z0 #s(literal 10 binary64))) #s(literal 2 binary64)) , (pow (+ 63/20 (* z0 10)) 2)  , 163
+0.058625 , (+.f64 #s(literal 63/20 binary64) (*.f64 z0 #s(literal 10 binary64))) , (+ 63/20 (* z0 10))  , 163
+0.0 , (*.f64 z0 #s(literal 30 binary64)) , (* z0 30)  , 154
+3.6372589615874182 , (+.f32 (*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z1) z1) (*.f32 (*.f32 (pow.f32 (floor.f32 z2) #s(literal 2 binary32)) z3) z3)) , (+ (* (* (pow (floor z0) 2) z1) z1) (* (* (pow (floor z2) 2) z3) z3))  , 144
+0.0 , (-.f32 #s(literal 1 binary32) z0) , (- 1 z0)  , 132
+0.0 , (-.f64 z0 #s(literal 1 binary64)) , (- z0 1)  , 129
+0.04619812031259015 , (+.f64 #s(literal 9 binary64) (*.f64 z0 #s(literal 10 binary64))) , (+ 9 (* z0 10))  , 128
+0.05282312031259015 , (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 11/2 binary64)) , (- (* z0 10) 11/2)  , 128
+0.0 , (*.f64 #s(literal 1/2 binary64) z0) , (* 1/2 z0)  , 126
+0.250375 , (*.f64 (PI.f64) z0) , (* (PI) z0)  , 122
+0.0005 , (pow.f64 z0 #s(literal 3 binary64)) , (pow z0 3)  , 121
+0.0 , (*.f64 #s(literal 3 binary64) z0) , (* 3 z0)  , 120
+29.54863939168938 , (-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 1 binary64)) , (- (- 1 z0) 1)  , 117
+0.0 , (/.f64 z0 #s(literal 180 binary64)) , (/ z0 180)  , 114
+0.04994812031259014 , (neg.f64 (+.f64 #s(literal 9 binary64) (*.f64 z0 #s(literal 10 binary64)))) , (neg (+ 9 (* z0 10)))  , 112
+0.047573120312590145 , (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 6 binary64)) , (- (* z0 10) 6)  , 112
+0.06951515121455117 , (+.f64 #s(literal 41/10 binary64) (*.f64 z0 #s(literal 10 binary64))) , (+ 41/10 (* z0 10))  , 112
+0.047 , (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 7 binary64)) , (- (* z0 10) 7)  , 112
+0.11484680468885218 , (+.f32 (pow.f32 (*.f32 z0 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z2 (floor.f32 z3)) #s(literal 2 binary32))) , (+ (pow (* z0 (floor z1)) 2) (pow (* z2 (floor z3)) 2))  , 110
+7.492309524685795 , (*.f64 (*.f64 z0 z0) z1) , (* (* z0 z0) z1)  , 109
+0.0 , (+.f64 #s(literal 1 binary64) z0) , (+ 1 z0)  , 106
+3.519335369561495 , (-.f32 (pow.f32 (*.f32 (floor.f32 z0) z1) #s(literal 2 binary32)) (pow.f32 (*.f32 (floor.f32 z2) z3) #s(literal 2 binary32))) , (- (pow (* (floor z0) z1) 2) (pow (* (floor z2) z3) 2))  , 102
+0.0 , (/.f64 (neg.f64 z0) z1) , (/ (neg z0) z1)  , 101
+0.30520772226507664 , (-.f32 (*.f32 z0 z1) (*.f32 z2 z3)) , (- (* z0 z1) (* z2 z3))  , 100
+0.0 , (*.f32 (floor.f32 z0) (floor.f32 z1)) , (* (floor z0) (floor z1))  , 98
+0.0 , (*.f64 #s(literal 4 binary64) z0) , (* 4 z0)  , 97
+0.0697712406251803 , (-.f64 #s(literal 33/10 binary64) (*.f64 z0 #s(literal 10 binary64))) , (- 33/10 (* z0 10))  , 96
+0.0515 , (+.f64 #s(literal 3 binary64) (*.f64 z0 #s(literal 10 binary64))) , (+ 3 (* z0 10))  , 96
+0.0 , (*.f64 z0 #s(literal 2 binary64)) , (* z0 2)  , 94
+0.0 , (+.f64 z0 #s(literal 1 binary64)) , (+ z0 1)  , 92
+3.170711635382762 , (*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z2) z3)) , (* (* (floor z0) z1) (* (floor z2) z3))  , 91
+0.003375 , (+.f64 (*.f64 z0 z0) (*.f64 z1 z1)) , (+ (* z0 z0) (* z1 z1))  , 91
+0.0 , (*.f64 (neg.f64 z0) z1) , (* (neg z0) z1)  , 90
+0.04943872187554086 , (fmax.f32 (+.f32 (*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z0) z1)) (*.f32 (*.f32 (floor.f32 z2) z3) (*.f32 (floor.f32 z2) z3))) (+.f32 (*.f32 (*.f32 (floor.f32 z0) z4) (*.f32 (floor.f32 z0) z4)) (*.f32 (*.f32 (floor.f32 z2) z5) (*.f32 (floor.f32 z2) z5)))) , (fmax (+ (* (* (floor z0) z1) (* (floor z0) z1)) (* (* (floor z2) z3) (* (floor z2) z3))) (+ (* (* (floor z0) z4) (* (floor z0) z4)) (* (* (floor z2) z5) (* (floor z2) z5))))  , 84
+0.44775 , (-.f64 (*.f64 z0 z1) (*.f64 z2 z3)) , (- (* z0 z1) (* z2 z3))  , 84
+0.0 , (+.f64 z0 z0) , (+ z0 z0)  , 82
+0.04994812031259015 , (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 13/2 binary64)) , (- (* z0 10) 13/2)  , 80
+0.04518648163704121 , (-.f64 #s(literal 5 binary64) (*.f64 z0 #s(literal 10 binary64))) , (- 5 (* z0 10))  , 80
+0.05105117386701721 , (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 7/2 binary64)) , (- (* z0 10) 7/2)  , 80
+0.065625 , (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 28/5 binary64)) , (- (* z0 10) 28/5)  , 78
+0.0 , (*.f64 z0 #s(literal 3 binary64)) , (* z0 3)  , 76
+4.948985962305139 , (/.f64 (*.f64 z0 z1) z2) , (/ (* z0 z1) z2)  , 75
+0.3390755640636719 , (*.f64 (/.f64 z0 #s(literal 180 binary64)) (PI.f64)) , (* (/ z0 180) (PI))  , 73
+7.435207795518225 , (/.f64 (*.f64 z0 z0) z1) , (/ (* z0 z0) z1)  , 72
+0.0 , (*.f64 #s(literal -2 binary64) z0) , (* -2 z0)  , 72
+0.038211625634587444 , (*.f64 (*.f64 #s(literal 4 binary64) z0) z1) , (* (* 4 z0) z1)  , 71
+0.0 , (*.f64 z0-scale z0-scale) , (* z0-scale z0-scale)  , 70
+1.009028317680791 , (fmax.f32 (+.f32 (*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z1) z1) (*.f32 (*.f32 (pow.f32 (floor.f32 z2) #s(literal 2 binary32)) z3) z3)) (+.f32 (*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z4) z4) (*.f32 (*.f32 (pow.f32 (floor.f32 z2) #s(literal 2 binary32)) z5) z5))) , (fmax (+ (* (* (pow (floor z0) 2) z1) z1) (* (* (pow (floor z2) 2) z3) z3)) (+ (* (* (pow (floor z0) 2) z4) z4) (* (* (pow (floor z2) 2) z5) z5)))  , 69
+0.048375 , (fmax.f64 (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z0 #s(literal 10 binary64)))) (+.f64 #s(literal 1 binary64) (*.f64 z0 #s(literal 10 binary64)))) , (fmax (neg (+ 7/2 (* z0 10))) (+ 1 (* z0 10)))  , 64
+0.0647712406251803 , (neg.f64 (+.f64 #s(literal 37/10 binary64) (*.f64 z0 #s(literal 10 binary64)))) , (neg (+ 37/10 (* z0 10)))  , 64
+0.06948836132445106 , (+.f64 #s(literal 37/10 binary64) (*.f64 z0 #s(literal 10 binary64))) , (+ 37/10 (* z0 10))  , 64
+0.06257312031259014 , (+.f64 #s(literal 13/5 binary64) (*.f64 z0 #s(literal 10 binary64))) , (+ 13/5 (* z0 10))  , 64
+0.050990601562950724 , (neg.f64 (fmin.f64 (-.f64 #s(literal 9 binary64) (*.f64 z0 #s(literal 10 binary64))) (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 11/2 binary64)))) , (neg (fmin (- 9 (* z0 10)) (- (* z0 10) 11/2)))  , 64
+0.04827124062518029 , (fmin.f64 (-.f64 #s(literal 9 binary64) (*.f64 z0 #s(literal 10 binary64))) (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 11/2 binary64))) , (fmin (- 9 (* z0 10)) (- (* z0 10) 11/2))  , 64
+0.04866524101186092 , (-.f64 #s(literal 9 binary64) (*.f64 z0 #s(literal 10 binary64))) , (- 9 (* z0 10))  , 64
+0.05952124062518029 , (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 29/5 binary64)) , (- (* z0 10) 29/5)  , 64
+0.0495614816370412 , (-.f64 #s(literal 13/2 binary64) (*.f64 z0 #s(literal 10 binary64))) , (- 13/2 (* z0 10))  , 64
+0.0595 , (-.f64 #s(literal 31/10 binary64) (*.f64 z0 #s(literal 10 binary64))) , (- 31/10 (* z0 10))  , 64
+0.046625 , (+.f64 #s(literal 17/2 binary64) (*.f64 z0 #s(literal 10 binary64))) , (+ 17/2 (* z0 10))  , 64
+0.04977124062518029 , (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 33/2 binary64)) , (- (* z0 10) 33/2)  , 64
+0.05009436093777044 , (+.f64 #s(literal 3/2 binary64) (*.f64 z0 #s(literal 10 binary64))) , (+ 3/2 (* z0 10))  , 64
+0.05193872187554087 , (-.f64 #s(literal 1/2 binary64) (*.f64 z0 #s(literal 10 binary64))) , (- 1/2 (* z0 10))  , 64
+0.0 , (/.f64 (-.f64 z0 z1) #s(literal 2 binary64)) , (/ (- z0 z1) 2)  , 63
+0.01075 , (*.f64 (-.f64 z0 z1) z2) , (* (- z0 z1) z2)  , 63
+0.0 , (*.f64 #s(literal -1/2 binary64) z0) , (* -1/2 z0)  , 61
+0.0 , (*.f64 z0 #s(literal 5 binary64)) , (* z0 5)  , 60
+4.903664540268727 , (*.f64 (*.f64 z0 z1) z2) , (* (* z0 z1) z2)  , 60
+5.110200232426508 , (*.f64 (/.f64 z0 z1) z2) , (* (/ z0 z1) z2)  , 58
+0.000875 , (pow.f64 z0 #s(literal 2 binary64)) , (pow z0 2)  , 56
+0.10226184218813102 , (*.f64 (cos.f64 z0) (cos.f64 z1)) , (* (cos z0) (cos z1))  , 56
+0.001 , (-.f64 (*.f64 z0 z0) #s(literal 1 binary64)) , (- (* z0 z0) 1)  , 55
+0.0 , (/.f64 #s(literal 1/2 binary64) z0) , (/ 1/2 z0)  , 54
+29.76743407593723 , (sqrt.f64 (+.f64 (*.f64 z0 z0) (*.f64 z1 z1))) , (sqrt (+ (* z0 z0) (* z1 z1)))  , 53
+0.0 , (*.f64 z0 #s(literal 4 binary64)) , (* z0 4)  , 53
+4.107988493558855 , (fabs.f32 (*.f32 (-.f32 (*.f32 z0 z1) (*.f32 z2 z3)) (*.f32 (floor.f32 z4) (floor.f32 z5)))) , (fabs (* (- (* z0 z1) (* z2 z3)) (* (floor z4) (floor z5))))  , 52
+3.9395216480049586 , (*.f32 (-.f32 (*.f32 z0 z1) (*.f32 z2 z3)) (*.f32 (floor.f32 z4) (floor.f32 z5))) , (* (- (* z0 z1) (* z2 z3)) (* (floor z4) (floor z5)))  , 52
+0.2543516921910155 , (pow.f64 (sin.f64 z0) #s(literal 2 binary64)) , (pow (sin z0) 2)  , 52
+2.472868313381356 , (fmax.f32 (-.f32 (pow.f32 (*.f32 (floor.f32 z0) z1) #s(literal 2 binary32)) (pow.f32 (*.f32 (floor.f32 z2) z3) #s(literal 2 binary32))) (-.f32 (pow.f32 (*.f32 (floor.f32 z0) z4) #s(literal 2 binary32)) (pow.f32 (*.f32 (floor.f32 z2) z5) #s(literal 2 binary32)))) , (fmax (- (pow (* (floor z0) z1) 2) (pow (* (floor z2) z3) 2)) (- (pow (* (floor z0) z4) 2) (pow (* (floor z2) z5) 2)))  , 51
+9.38623821175116 , (sqrt.f32 (fmax.f32 (+.f32 (*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z0) z1)) (*.f32 (*.f32 (floor.f32 z2) z3) (*.f32 (floor.f32 z2) z3))) (+.f32 (*.f32 (*.f32 (floor.f32 z0) z4) (*.f32 (floor.f32 z0) z4)) (*.f32 (*.f32 (floor.f32 z2) z5) (*.f32 (floor.f32 z2) z5))))) , (sqrt (fmax (+ (* (* (floor z0) z1) (* (floor z0) z1)) (* (* (floor z2) z3) (* (floor z2) z3))) (+ (* (* (floor z0) z4) (* (floor z0) z4)) (* (* (floor z2) z5) (* (floor z2) z5)))))  , 51
+15.274209582977376 , (sin.f64 (/.f64 (-.f64 z0 z1) #s(literal 2 binary64))) , (sin (/ (- z0 z1) 2))  , 51
+0.0003231203125901445 , (-.f64 #s(literal 1 binary64) (*.f64 z0 z0)) , (- 1 (* z0 z0))  , 50
+0.0 , (exp.f64 (neg.f64 z0)) , (exp (neg z0))  , 50
+0.0 , (/.f64 z0 #s(literal 2 binary64)) , (/ z0 2)  , 50
+7.2383369998761795 , (/.f64 z0 (*.f64 z1 z1)) , (/ z0 (* z1 z1))  , 50
+0.0 , (*.f64 (neg.f64 z0) z0) , (* (neg z0) z0)  , 49
+26.410631920546656 , (sin.f64 (*.f64 z0 #s(literal 30 binary64))) , (sin (* z0 30))  , 48
+0.469 , (*.f64 z0 #s(literal 3275911/10000000 binary64)) , (* z0 3275911/10000000)  , 48
+0.05911336132445106 , (fmax.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 28/5 binary64)) (-.f64 #s(literal 24/5 binary64) (*.f64 z0 #s(literal 10 binary64)))) , (fmax (- (* z0 10) 28/5) (- 24/5 (* z0 10)))  , 48
+0.06132312031259015 , (-.f64 #s(literal 24/5 binary64) (*.f64 z0 #s(literal 10 binary64))) , (- 24/5 (* z0 10))  , 48
+0.6114178578176387 , (pow.f64 (+.f64 #s(literal 131/20 binary64) (*.f64 z0 #s(literal 10 binary64))) #s(literal 2 binary64)) , (pow (+ 131/20 (* z0 10)) 2)  , 48
+0.05875 , (+.f64 #s(literal 131/20 binary64) (*.f64 z0 #s(literal 10 binary64))) , (+ 131/20 (* z0 10))  , 48
+0.056375 , (fmax.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 24/5 binary64)) (-.f64 #s(literal 5/2 binary64) (*.f64 z0 #s(literal 10 binary64)))) , (fmax (- (* z0 10) 24/5) (- 5/2 (* z0 10)))  , 48
+0.050505549264919805 , (-.f64 #s(literal 5/2 binary64) (*.f64 z0 #s(literal 10 binary64))) , (- 5/2 (* z0 10))  , 48
+0.06025 , (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 24/5 binary64)) , (- (* z0 10) 24/5)  , 48
+0.14666812332191376 , (pow.f64 (+.f64 #s(literal 11/4 binary64) (*.f64 z0 #s(literal 10 binary64))) #s(literal 2 binary64)) , (pow (+ 11/4 (* z0 10)) 2)  , 48
+0.05002124062518029 , (+.f64 #s(literal 11/4 binary64) (*.f64 z0 #s(literal 10 binary64))) , (+ 11/4 (* z0 10))  , 48
+25.8206010031753 , (sqrt.f64 (+.f64 (pow.f64 (+.f64 #s(literal 41/10 binary64) (*.f64 z0 #s(literal 10 binary64))) #s(literal 2 binary64)) (pow.f64 (-.f64 (*.f64 z1 #s(literal 10 binary64)) #s(literal 33/10 binary64)) #s(literal 2 binary64)))) , (sqrt (+ (pow (+ 41/10 (* z0 10)) 2) (pow (- (* z1 10) 33/10) 2)))  , 48
+0.4043095875079331 , (+.f64 (pow.f64 (+.f64 #s(literal 41/10 binary64) (*.f64 z0 #s(literal 10 binary64))) #s(literal 2 binary64)) (pow.f64 (-.f64 (*.f64 z1 #s(literal 10 binary64)) #s(literal 33/10 binary64)) #s(literal 2 binary64))) , (+ (pow (+ 41/10 (* z0 10)) 2) (pow (- (* z1 10) 33/10) 2))  , 48
+0.6254301070309342 , (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 33/10 binary64)) #s(literal 2 binary64)) , (pow (- (* z0 10) 33/10) 2)  , 48
+0.06532312031259013 , (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 33/10 binary64)) , (- (* z0 10) 33/10)  , 48
+0.1494349945330969 , (pow.f64 (+.f64 #s(literal 41/10 binary64) (*.f64 z0 #s(literal 10 binary64))) #s(literal 2 binary64)) , (pow (+ 41/10 (* z0 10)) 2)  , 48
+0.04475 , (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 15/2 binary64)) , (- (* z0 10) 15/2)  , 48
+0.047330482023721844 , (neg.f64 (+.f64 #s(literal 17/2 binary64) (*.f64 z0 #s(literal 10 binary64)))) , (neg (+ 17/2 (* z0 10)))  , 48
+0.0515 , (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 5/2 binary64)) , (- (* z0 10) 5/2)  , 48
+0.04719812031259015 , (neg.f64 (+.f64 #s(literal 3 binary64) (*.f64 z0 #s(literal 10 binary64)))) , (neg (+ 3 (* z0 10)))  , 48
+0.04741524101186092 , (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 21/2 binary64)) , (- (* z0 10) 21/2)  , 48
+0.04991524101186092 , (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 2 binary64)) , (- (* z0 10) 2)  , 48
+0.006875 , (*.f64 #s(literal -2 binary64) (*.f64 z0 z0)) , (* -2 (* z0 z0))  , 47
+0.9638197513606513 , (-.f64 (*.f64 z0 z0) (*.f64 (*.f64 #s(literal 4 binary64) z1) z2)) , (- (* z0 z0) (* (* 4 z1) z2))  , 47
+0.15184436093777043 , (*.f64 (cos.f64 z0) (sin.f64 z1)) , (* (cos z0) (sin z1))  , 45
+6.389044232709744 , (fabs.f32 (-.f32 (*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z2) z3)) (*.f32 (*.f32 (floor.f32 z2) z4) (*.f32 (floor.f32 z0) z5)))) , (fabs (- (* (* (floor z0) z1) (* (floor z2) z3)) (* (* (floor z2) z4) (* (floor z0) z5))))  , 44
+6.716841563791301 , (-.f32 (*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z2) z3)) (*.f32 (*.f32 (floor.f32 z2) z4) (*.f32 (floor.f32 z0) z5))) , (- (* (* (floor z0) z1) (* (floor z2) z3)) (* (* (floor z2) z4) (* (floor z0) z5)))  , 44
+0.22834436093777044 , (-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64)) , (- (* z0 3275911/10000000) -1)  , 44
+0.013198120312590145 , (-.f64 z0 #s(literal 11/20 binary64)) , (- z0 11/20)  , 44
+0.3285 , (*.f32 (PI.f32) z0) , (* (PI) z0)  , 44
+0.13075 , (*.f64 (/.f64 z0 z1) z0) , (* (/ z0 z1) z0)  , 44
+0.001125 , (+.f64 (+.f64 z0 z1) z2) , (+ (+ z0 z1) z2)  , 43
+0.0 , (/.f64 #s(literal 2 binary64) z0) , (/ 2 z0)  , 43
+0.009625 , (/.f64 z0 (-.f64 z1 z2)) , (/ z0 (- z1 z2))  , 42
+0.0 , (/.f64 #s(literal 1 binary64) (fabs.f64 z0)) , (/ 1 (fabs z0))  , 41
+0.007625 , (sqrt.f64 (-.f64 z0 #s(literal -1 binary64))) , (sqrt (- z0 -1))  , 41
+15.125301598808356 , (cos.f64 (-.f64 z0 z1)) , (cos (- z0 z1))  , 41
+0.11375 , (*.f64 (cos.f64 z0) z1) , (* (cos z0) z1)  , 40
+28.00823362388468 , (cos.f64 (*.f64 (/.f64 z0 #s(literal 180 binary64)) (PI.f64))) , (cos (* (/ z0 180) (PI)))  , 40
+0.20441748125036058 , (*.f64 (sin.f64 z0) (sin.f64 z1)) , (* (sin z0) (sin z1))  , 40
+0.336125 , (*.f64 #s(literal 1/6 binary64) z0) , (* 1/6 z0)  , 39
+24.909095543237555 , (sqrt.f64 (-.f64 (*.f64 z0 z0) (*.f64 (*.f64 #s(literal 4 binary64) z1) z2))) , (sqrt (- (* z0 z0) (* (* 4 z1) z2)))  , 38
+0.25475 , (*.f64 z0 (PI.f64)) , (* z0 (PI))  , 38
+0.6202691262618912 , (pow.f64 (-.f64 (*.f64 z0 #s(literal 5 binary64)) #s(literal 11/5 binary64)) #s(literal 2 binary64)) , (pow (- (* z0 5) 11/5) 2)  , 37
+0.06569812031259015 , (-.f64 (*.f64 z0 #s(literal 5 binary64)) #s(literal 11/5 binary64)) , (- (* z0 5) 11/5)  , 37
+0.13175 , (sqrt.f64 (/.f64 #s(literal 1 binary64) z0)) , (sqrt (/ 1 z0))  , 37
+1.3695867662588315 , (*.f64 (atan2.f64 z0 z1) z2) , (* (atan2 z0 z1) z2)  , 37
+0.33232556406367175 , (*.f64 (PI.f64) (/.f64 z0 #s(literal 180 binary64))) , (* (PI) (/ z0 180))  , 37
+0.124 , (*.f64 (sin.f64 z0) z1) , (* (sin z0) z1)  , 37
+0.000375 , (+.f64 (*.f64 z0 z0) #s(literal 1 binary64)) , (+ (* z0 z0) 1)  , 37
+3.8156220926923097 , (*.f32 (*.f32 (floor.f32 z0) (floor.f32 z1)) (-.f32 (*.f32 z2 z3) (*.f32 z4 z5))) , (* (* (floor z0) (floor z1)) (- (* z2 z3) (* z4 z5)))  , 36
+0.07154661401787192 , (*.f64 (pow.f64 z0 #s(literal 4 binary64)) #s(literal 9 binary64)) , (* (pow z0 4) 9)  , 36
+39.58968984602322 , (*.f64 (sin.f64 (*.f64 z0 #s(literal 30 binary64))) (cos.f64 (*.f64 z1 #s(literal 30 binary64)))) , (* (sin (* z0 30)) (cos (* z1 30)))  , 36
+26.504220514933568 , (cos.f64 (*.f64 z0 #s(literal 30 binary64))) , (cos (* z0 30))  , 36
+0.00825 , (*.f64 (+.f64 z0 z1) z2) , (* (+ z0 z1) z2)  , 36
+0.000375 , (pow.f64 z0 #s(literal 6 binary64)) , (pow z0 6)  , 36
+0.255125 , (*.f64 (log.f64 z0) z1) , (* (log z0) z1)  , 36
+0.0 , (*.f64 z0-scale z1-scale) , (* z0-scale z1-scale)  , 36
+0.1255 , (*.f64 z0 (sin.f64 z1)) , (* z0 (sin z1))  , 36
+5.755892521169055 , (*.f64 (-.f64 (*.f64 z0 z1) (*.f64 z2 z3)) z4) , (* (- (* z0 z1) (* z2 z3)) z4)  , 35
+0.6337914011715814 , (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 97/20 binary64)) #s(literal 2 binary64)) , (pow (- (* z0 10) 97/20) 2)  , 35
+0.06460091936525719 , (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 97/20 binary64)) , (- (* z0 10) 97/20)  , 35
+0.0 , (*.f64 #s(literal -1/4 binary64) z0) , (* -1/4 z0)  , 35
+0.3387925040064793 , (*.f64 (*.f64 (PI.f64) z0) #s(literal 1/180 binary64)) , (* (* (PI) z0) 1/180)  , 35
+0.12428552656439304 , (*.f64 (*.f64 z0 z0) (*.f64 z0 z0)) , (* (* z0 z0) (* z0 z0))  , 35
+0.082125 , (*.f64 (*.f64 z0 z0) z0) , (* (* z0 z0) z0)  , 34
+0.053011842188131014 , (fmax.f32 (+.f32 (pow.f32 (*.f32 z0 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z2 (floor.f32 z3)) #s(literal 2 binary32))) (+.f32 (pow.f32 (*.f32 z4 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z5 (floor.f32 z3)) #s(literal 2 binary32)))) , (fmax (+ (pow (* z0 (floor z1)) 2) (pow (* z2 (floor z3)) 2)) (+ (pow (* z4 (floor z1)) 2) (pow (* z5 (floor z3)) 2)))  , 33
+0.134375 , (*.f64 (*.f64 #s(literal 3 binary64) z0) z0) , (* (* 3 z0) z0)  , 33
+0.0 , (*.f32 #s(literal 2 binary32) z0) , (* 2 z0)  , 33
+0.5302082718841955 , (pow.f64 (log.f64 z0) #s(literal 2 binary64)) , (pow (log z0) 2)  , 33
+28.321738044686644 , (sin.f64 (*.f64 (/.f64 z0 #s(literal 180 binary64)) (PI.f64))) , (sin (* (/ z0 180) (PI)))  , 33
+23.16683520411567 , (/.f32 (fmax.f32 (+.f32 (*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z1) z1) (*.f32 (*.f32 (pow.f32 (floor.f32 z2) #s(literal 2 binary32)) z3) z3)) (+.f32 (*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z4) z4) (*.f32 (*.f32 (pow.f32 (floor.f32 z2) #s(literal 2 binary32)) z5) z5))) (fabs.f32 (*.f32 (-.f32 (*.f32 z5 z1) (*.f32 z4 z3)) (*.f32 (floor.f32 z0) (floor.f32 z2))))) , (/ (fmax (+ (* (* (pow (floor z0) 2) z1) z1) (* (* (pow (floor z2) 2) z3) z3)) (+ (* (* (pow (floor z0) 2) z4) z4) (* (* (pow (floor z2) 2) z5) z5))) (fabs (* (- (* z5 z1) (* z4 z3)) (* (floor z0) (floor z2)))))  , 32
+8.582149528884479 , (-.f64 (*.f64 (pow.f64 z0 #s(literal 4 binary64)) #s(literal 9 binary64)) (pow.f64 z1 #s(literal 4 binary64))) , (- (* (pow z0 4) 9) (pow z1 4))  , 32
+0.05854024101186092 , (neg.f64 (+.f64 #s(literal 39/10 binary64) (*.f64 z0 #s(literal 10 binary64)))) , (neg (+ 39/10 (* z0 10)))  , 32
+0.0595 , (+.f64 #s(literal 39/10 binary64) (*.f64 z0 #s(literal 10 binary64))) , (+ 39/10 (* z0 10))  , 32
+0.05050834524154836 , (fmax.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 9 binary64)) (-.f64 (*.f64 z1 #s(literal 10 binary64)) #s(literal 7 binary64))) , (fmax (- (* z0 10) 9) (- (* z1 10) 7))  , 32
+0.04394812031259015 , (-.f64 #s(literal 2 binary64) (*.f64 z0 #s(literal 10 binary64))) , (- 2 (* z0 10))  , 32
+0.0465 , (+.f64 #s(literal 4 binary64) (*.f64 z0 #s(literal 10 binary64))) , (+ 4 (* z0 10))  , 32
+0.06752124062518029 , (+.f64 #s(literal 11/5 binary64) (*.f64 z0 #s(literal 10 binary64))) , (+ 11/5 (* z0 10))  , 32
+0.06396936093777043 , (+.f64 #s(literal 33/10 binary64) (*.f64 z0 #s(literal 10 binary64))) , (+ 33/10 (* z0 10))  , 32
+0.15226521789602335 , (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 21/20 binary64)) #s(literal 2 binary64)) , (pow (- (* z0 10) 21/20) 2)  , 32
+0.05677124062518029 , (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 21/20 binary64)) , (- (* z0 10) 21/20)  , 32
+0.05089624062518029 , (+.f64 #s(literal 6 binary64) (*.f64 z0 #s(literal 10 binary64))) , (+ 6 (* z0 10))  , 32
+0.066125 , (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 37/5 binary64)) , (- (* z0 10) 37/5)  , 32
+0.05002124062518029 , (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 5 binary64)) , (- (* z0 10) 5)  , 32
+0.04494812031259014 , (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 3/2 binary64)) , (- (* z0 10) 3/2)  , 32
+0.0495 , (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 1/2 binary64)) , (- (* z0 10) 1/2)  , 32
+0.06019812031259015 , (+.f64 #s(literal 36/5 binary64) (*.f64 z0 #s(literal 10 binary64))) , (+ 36/5 (* z0 10))  , 32
+0.06869812031259015 , (-.f64 #s(literal 1/5 binary64) (*.f64 z0 #s(literal 10 binary64))) , (- 1/5 (* z0 10))  , 32
+0.060665241011860924 , (+.f64 #s(literal 999999/10000000 binary64) (*.f64 z0 #s(literal 10 binary64))) , (+ 999999/10000000 (* z0 10))  , 32
+0.061125 , (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 31/10 binary64)) , (- (* z0 10) 31/10)  , 32
+26.6413978524098 , (-.f64 (sqrt.f64 (+.f64 (pow.f64 (+.f64 #s(literal 41/10 binary64) (*.f64 z0 #s(literal 10 binary64))) #s(literal 2 binary64)) (pow.f64 (-.f64 (*.f64 z1 #s(literal 10 binary64)) #s(literal 33/10 binary64)) #s(literal 2 binary64)))) #s(literal 3/2 binary64)) , (- (sqrt (+ (pow (+ 41/10 (* z0 10)) 2) (pow (- (* z1 10) 33/10) 2))) 3/2)  , 32
+0.36925 , (*.f64 z0 #s(literal 122859/12500 binary64)) , (* z0 122859/12500)  , 32
+0.299625 , (*.f64 z0 #s(literal 184289/100000 binary64)) , (* z0 184289/100000)  , 32
+0.462125 , (*.f64 z0 #s(literal 98503/10000 binary64)) , (* z0 98503/10000)  , 32
+0.00425 , (*.f64 z0 #s(literal 8619/5000 binary64)) , (* z0 8619/5000)  , 32
+0.05807312031259015 , (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 67/10 binary64)) , (- (* z0 10) 67/10)  , 32
+0.05994812031259014 , (-.f64 #s(literal 57/10 binary64) (*.f64 z0 #s(literal 10 binary64))) , (- 57/10 (* z0 10))  , 32
+0.05882312031259014 , (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 34/5 binary64)) , (- (* z0 10) 34/5)  , 32
+0.07007312031259015 , (+.f64 #s(literal 27/5 binary64) (*.f64 z0 #s(literal 10 binary64))) , (+ 27/5 (* z0 10))  , 32
+0.061 , (-.f64 #s(literal 67/10 binary64) (*.f64 z0 #s(literal 10 binary64))) , (- 67/10 (* z0 10))  , 32
+0.06637640340692791 , (neg.f64 (+.f64 #s(literal 23/10 binary64) (*.f64 z0 #s(literal 10 binary64)))) , (neg (+ 23/10 (* z0 10)))  , 32
+0.064875 , (+.f64 #s(literal 23/10 binary64) (*.f64 z0 #s(literal 10 binary64))) , (+ 23/10 (* z0 10))  , 32
+0.049510932855156294 , (neg.f64 (+.f64 #s(literal 5/2 binary64) (*.f64 z0 #s(literal 10 binary64)))) , (neg (+ 5/2 (* z0 10)))  , 32
+0.06092403967784735 , (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 31/5 binary64)) , (- (* z0 10) 31/5)  , 32
+0.0 , (*.f64 z0 #s(literal 8 binary64)) , (* z0 8)  , 32
+0.07107312031259015 , (neg.f64 (+.f64 #s(literal 61/10 binary64) (*.f64 z0 #s(literal 10 binary64)))) , (neg (+ 61/10 (* z0 10)))  , 32
+0.061948120312590144 , (+.f64 #s(literal 61/10 binary64) (*.f64 z0 #s(literal 10 binary64))) , (+ 61/10 (* z0 10))  , 32
+0.04866524101186092 , (-.f64 #s(literal 3/2 binary64) (*.f64 z0 #s(literal 10 binary64))) , (- 3/2 (* z0 10))  , 32
+0.05579248125036058 , (fmax.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 33/2 binary64)) (+.f64 #s(literal 41/10 binary64) (*.f64 z1 #s(literal 10 binary64)))) , (fmax (- (* z0 10) 33/2) (+ 41/10 (* z1 10)))  , 32
+0.05369812031259015 , (+.f64 #s(literal 15/2 binary64) (*.f64 z0 #s(literal 10 binary64))) , (+ 15/2 (* z0 10))  , 32
+0.050625 , (-.f64 #s(literal 7/2 binary64) (*.f64 z0 #s(literal 10 binary64))) , (- 7/2 (* z0 10))  , 32
+0.4512742074778138 , (neg.f64 (fmin.f64 (fmin.f64 (fmin.f64 (fmin.f64 (fmin.f64 (fmin.f64 (fmin.f64 (fmax.f64 (fmax.f64 (fmax.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 7/2 binary64)) (-.f64 #s(literal 1/2 binary64) (*.f64 z0 #s(literal 10 binary64)))) (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z1 #s(literal 10 binary64))))) (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64)))) (-.f64 (sqrt.f64 (+.f64 (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 2 binary64)) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64)))) #s(literal 3/2 binary64))) (fmax.f64 (fmax.f64 (fmax.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 7 binary64)) (-.f64 #s(literal 4 binary64) (*.f64 z0 #s(literal 10 binary64)))) (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z1 #s(literal 10 binary64))))) (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))))) (-.f64 (sqrt.f64 (+.f64 (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 11/2 binary64)) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64)))) #s(literal 3/2 binary64))) (fmax.f64 (fmax.f64 (fmax.f64 (-.f64 #s(literal 15/2 binary64) (*.f64 z0 #s(literal 10 binary64))) (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 21/2 binary64))) (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z1 #s(literal 10 binary64))))) (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))))) (-.f64 (sqrt.f64 (+.f64 (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 9 binary64)) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64)))) #s(literal 3/2 binary64))) (fmax.f64 (fmax.f64 (fmax.f64 (neg.f64 (+.f64 #s(literal 3 binary64) (*.f64 z0 #s(literal 10 binary64)))) (*.f64 z0 #s(literal 10 binary64))) (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z1 #s(literal 10 binary64))))) (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))))) (-.f64 (sqrt.f64 (+.f64 (pow.f64 (+.f64 #s(literal 3/2 binary64) (*.f64 z0 #s(literal 10 binary64))) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64)))) #s(literal 3/2 binary64)))) , (neg (fmin (fmin (fmin (fmin (fmin (fmin (fmin (fmax (fmax (fmax (- (* z0 10) 7/2) (- 1/2 (* z0 10))) (neg (+ 7/2 (* z1 10)))) (+ 1 (* z1 10))) (- (sqrt (+ (pow (- (* z0 10) 2) 2) (pow (+ 1 (* z1 10)) 2))) 3/2)) (fmax (fmax (fmax (- (* z0 10) 7) (- 4 (* z0 10))) (neg (+ 7/2 (* z1 10)))) (+ 1 (* z1 10)))) (- (sqrt (+ (pow (- (* z0 10) 11/2) 2) (pow (+ 1 (* z1 10)) 2))) 3/2)) (fmax (fmax (fmax (- 15/2 (* z0 10)) (- (* z0 10) 21/2)) (neg (+ 7/2 (* z1 10)))) (+ 1 (* z1 10)))) (- (sqrt (+ (pow (- (* z0 10) 9) 2) (pow (+ 1 (* z1 10)) 2))) 3/2)) (fmax (fmax (fmax (neg (+ 3 (* z0 10))) (* z0 10)) (neg (+ 7/2 (* z1 10)))) (+ 1 (* z1 10)))) (- (sqrt (+ (pow (+ 3/2 (* z0 10)) 2) (pow (+ 1 (* z1 10)) 2))) 3/2)))  , 32
+0.4633586203471039 , (fmin.f64 (fmin.f64 (fmin.f64 (fmin.f64 (fmin.f64 (fmin.f64 (fmin.f64 (fmax.f64 (fmax.f64 (fmax.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 7/2 binary64)) (-.f64 #s(literal 1/2 binary64) (*.f64 z0 #s(literal 10 binary64)))) (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z1 #s(literal 10 binary64))))) (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64)))) (-.f64 (sqrt.f64 (+.f64 (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 2 binary64)) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64)))) #s(literal 3/2 binary64))) (fmax.f64 (fmax.f64 (fmax.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 7 binary64)) (-.f64 #s(literal 4 binary64) (*.f64 z0 #s(literal 10 binary64)))) (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z1 #s(literal 10 binary64))))) (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))))) (-.f64 (sqrt.f64 (+.f64 (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 11/2 binary64)) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64)))) #s(literal 3/2 binary64))) (fmax.f64 (fmax.f64 (fmax.f64 (-.f64 #s(literal 15/2 binary64) (*.f64 z0 #s(literal 10 binary64))) (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 21/2 binary64))) (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z1 #s(literal 10 binary64))))) (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))))) (-.f64 (sqrt.f64 (+.f64 (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 9 binary64)) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64)))) #s(literal 3/2 binary64))) (fmax.f64 (fmax.f64 (fmax.f64 (neg.f64 (+.f64 #s(literal 3 binary64) (*.f64 z0 #s(literal 10 binary64)))) (*.f64 z0 #s(literal 10 binary64))) (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z1 #s(literal 10 binary64))))) (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))))) (-.f64 (sqrt.f64 (+.f64 (pow.f64 (+.f64 #s(literal 3/2 binary64) (*.f64 z0 #s(literal 10 binary64))) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64)))) #s(literal 3/2 binary64))) , (fmin (fmin (fmin (fmin (fmin (fmin (fmin (fmax (fmax (fmax (- (* z0 10) 7/2) (- 1/2 (* z0 10))) (neg (+ 7/2 (* z1 10)))) (+ 1 (* z1 10))) (- (sqrt (+ (pow (- (* z0 10) 2) 2) (pow (+ 1 (* z1 10)) 2))) 3/2)) (fmax (fmax (fmax (- (* z0 10) 7) (- 4 (* z0 10))) (neg (+ 7/2 (* z1 10)))) (+ 1 (* z1 10)))) (- (sqrt (+ (pow (- (* z0 10) 11/2) 2) (pow (+ 1 (* z1 10)) 2))) 3/2)) (fmax (fmax (fmax (- 15/2 (* z0 10)) (- (* z0 10) 21/2)) (neg (+ 7/2 (* z1 10)))) (+ 1 (* z1 10)))) (- (sqrt (+ (pow (- (* z0 10) 9) 2) (pow (+ 1 (* z1 10)) 2))) 3/2)) (fmax (fmax (fmax (neg (+ 3 (* z0 10))) (* z0 10)) (neg (+ 7/2 (* z1 10)))) (+ 1 (* z1 10)))) (- (sqrt (+ (pow (+ 3/2 (* z0 10)) 2) (pow (+ 1 (* z1 10)) 2))) 3/2))  , 32
+26.380904012149763 , (-.f64 (sqrt.f64 (+.f64 (pow.f64 (+.f64 #s(literal 3/2 binary64) (*.f64 z0 #s(literal 10 binary64))) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64)))) #s(literal 3/2 binary64)) , (- (sqrt (+ (pow (+ 3/2 (* z0 10)) 2) (pow (+ 1 (* z1 10)) 2))) 3/2)  , 32
+25.871303938333543 , (sqrt.f64 (+.f64 (pow.f64 (+.f64 #s(literal 3/2 binary64) (*.f64 z0 #s(literal 10 binary64))) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64)))) , (sqrt (+ (pow (+ 3/2 (* z0 10)) 2) (pow (+ 1 (* z1 10)) 2)))  , 32
+0.17398157969317898 , (+.f64 (pow.f64 (+.f64 #s(literal 3/2 binary64) (*.f64 z0 #s(literal 10 binary64))) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64))) , (+ (pow (+ 3/2 (* z0 10)) 2) (pow (+ 1 (* z1 10)) 2))  , 32
+0.1361629703154748 , (pow.f64 (+.f64 #s(literal 3/2 binary64) (*.f64 z0 #s(literal 10 binary64))) #s(literal 2 binary64)) , (pow (+ 3/2 (* z0 10)) 2)  , 32
+0.31801265623845937 , (fmin.f64 (fmin.f64 (fmin.f64 (fmin.f64 (fmin.f64 (fmin.f64 (fmax.f64 (fmax.f64 (fmax.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 7/2 binary64)) (-.f64 #s(literal 1/2 binary64) (*.f64 z0 #s(literal 10 binary64)))) (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z1 #s(literal 10 binary64))))) (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64)))) (-.f64 (sqrt.f64 (+.f64 (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 2 binary64)) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64)))) #s(literal 3/2 binary64))) (fmax.f64 (fmax.f64 (fmax.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 7 binary64)) (-.f64 #s(literal 4 binary64) (*.f64 z0 #s(literal 10 binary64)))) (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z1 #s(literal 10 binary64))))) (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))))) (-.f64 (sqrt.f64 (+.f64 (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 11/2 binary64)) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64)))) #s(literal 3/2 binary64))) (fmax.f64 (fmax.f64 (fmax.f64 (-.f64 #s(literal 15/2 binary64) (*.f64 z0 #s(literal 10 binary64))) (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 21/2 binary64))) (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z1 #s(literal 10 binary64))))) (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))))) (-.f64 (sqrt.f64 (+.f64 (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 9 binary64)) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64)))) #s(literal 3/2 binary64))) (fmax.f64 (fmax.f64 (fmax.f64 (neg.f64 (+.f64 #s(literal 3 binary64) (*.f64 z0 #s(literal 10 binary64)))) (*.f64 z0 #s(literal 10 binary64))) (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z1 #s(literal 10 binary64))))) (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))))) , (fmin (fmin (fmin (fmin (fmin (fmin (fmax (fmax (fmax (- (* z0 10) 7/2) (- 1/2 (* z0 10))) (neg (+ 7/2 (* z1 10)))) (+ 1 (* z1 10))) (- (sqrt (+ (pow (- (* z0 10) 2) 2) (pow (+ 1 (* z1 10)) 2))) 3/2)) (fmax (fmax (fmax (- (* z0 10) 7) (- 4 (* z0 10))) (neg (+ 7/2 (* z1 10)))) (+ 1 (* z1 10)))) (- (sqrt (+ (pow (- (* z0 10) 11/2) 2) (pow (+ 1 (* z1 10)) 2))) 3/2)) (fmax (fmax (fmax (- 15/2 (* z0 10)) (- (* z0 10) 21/2)) (neg (+ 7/2 (* z1 10)))) (+ 1 (* z1 10)))) (- (sqrt (+ (pow (- (* z0 10) 9) 2) (pow (+ 1 (* z1 10)) 2))) 3/2)) (fmax (fmax (fmax (neg (+ 3 (* z0 10))) (* z0 10)) (neg (+ 7/2 (* z1 10)))) (+ 1 (* z1 10))))  , 32
+0.058875 , (fmax.f64 (fmax.f64 (fmax.f64 (neg.f64 (+.f64 #s(literal 3 binary64) (*.f64 z0 #s(literal 10 binary64)))) (*.f64 z0 #s(literal 10 binary64))) (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z1 #s(literal 10 binary64))))) (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64)))) , (fmax (fmax (fmax (neg (+ 3 (* z0 10))) (* z0 10)) (neg (+ 7/2 (* z1 10)))) (+ 1 (* z1 10)))  , 32
+0.03825 , (fmax.f64 (fmax.f64 (neg.f64 (+.f64 #s(literal 3 binary64) (*.f64 z0 #s(literal 10 binary64)))) (*.f64 z0 #s(literal 10 binary64))) (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z1 #s(literal 10 binary64))))) , (fmax (fmax (neg (+ 3 (* z0 10))) (* z0 10)) (neg (+ 7/2 (* z1 10))))  , 32
+0.02225 , (fmax.f64 (neg.f64 (+.f64 #s(literal 3 binary64) (*.f64 z0 #s(literal 10 binary64)))) (*.f64 z0 #s(literal 10 binary64))) , (fmax (neg (+ 3 (* z0 10))) (* z0 10))  , 32
+0.3209677007791306 , (fmin.f64 (fmin.f64 (fmin.f64 (fmin.f64 (fmin.f64 (fmax.f64 (fmax.f64 (fmax.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 7/2 binary64)) (-.f64 #s(literal 1/2 binary64) (*.f64 z0 #s(literal 10 binary64)))) (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z1 #s(literal 10 binary64))))) (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64)))) (-.f64 (sqrt.f64 (+.f64 (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 2 binary64)) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64)))) #s(literal 3/2 binary64))) (fmax.f64 (fmax.f64 (fmax.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 7 binary64)) (-.f64 #s(literal 4 binary64) (*.f64 z0 #s(literal 10 binary64)))) (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z1 #s(literal 10 binary64))))) (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))))) (-.f64 (sqrt.f64 (+.f64 (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 11/2 binary64)) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64)))) #s(literal 3/2 binary64))) (fmax.f64 (fmax.f64 (fmax.f64 (-.f64 #s(literal 15/2 binary64) (*.f64 z0 #s(literal 10 binary64))) (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 21/2 binary64))) (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z1 #s(literal 10 binary64))))) (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))))) (-.f64 (sqrt.f64 (+.f64 (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 9 binary64)) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64)))) #s(literal 3/2 binary64))) , (fmin (fmin (fmin (fmin (fmin (fmax (fmax (fmax (- (* z0 10) 7/2) (- 1/2 (* z0 10))) (neg (+ 7/2 (* z1 10)))) (+ 1 (* z1 10))) (- (sqrt (+ (pow (- (* z0 10) 2) 2) (pow (+ 1 (* z1 10)) 2))) 3/2)) (fmax (fmax (fmax (- (* z0 10) 7) (- 4 (* z0 10))) (neg (+ 7/2 (* z1 10)))) (+ 1 (* z1 10)))) (- (sqrt (+ (pow (- (* z0 10) 11/2) 2) (pow (+ 1 (* z1 10)) 2))) 3/2)) (fmax (fmax (fmax (- 15/2 (* z0 10)) (- (* z0 10) 21/2)) (neg (+ 7/2 (* z1 10)))) (+ 1 (* z1 10)))) (- (sqrt (+ (pow (- (* z0 10) 9) 2) (pow (+ 1 (* z1 10)) 2))) 3/2))  , 32
+26.489686117237582 , (-.f64 (sqrt.f64 (+.f64 (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 9 binary64)) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64)))) #s(literal 3/2 binary64)) , (- (sqrt (+ (pow (- (* z0 10) 9) 2) (pow (+ 1 (* z1 10)) 2))) 3/2)  , 32
+25.182808230197324 , (sqrt.f64 (+.f64 (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 9 binary64)) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64)))) , (sqrt (+ (pow (- (* z0 10) 9) 2) (pow (+ 1 (* z1 10)) 2)))  , 32
+0.17063721875540863 , (+.f64 (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 9 binary64)) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64))) , (+ (pow (- (* z0 10) 9) 2) (pow (+ 1 (* z1 10)) 2))  , 32
+0.14900592583219743 , (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 9 binary64)) #s(literal 2 binary64)) , (pow (- (* z0 10) 9) 2)  , 32
+0.33224988888756746 , (fmin.f64 (fmin.f64 (fmin.f64 (fmin.f64 (fmax.f64 (fmax.f64 (fmax.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 7/2 binary64)) (-.f64 #s(literal 1/2 binary64) (*.f64 z0 #s(literal 10 binary64)))) (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z1 #s(literal 10 binary64))))) (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64)))) (-.f64 (sqrt.f64 (+.f64 (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 2 binary64)) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64)))) #s(literal 3/2 binary64))) (fmax.f64 (fmax.f64 (fmax.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 7 binary64)) (-.f64 #s(literal 4 binary64) (*.f64 z0 #s(literal 10 binary64)))) (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z1 #s(literal 10 binary64))))) (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))))) (-.f64 (sqrt.f64 (+.f64 (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 11/2 binary64)) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64)))) #s(literal 3/2 binary64))) (fmax.f64 (fmax.f64 (fmax.f64 (-.f64 #s(literal 15/2 binary64) (*.f64 z0 #s(literal 10 binary64))) (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 21/2 binary64))) (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z1 #s(literal 10 binary64))))) (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))))) , (fmin (fmin (fmin (fmin (fmax (fmax (fmax (- (* z0 10) 7/2) (- 1/2 (* z0 10))) (neg (+ 7/2 (* z1 10)))) (+ 1 (* z1 10))) (- (sqrt (+ (pow (- (* z0 10) 2) 2) (pow (+ 1 (* z1 10)) 2))) 3/2)) (fmax (fmax (fmax (- (* z0 10) 7) (- 4 (* z0 10))) (neg (+ 7/2 (* z1 10)))) (+ 1 (* z1 10)))) (- (sqrt (+ (pow (- (* z0 10) 11/2) 2) (pow (+ 1 (* z1 10)) 2))) 3/2)) (fmax (fmax (fmax (- 15/2 (* z0 10)) (- (* z0 10) 21/2)) (neg (+ 7/2 (* z1 10)))) (+ 1 (* z1 10))))  , 32
+0.07069812031259015 , (fmax.f64 (fmax.f64 (fmax.f64 (-.f64 #s(literal 15/2 binary64) (*.f64 z0 #s(literal 10 binary64))) (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 21/2 binary64))) (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z1 #s(literal 10 binary64))))) (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64)))) , (fmax (fmax (fmax (- 15/2 (* z0 10)) (- (* z0 10) 21/2)) (neg (+ 7/2 (* z1 10)))) (+ 1 (* z1 10)))  , 32
+0.05875279597662855 , (fmax.f64 (fmax.f64 (-.f64 #s(literal 15/2 binary64) (*.f64 z0 #s(literal 10 binary64))) (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 21/2 binary64))) (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z1 #s(literal 10 binary64))))) , (fmax (fmax (- 15/2 (* z0 10)) (- (* z0 10) 21/2)) (neg (+ 7/2 (* z1 10))))  , 32
+0.053009601949631356 , (fmax.f64 (-.f64 #s(literal 15/2 binary64) (*.f64 z0 #s(literal 10 binary64))) (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 21/2 binary64))) , (fmax (- 15/2 (* z0 10)) (- (* z0 10) 21/2))  , 32
+0.045875 , (-.f64 #s(literal 15/2 binary64) (*.f64 z0 #s(literal 10 binary64))) , (- 15/2 (* z0 10))  , 32
+0.3277244627191993 , (fmin.f64 (fmin.f64 (fmin.f64 (fmax.f64 (fmax.f64 (fmax.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 7/2 binary64)) (-.f64 #s(literal 1/2 binary64) (*.f64 z0 #s(literal 10 binary64)))) (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z1 #s(literal 10 binary64))))) (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64)))) (-.f64 (sqrt.f64 (+.f64 (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 2 binary64)) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64)))) #s(literal 3/2 binary64))) (fmax.f64 (fmax.f64 (fmax.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 7 binary64)) (-.f64 #s(literal 4 binary64) (*.f64 z0 #s(literal 10 binary64)))) (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z1 #s(literal 10 binary64))))) (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))))) (-.f64 (sqrt.f64 (+.f64 (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 11/2 binary64)) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64)))) #s(literal 3/2 binary64))) , (fmin (fmin (fmin (fmax (fmax (fmax (- (* z0 10) 7/2) (- 1/2 (* z0 10))) (neg (+ 7/2 (* z1 10)))) (+ 1 (* z1 10))) (- (sqrt (+ (pow (- (* z0 10) 2) 2) (pow (+ 1 (* z1 10)) 2))) 3/2)) (fmax (fmax (fmax (- (* z0 10) 7) (- 4 (* z0 10))) (neg (+ 7/2 (* z1 10)))) (+ 1 (* z1 10)))) (- (sqrt (+ (pow (- (* z0 10) 11/2) 2) (pow (+ 1 (* z1 10)) 2))) 3/2))  , 32
+25.673328343313237 , (-.f64 (sqrt.f64 (+.f64 (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 11/2 binary64)) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64)))) #s(literal 3/2 binary64)) , (- (sqrt (+ (pow (- (* z0 10) 11/2) 2) (pow (+ 1 (* z1 10)) 2))) 3/2)  , 32
+25.89756750089385 , (sqrt.f64 (+.f64 (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 11/2 binary64)) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64)))) , (sqrt (+ (pow (- (* z0 10) 11/2) 2) (pow (+ 1 (* z1 10)) 2)))  , 32
+0.16564661719245785 , (+.f64 (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 11/2 binary64)) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64))) , (+ (pow (- (* z0 10) 11/2) 2) (pow (+ 1 (* z1 10)) 2))  , 32
+0.13843665469173683 , (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 11/2 binary64)) #s(literal 2 binary64)) , (pow (- (* z0 10) 11/2) 2)  , 32
+0.3188849785169091 , (fmin.f64 (fmin.f64 (fmax.f64 (fmax.f64 (fmax.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 7/2 binary64)) (-.f64 #s(literal 1/2 binary64) (*.f64 z0 #s(literal 10 binary64)))) (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z1 #s(literal 10 binary64))))) (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64)))) (-.f64 (sqrt.f64 (+.f64 (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 2 binary64)) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64)))) #s(literal 3/2 binary64))) (fmax.f64 (fmax.f64 (fmax.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 7 binary64)) (-.f64 #s(literal 4 binary64) (*.f64 z0 #s(literal 10 binary64)))) (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z1 #s(literal 10 binary64))))) (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))))) , (fmin (fmin (fmax (fmax (fmax (- (* z0 10) 7/2) (- 1/2 (* z0 10))) (neg (+ 7/2 (* z1 10)))) (+ 1 (* z1 10))) (- (sqrt (+ (pow (- (* z0 10) 2) 2) (pow (+ 1 (* z1 10)) 2))) 3/2)) (fmax (fmax (fmax (- (* z0 10) 7) (- 4 (* z0 10))) (neg (+ 7/2 (* z1 10)))) (+ 1 (* z1 10))))  , 32
+0.07275 , (fmax.f64 (fmax.f64 (fmax.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 7 binary64)) (-.f64 #s(literal 4 binary64) (*.f64 z0 #s(literal 10 binary64)))) (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z1 #s(literal 10 binary64))))) (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64)))) , (fmax (fmax (fmax (- (* z0 10) 7) (- 4 (* z0 10))) (neg (+ 7/2 (* z1 10)))) (+ 1 (* z1 10)))  , 32
+0.061625 , (fmax.f64 (fmax.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 7 binary64)) (-.f64 #s(literal 4 binary64) (*.f64 z0 #s(literal 10 binary64)))) (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z1 #s(literal 10 binary64))))) , (fmax (fmax (- (* z0 10) 7) (- 4 (* z0 10))) (neg (+ 7/2 (* z1 10))))  , 32
+0.05194812031259015 , (fmax.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 7 binary64)) (-.f64 #s(literal 4 binary64) (*.f64 z0 #s(literal 10 binary64)))) , (fmax (- (* z0 10) 7) (- 4 (* z0 10)))  , 32
+0.04854903967784734 , (-.f64 #s(literal 4 binary64) (*.f64 z0 #s(literal 10 binary64))) , (- 4 (* z0 10))  , 32
+0.31712313632877803 , (fmin.f64 (fmax.f64 (fmax.f64 (fmax.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 7/2 binary64)) (-.f64 #s(literal 1/2 binary64) (*.f64 z0 #s(literal 10 binary64)))) (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z1 #s(literal 10 binary64))))) (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64)))) (-.f64 (sqrt.f64 (+.f64 (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 2 binary64)) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64)))) #s(literal 3/2 binary64))) , (fmin (fmax (fmax (fmax (- (* z0 10) 7/2) (- 1/2 (* z0 10))) (neg (+ 7/2 (* z1 10)))) (+ 1 (* z1 10))) (- (sqrt (+ (pow (- (* z0 10) 2) 2) (pow (+ 1 (* z1 10)) 2))) 3/2))  , 32
+26.17054924004683 , (-.f64 (sqrt.f64 (+.f64 (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 2 binary64)) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64)))) #s(literal 3/2 binary64)) , (- (sqrt (+ (pow (- (* z0 10) 2) 2) (pow (+ 1 (* z1 10)) 2))) 3/2)  , 32
+25.85679283926592 , (sqrt.f64 (+.f64 (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 2 binary64)) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64)))) , (sqrt (+ (pow (- (* z0 10) 2) 2) (pow (+ 1 (* z1 10)) 2)))  , 32
+0.1733847750043268 , (+.f64 (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 2 binary64)) #s(literal 2 binary64)) (pow.f64 (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64))) #s(literal 2 binary64))) , (+ (pow (- (* z0 10) 2) 2) (pow (+ 1 (* z1 10)) 2))  , 32
+0.14709229375396637 , (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 2 binary64)) #s(literal 2 binary64)) , (pow (- (* z0 10) 2) 2)  , 32
+0.070375 , (fmax.f64 (fmax.f64 (fmax.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 7/2 binary64)) (-.f64 #s(literal 1/2 binary64) (*.f64 z0 #s(literal 10 binary64)))) (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z1 #s(literal 10 binary64))))) (+.f64 #s(literal 1 binary64) (*.f64 z1 #s(literal 10 binary64)))) , (fmax (fmax (fmax (- (* z0 10) 7/2) (- 1/2 (* z0 10))) (neg (+ 7/2 (* z1 10)))) (+ 1 (* z1 10)))  , 32
+0.06447591936525719 , (fmax.f64 (fmax.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 7/2 binary64)) (-.f64 #s(literal 1/2 binary64) (*.f64 z0 #s(literal 10 binary64)))) (neg.f64 (+.f64 #s(literal 7/2 binary64) (*.f64 z1 #s(literal 10 binary64))))) , (fmax (fmax (- (* z0 10) 7/2) (- 1/2 (* z0 10))) (neg (+ 7/2 (* z1 10))))  , 32
+0.049188721875540874 , (fmax.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 7/2 binary64)) (-.f64 #s(literal 1/2 binary64) (*.f64 z0 #s(literal 10 binary64)))) , (fmax (- (* z0 10) 7/2) (- 1/2 (* z0 10)))  , 32
+0.02825 , (*.f32 (-.f32 #s(literal 1 binary32) z0) z1) , (* (- 1 z0) z1)  , 32
+30.638342897604513 , (log.f64 (sqrt.f64 (+.f64 (*.f64 z0 z0) (*.f64 z1 z1)))) , (log (sqrt (+ (* z0 z0) (* z1 z1))))  , 32
+0.16081372187554085 , (*.f64 (sin.f64 z0) (cos.f64 z1)) , (* (sin z0) (cos z1))  , 31
+0.01189624062518029 , (-.f64 z0 #s(literal 11/40 binary64)) , (- z0 11/40)  , 31
+0.107 , (*.f64 (*.f64 #s(literal 1/180 binary64) (PI.f64)) z0) , (* (* 1/180 (PI)) z0)  , 31
+0.000875 , (*.f64 (+.f64 z0 z1) (-.f64 z0 z1)) , (* (+ z0 z1) (- z0 z1))  , 31
+13.08843059909074 , (pow.f64 (*.f64 z0 (cos.f64 (*.f64 (/.f64 z1 #s(literal 180 binary64)) (PI.f64)))) #s(literal 2 binary64)) , (pow (* z0 (cos (* (/ z1 180) (PI)))) 2)  , 31
+27.713008071566932 , (*.f64 z0 (cos.f64 (*.f64 (/.f64 z1 #s(literal 180 binary64)) (PI.f64)))) , (* z0 (cos (* (/ z1 180) (PI))))  , 31
+24.063145332902028 , (/.f32 (fmax.f32 (+.f32 (*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z0) z1)) (*.f32 (*.f32 (floor.f32 z2) z3) (*.f32 (floor.f32 z2) z3))) (+.f32 (*.f32 (*.f32 (floor.f32 z0) z4) (*.f32 (floor.f32 z0) z4)) (*.f32 (*.f32 (floor.f32 z2) z5) (*.f32 (floor.f32 z2) z5)))) (fabs.f32 (-.f32 (*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z2) z5)) (*.f32 (*.f32 (floor.f32 z2) z3) (*.f32 (floor.f32 z0) z4))))) , (/ (fmax (+ (* (* (floor z0) z1) (* (floor z0) z1)) (* (* (floor z2) z3) (* (floor z2) z3))) (+ (* (* (floor z0) z4) (* (floor z0) z4)) (* (* (floor z2) z5) (* (floor z2) z5)))) (fabs (- (* (* (floor z0) z1) (* (floor z2) z5)) (* (* (floor z2) z3) (* (floor z0) z4)))))  , 30
+0.6372911672011131 , (pow.f64 (-.f64 (*.f64 z0 #s(literal 10 binary64)) #s(literal 28/5 binary64)) #s(literal 2 binary64)) , (pow (- (* z0 10) 28/5) 2)  , 30
+0.009625 , (*.f64 z0 (-.f64 z1 z2)) , (* z0 (- z1 z2))  , 30
+0.0 , (-.f64 z0 #s(literal 1/2 binary64)) , (- z0 1/2)  , 29
+0.22065112812734364 , (pow.f64 (/.f64 z0 z1) #s(literal 2 binary64)) , (pow (/ z0 z1) 2)  , 29
+0.0 , (*.f64 z0 #s(literal 1/2 binary64)) , (* z0 1/2)  , 29
+0.009125 , (/.f64 (-.f64 z0 z1) z2) , (/ (- z0 z1) z2)  , 29
+3.377505091049017 , (-.f32 (pow.f32 (*.f32 z0 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z2 (floor.f32 z3)) #s(literal 2 binary32))) , (- (pow (* z0 (floor z1)) 2) (pow (* z2 (floor z3)) 2))  , 28
+0.0015731203125901444 , (+.f64 (-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 1 binary64)) #s(literal 7 binary64)) , (+ (- (- 1 z0) 1) 7)  , 28
+0.00625 , (sqrt.f64 (+.f64 z0 #s(literal 1 binary64))) , (sqrt (+ z0 1))  , 28
+0.338375 , (*.f32 z0 (PI.f32)) , (* z0 (PI))  , 28

@@ -158,8 +158,7 @@
   (platform-union boolean-platform
                   machine-platform
                   libm64-platform
-                  libm32-platform
-                  accelerator-platform))
+                  libm32-platform))
 
 ; Register all three
 

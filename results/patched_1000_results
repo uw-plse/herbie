@@ -1,0 +1,38 @@
+25.10539294050536 , (sqrt.f64 (-.f64 (*.f64 z0 z0) (*.f64 z1 (*.f64 z2 #s(literal 4 binary64))))) , (sqrt (- (* z0 z0) (* z1 (* z2 4)))) , 1856 , 2433
+0.001125 , (+.f64 (+.f64 z0 z1) (*.f64 #s(literal 2 binary64) z2)) , (+ (+ z0 z1) (* 2 z2)) , 768 , 2440
+0.0 , (*.f64 (-.f64 z0 z1) #s(literal -1/2 binary64)) , (* (- z0 z1) -1/2) , 576 , 2442
+0.22308045156583525 , (*.f64 (/.f64 z0 z1) (/.f64 z0 z1)) , (* (/ z0 z1) (/ z0 z1)) , 1792 , 2446
+0.012908082813311302 , (pow.f64 (+.f64 z0 z1) #s(literal 3 binary64)) , (pow (+ z0 z1) 3) , 6720 , 2462
+0.013 , (/.f64 z0 (+.f64 z1 z0)) , (/ z0 (+ z1 z0)) , 960 , 2464
+0.00675 , (-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal -1 binary64)) , (- (- 1 z0) -1) , 448 , 2465
+9.663152652333038 , (sqrt.f32 (fmax.f32 (+.f32 (pow.f32 (*.f32 z0 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z2 (floor.f32 z3)) #s(literal 2 binary32))) (+.f32 (pow.f32 (*.f32 z4 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z5 (floor.f32 z3)) #s(literal 2 binary32))))) , (sqrt (fmax (+ (pow (* z0 (floor z1)) 2) (pow (* z2 (floor z3)) 2)) (+ (pow (* z4 (floor z1)) 2) (pow (* z5 (floor z3)) 2)))) , 30144 , 2478
+0.00125 , (pow.f64 z0 #s(literal 3/2 binary64)) , (pow z0 3/2) , 6528 , 2486
+5.551883367101309 , (*.f64 (-.f64 (*.f64 z0 z1) (*.f64 z2 z3)) (-.f64 (*.f64 z4 z5) (*.f64 z6 z7))) , (* (- (* z0 z1) (* z2 z3)) (- (* z4 z5) (* z6 z7))) , 2048 , 2501
+0.007 , (-.f64 (exp.f64 z0) #s(literal -1 binary64)) , (- (exp z0) -1) , 6656 , 2502
+0.0 , (-.f64 z0 #s(literal -2 binary64)) , (- z0 -2) , 256 , 2504
+0.0 , (pow.f64 z0 #s(literal 1 binary64)) , (pow z0 1) , 6528 , 2523
+0.0 , (*.f64 #s(literal -3 binary64) z0) , (* -3 z0) , 384 , 2535
+0.018354456709620274 , (exp.f64 (/.f64 (-.f64 (+.f64 z0 z1) z2) z3)) , (exp (/ (- (+ z0 z1) z2) z3)) , 7552 , 2537
+3.3875926022384033 , (*.f32 (*.f32 z0 z0) z1) , (* (* z0 z0) z1) , 352 , 2538
+0.2370338359478661 , (/.f64 z0 (tan.f64 z1)) , (/ z0 (tan z1)) , 7168 , 2539
+0.002875 , (+.f64 (+.f64 (-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 1 binary64)) #s(literal 7 binary64)) #s(literal 1/2 binary64)) , (+ (+ (- (- 1 z0) 1) 7) 1/2) , 832 , 2544
+0.3582009406309497 , (+.f64 (pow.f64 (sin.f64 z0) #s(literal 2 binary64)) (pow.f64 (sin.f64 z1) #s(literal 2 binary64))) , (+ (pow (sin z0) 2) (pow (sin z1) 2)) , 25984 , 2548
+0.026443137545677602 , (neg.f64 (log.f64 (/.f64 #s(literal -1 binary64) z0))) , (neg (log (/ -1 z0))) , 7296 , 2553
+5.545196927480633 , (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) (*.f32 z1 z1)) , (* (pow (floor z0) 2) (* z1 z1)) , 6784 , 2558
+3.9915943609377704 , (-.f64 (pow.f64 (-.f64 z0 z1) #s(literal 2 binary64)) (*.f64 z0 z1)) , (- (pow (- z0 z1) 2) (* z0 z1)) , 7232 , 2561
+15.316922551087053 , (sin.f64 (-.f64 z0 z1)) , (sin (- z0 z1)) , 6656 , 2583
+15.118562886444955 , (cos.f64 (+.f64 z0 z1)) , (cos (+ z0 z1)) , 6656 , 2590
+0.031625 , (/.f32 z0 (-.f32 #s(literal 1 binary32) z0)) , (/ z0 (- 1 z0)) , 480 , 2598
+0.000625 , (pow.f64 z0 #s(literal -2 binary64)) , (pow z0 -2) , 6528 , 2604
+29.227944800393768 , (-.f64 (sqrt.f64 (-.f64 z0 #s(literal -1 binary64))) (sqrt.f64 z0)) , (- (sqrt (- z0 -1)) (sqrt z0)) , 1728 , 2616
+5.150239519741834 , (/.f64 (pow.f64 z0 #s(literal 3 binary64)) z1) , (/ (pow z0 3) z1) , 7232 , 2627
+0.00075 , (pow.f64 (neg.f64 z0) #s(literal 3 binary64)) , (pow (neg z0) 3) , 6656 , 2629
+0.24521315938635768 , (/.f64 (tan.f64 z0) z1) , (/ (tan z0) z1) , 7168 , 2629
+0.1415 , (*.f64 #s(literal 841/108 binary64) z0) , (* 841/108 z0) , 384 , 2658
+0.24194806200708427 , (*.f64 (*.f64 z0 z1) #s(literal -12 binary64)) , (* (* z0 z1) -12) , 704 , 2660
+0.018875 , (/.f64 (sin.f64 z0) #s(literal 16 binary64)) , (/ (sin z0) 16) , 7168 , 2663
+0.0 , (-.f32 z0 #s(literal -1 binary32)) , (- z0 -1) , 128 , 2683
+0.0 , (*.f64 #s(literal -1/4 binary64) z0) , (* -1/4 z0) , 384 , 2694
+0.00375 , (-.f64 (*.f64 z0 z0) z1) , (- (* z0 z0) z1) , 576 , 2714
+1.1522740069284507 , (-.f64 (*.f64 z0 z0) (*.f64 z1 (*.f64 z2 #s(literal 3 binary64)))) , (- (* z0 z0) (* z1 (* z2 3))) , 1216 , 2721
+0.013448120312590146 , (pow.f64 (-.f64 z0 (*.f64 #s(literal -2 binary64) z1)) #s(literal 2 binary64)) , (pow (- z0 (* -2 z1)) 2) , 7040 , 2736

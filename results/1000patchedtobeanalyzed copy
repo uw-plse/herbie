@@ -1,0 +1,1000 @@
+(*.f32 (floor.f32 z0) z1)  ,  707483
+(*.f64 z0 z0)  ,  593865
+(pow.f32 (floor.f32 z0) #s(literal 2 binary32))  ,  325216
+(*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z1)  ,  319121
+(*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z1) z1)  ,  318963
+(*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z0) z1))  ,  262918
+(+.f32 (*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z1) z1) (*.f32 (*.f32 (pow.f32 (floor.f32 z2) #s(literal 2 binary32)) z3) z3))  ,  152173
+(+.f32 (*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z0) z1)) (*.f32 (*.f32 (floor.f32 z2) z3) (*.f32 (floor.f32 z2) z3)))  ,  126016
+(pow.f64 z0 #s(literal 3 binary64))  ,  106761
+(*.f32 z0 (floor.f32 z1))  ,  98496
+(pow.f64 z0 #s(literal 4 binary64))  ,  89884
+(*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z2) z3))  ,  82326
+(-.f32 (*.f32 z0 z1) (*.f32 z2 z3))  ,  74243
+(pow.f32 (*.f32 z0 (floor.f32 z1)) #s(literal 2 binary32))  ,  73433
+(-.f64 #s(literal 1 binary64) z0)  ,  69894
+(fmax.f32 (+.f32 (*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z1) z1) (*.f32 (*.f32 (pow.f32 (floor.f32 z2) #s(literal 2 binary32)) z3) z3)) (+.f32 (*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z4) z4) (*.f32 (*.f32 (pow.f32 (floor.f32 z2) #s(literal 2 binary32)) z5) z5)))  ,  69837
+(*.f32 (floor.f32 z0) (floor.f32 z1))  ,  65843
+(*.f32 (-.f32 (*.f32 z0 z1) (*.f32 z2 z3)) (*.f32 (floor.f32 z4) (floor.f32 z5)))  ,  62073
+(fabs.f32 (*.f32 (-.f32 (*.f32 z0 z1) (*.f32 z2 z3)) (*.f32 (floor.f32 z4) (floor.f32 z5))))  ,  62025
+(fmax.f32 (+.f32 (*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z0) z1)) (*.f32 (*.f32 (floor.f32 z2) z3) (*.f32 (floor.f32 z2) z3))) (+.f32 (*.f32 (*.f32 (floor.f32 z0) z4) (*.f32 (floor.f32 z0) z4)) (*.f32 (*.f32 (floor.f32 z2) z5) (*.f32 (floor.f32 z2) z5))))  ,  57111
+(*.f32 z0 z0)  ,  51086
+(*.f64 #s(literal 2 binary64) z0)  ,  44932
+(*.f64 (PI.f64) z0)  ,  42622
+(*.f64 z0 (PI.f64))  ,  40991
+(fabs.f32 (-.f32 (*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z2) z3)) (*.f32 (*.f32 (floor.f32 z2) z4) (*.f32 (floor.f32 z0) z5))))  ,  39768
+(-.f32 (*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z2) z3)) (*.f32 (*.f32 (floor.f32 z2) z4) (*.f32 (floor.f32 z0) z5)))  ,  39768
+(*.f64 #s(literal -2 binary64) z0)  ,  38779
+(-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 1 binary64))  ,  36132
+(/.f32 (fmax.f32 (+.f32 (*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z1) z1) (*.f32 (*.f32 (pow.f32 (floor.f32 z2) #s(literal 2 binary32)) z3) z3)) (+.f32 (*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z4) z4) (*.f32 (*.f32 (pow.f32 (floor.f32 z2) #s(literal 2 binary32)) z5) z5))) (fabs.f32 (*.f32 (-.f32 (*.f32 z5 z1) (*.f32 z4 z3)) (*.f32 (floor.f32 z0) (floor.f32 z2)))))  ,  35369
+(-.f64 z0 #s(literal -1 binary64))  ,  34385
+(*.f64 #s(literal 1/180 binary64) (*.f64 z0 (PI.f64)))  ,  33205
+(+.f32 (pow.f32 (*.f32 z0 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z2 (floor.f32 z3)) #s(literal 2 binary32)))  ,  32066
+(/.f32 (fmax.f32 (+.f32 (*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z0) z1)) (*.f32 (*.f32 (floor.f32 z2) z3) (*.f32 (floor.f32 z2) z3))) (+.f32 (*.f32 (*.f32 (floor.f32 z0) z4) (*.f32 (floor.f32 z0) z4)) (*.f32 (*.f32 (floor.f32 z2) z5) (*.f32 (floor.f32 z2) z5)))) (fabs.f32 (-.f32 (*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z2) z5)) (*.f32 (*.f32 (floor.f32 z2) z3) (*.f32 (floor.f32 z0) z4)))))  ,  28632
+(pow.f64 z0 #s(literal 6 binary64))  ,  26403
+(pow.f64 (*.f64 z0 z1) #s(literal 2 binary64))  ,  26289
+(-.f64 (*.f64 z0 z1) (*.f64 z2 z3))  ,  24492
+(>.f32 (/.f32 (fmax.f32 (+.f32 (*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z1) z1) (*.f32 (*.f32 (pow.f32 (floor.f32 z2) #s(literal 2 binary32)) z3) z3)) (+.f32 (*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z4) z4) (*.f32 (*.f32 (pow.f32 (floor.f32 z2) #s(literal 2 binary32)) z5) z5))) (fabs.f32 (*.f32 (-.f32 (*.f32 z5 z1) (*.f32 z4 z3)) (*.f32 (floor.f32 z0) (floor.f32 z2))))) (floor.f32 z6))  ,  24441
+(-.f32 #s(literal 1 binary32) z0)  ,  24398
+(sqrt.f32 (fmax.f32 (+.f32 (*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z0) z1)) (*.f32 (*.f32 (floor.f32 z2) z3) (*.f32 (floor.f32 z2) z3))) (+.f32 (*.f32 (*.f32 (floor.f32 z0) z4) (*.f32 (floor.f32 z0) z4)) (*.f32 (*.f32 (floor.f32 z2) z5) (*.f32 (floor.f32 z2) z5)))))  ,  23791
+(*.f64 #s(literal 3 binary64) z0)  ,  23525
+(/.f64 #s(literal 1 binary64) z0)  ,  21428
+(pow.f64 (sin.f64 z0) #s(literal 2 binary64))  ,  20540
+(>.f32 (/.f32 (fmax.f32 (+.f32 (*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z0) z1)) (*.f32 (*.f32 (floor.f32 z2) z3) (*.f32 (floor.f32 z2) z3))) (+.f32 (*.f32 (*.f32 (floor.f32 z0) z4) (*.f32 (floor.f32 z0) z4)) (*.f32 (*.f32 (floor.f32 z2) z5) (*.f32 (floor.f32 z2) z5)))) (fabs.f32 (-.f32 (*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z2) z5)) (*.f32 (*.f32 (floor.f32 z2) z3) (*.f32 (floor.f32 z0) z4))))) (floor.f32 z6))  ,  20122
+(*.f64 (*.f64 z0 z0) z1)  ,  19376
+(sin.f64 (*.f64 #s(literal 1/180 binary64) (*.f64 z0 (PI.f64))))  ,  18893
+(+.f64 (*.f64 z0 z0) (*.f64 z1 z1))  ,  17729
+(*.f64 #s(literal 1/2 binary64) z0)  ,  17681
+(/.f64 z0 #s(literal 180 binary64))  ,  16873
+(sqrt.f32 (fmax.f32 (+.f32 (*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z1) z1) (*.f32 (*.f32 (pow.f32 (floor.f32 z2) #s(literal 2 binary32)) z3) z3)) (+.f32 (*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z4) z4) (*.f32 (*.f32 (pow.f32 (floor.f32 z2) #s(literal 2 binary32)) z5) z5))))  ,  16745
+(/.f32 (sqrt.f32 (fmax.f32 (+.f32 (*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z1) z1) (*.f32 (*.f32 (pow.f32 (floor.f32 z2) #s(literal 2 binary32)) z3) z3)) (+.f32 (*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z4) z4) (*.f32 (*.f32 (pow.f32 (floor.f32 z2) #s(literal 2 binary32)) z5) z5)))) (floor.f32 z6))  ,  16721
+(pow.f64 (sin.f64 (*.f64 #s(literal 1/180 binary64) (*.f64 z0 (PI.f64)))) #s(literal 2 binary64))  ,  16654
+(*.f64 #s(literal 4 binary64) z0)  ,  16271
+(/.f32 #s(literal 1 binary32) (fmax.f32 (+.f32 (*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z1) z1) (*.f32 (*.f32 (pow.f32 (floor.f32 z2) #s(literal 2 binary32)) z3) z3)) (+.f32 (*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z4) z4) (*.f32 (*.f32 (pow.f32 (floor.f32 z2) #s(literal 2 binary32)) z5) z5))))  ,  16036
+(sqrt.f32 (/.f32 #s(literal 1 binary32) (fmax.f32 (+.f32 (*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z1) z1) (*.f32 (*.f32 (pow.f32 (floor.f32 z2) #s(literal 2 binary32)) z3) z3)) (+.f32 (*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z4) z4) (*.f32 (*.f32 (pow.f32 (floor.f32 z2) #s(literal 2 binary32)) z5) z5)))))  ,  16033
+(*.f32 (sqrt.f32 (/.f32 #s(literal 1 binary32) (fmax.f32 (+.f32 (*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z1) z1) (*.f32 (*.f32 (pow.f32 (floor.f32 z2) #s(literal 2 binary32)) z3) z3)) (+.f32 (*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z4) z4) (*.f32 (*.f32 (pow.f32 (floor.f32 z2) #s(literal 2 binary32)) z5) z5))))) (fabs.f32 (*.f32 (-.f32 (*.f32 z5 z1) (*.f32 z4 z3)) (*.f32 (floor.f32 z0) (floor.f32 z2)))))  ,  16013
+(*.f64 z0 #s(literal 3275911/10000000 binary64))  ,  15495
+(-.f64 z0 #s(literal 1 binary64))  ,  15231
+(-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64))  ,  15052
+(+.f64 #s(literal 1 binary64) z0)  ,  15007
+(cos.f64 (*.f64 #s(literal 1/180 binary64) (*.f64 z0 (PI.f64))))  ,  14253
+(*.f64 (neg.f64 z0) z1)  ,  13934
+(*.f64 (*.f64 z0 z0) (*.f64 z0 z0))  ,  13575
+(fmax.f32 (+.f32 (pow.f32 (*.f32 z0 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z2 (floor.f32 z3)) #s(literal 2 binary32))) (+.f32 (pow.f32 (*.f32 z4 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z5 (floor.f32 z3)) #s(literal 2 binary32))))  ,  13531
+(/.f64 (neg.f64 z0) z1)  ,  13441
+(*.f64 (*.f64 (PI.f64) z0) #s(literal 1/180 binary64))  ,  13438
+(pow.f64 (cos.f64 (*.f64 #s(literal 1/180 binary64) (*.f64 z0 (PI.f64)))) #s(literal 2 binary64))  ,  13404
+(*.f64 #s(literal -1/2 binary64) z0)  ,  13347
+(*.f64 (/.f64 z0 #s(literal 180 binary64)) (PI.f64))  ,  13318
+(/.f64 #s(literal -1 binary64) z0)  ,  13278
+(*.f64 #s(literal -1/180 binary64) (*.f64 (PI.f64) z0))  ,  12991
+(sin.f64 (*.f64 (*.f64 (PI.f64) z0) #s(literal 1/180 binary64)))  ,  12978
+(*.f64 (neg.f64 z0) z0)  ,  12818
+(*.f64 z0 #s(literal 4 binary64))  ,  12795
+(cos.f64 (*.f64 #s(literal -1/180 binary64) (*.f64 (PI.f64) z0)))  ,  12781
+(pow.f64 z0 #s(literal 5 binary64))  ,  12643
+(pow.f64 (cos.f64 z0) #s(literal 2 binary64))  ,  12587
+(pow.f64 (cos.f64 (*.f64 #s(literal -1/180 binary64) (*.f64 (PI.f64) z0))) #s(literal 2 binary64))  ,  11848
+(-.f64 z0 (*.f64 #s(literal -2 binary64) z1))  ,  11823
+(pow.f64 (sin.f64 (*.f64 (*.f64 (PI.f64) z0) #s(literal 1/180 binary64))) #s(literal 2 binary64))  ,  11684
+(pow.f64 (*.f64 z0 z1) #s(literal 3 binary64))  ,  11660
+(exp.f64 (neg.f64 z0))  ,  11268
+(*.f64 (cos.f64 z0) z1)  ,  10999
+(pow.f64 (-.f64 z0 z1) #s(literal 2 binary64))  ,  10844
+(+.f64 (+.f64 z0 z1) z2)  ,  10765
+(/.f64 (*.f64 z0 z0) z1)  ,  10690
+(sqrt.f64 (/.f64 z0 z1))  ,  10589
+(*.f64 (sin.f64 z0) (cos.f64 z1))  ,  10526
+(*.f64 z0 #s(literal 2 binary64))  ,  10487
+(cos.f64 (-.f64 z0 z1))  ,  10480
+(*.f64 (sin.f64 z0) z1)  ,  10453
+(log.f64 (/.f64 #s(literal -1 binary64) z0))  ,  10423
+(/.f32 (sqrt.f32 (fmax.f32 (+.f32 (*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z0) z1)) (*.f32 (*.f32 (floor.f32 z2) z3) (*.f32 (floor.f32 z2) z3))) (+.f32 (*.f32 (*.f32 (floor.f32 z0) z4) (*.f32 (floor.f32 z0) z4)) (*.f32 (*.f32 (floor.f32 z2) z5) (*.f32 (floor.f32 z2) z5))))) (floor.f32 z6))  ,  10415
+(sqrt.f64 (-.f64 z0 #s(literal -1 binary64)))  ,  10385
+(pow.f64 z0 #s(literal -1 binary64))  ,  10353
+(*.f64 (+.f64 z0 z1) (-.f64 z0 z1))  ,  10208
+(*.f64 (-.f64 z0 z1) z2)  ,  9973
+(*.f64 #s(literal -4 binary64) z0)  ,  9754
+(*.f64 (log.f64 z0) z1)  ,  9710
+(pow.f64 (/.f64 z0 z1) #s(literal 2 binary64))  ,  9612
+(*.f64 (atan2.f64 z0 z1) z2)  ,  9447
+(*.f64 (cos.f64 z0) (sin.f64 z1))  ,  9396
+(neg.f64 (neg.f64 z0))  ,  9340
+(+.f64 #s(literal 2 binary64) z0)  ,  9333
+(neg.f64 (log.f64 z0))  ,  9198
+(*.f32 #s(literal -2 binary32) z0)  ,  9127
+(+.f64 (*.f64 z0 z1) (*.f64 z2 z3))  ,  9104
+(*.f64 (*.f64 (*.f64 z0 z0) (*.f64 z0 z0)) (*.f64 z0 z0))  ,  9101
+(*.f32 #s(literal 2 binary32) z0)  ,  8914
+(/.f32 (fabs.f32 (-.f32 (*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z2) z3)) (*.f32 (*.f32 (floor.f32 z2) z4) (*.f32 (floor.f32 z0) z5)))) (sqrt.f32 (fmax.f32 (+.f32 (*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z0) z1)) (*.f32 (*.f32 (floor.f32 z2) z4) (*.f32 (floor.f32 z2) z4))) (+.f32 (*.f32 (*.f32 (floor.f32 z0) z5) (*.f32 (floor.f32 z0) z5)) (*.f32 (*.f32 (floor.f32 z2) z3) (*.f32 (floor.f32 z2) z3))))))  ,  8887
+(-.f64 (pow.f64 z0 #s(literal 3 binary64)) (pow.f64 z1 #s(literal 3 binary64)))  ,  8843
+(*.f64 (*.f64 #s(literal 4 binary64) z0) z1)  ,  8809
+(*.f64 (-.f64 (*.f64 z0 z1) (*.f64 z2 z3)) z4)  ,  8666
+(/.f64 (*.f64 z0 z1) z2)  ,  8649
+(*.f32 z0 #s(literal 2 binary32))  ,  8613
+(*.f32 (-.f32 (*.f32 z0 z1) (*.f32 z2 z3)) (floor.f32 z4))  ,  8488
+(*.f32 (*.f32 (-.f32 (*.f32 z0 z1) (*.f32 z2 z3)) (floor.f32 z4)) (floor.f32 z5))  ,  8444
+(fabs.f32 (*.f32 (*.f32 (-.f32 (*.f32 z0 z1) (*.f32 z2 z3)) (floor.f32 z4)) (floor.f32 z5)))  ,  8443
+(*.f64 z0 #s(literal 3 binary64))  ,  8388
+(*.f64 (cos.f64 z0) (cos.f64 z1))  ,  8328
+(+.f64 (*.f64 z0 z1) z2)  ,  8311
+(-.f32 #s(literal 1/2 binary32) (*.f32 #s(literal -2 binary32) z0))  ,  8275
+(/.f64 #s(literal 1 binary64) (fabs.f64 z0))  ,  8166
+(*.f32 (PI.f32) z0)  ,  8115
+(*.f32 (PI.f32) (-.f32 #s(literal 1/2 binary32) (*.f32 #s(literal -2 binary32) z0)))  ,  7862
+(*.f64 (sin.f64 z0) (sin.f64 z1))  ,  7845
+(pow.f64 (+.f64 z0 z1) #s(literal 2 binary64))  ,  7844
+(/.f64 #s(literal 2 binary64) z0)  ,  7829
+(*.f64 (*.f64 z0 z1) z2)  ,  7722
+(*.f64 #s(literal -2 binary64) (*.f64 z0 z0))  ,  7604
+(*.f32 (*.f32 z0 (floor.f32 z1)) z2)  ,  7557
+(-.f64 z0 #s(literal 1/2 binary64))  ,  7505
+(pow.f64 z0 #s(literal 2 binary64))  ,  7400
+(+.f64 (*.f64 z0 z0) #s(literal 1 binary64))  ,  7360
+(*.f64 #s(literal 3275911/10000000 binary64) z0)  ,  7280
+(-.f64 (*.f64 z0 z0) #s(literal 1 binary64))  ,  7254
+(/.f64 z0 (*.f64 z1 z1))  ,  7211
+(*.f64 z0 (-.f64 z0 z1))  ,  7108
+(*.f64 (+.f64 z0 z1) z2)  ,  7099
+(/.f64 (-.f64 z0 z1) z2)  ,  7099
+(sqrt.f64 (+.f64 (*.f64 z0 z0) (*.f64 z1 z1)))  ,  7046
+(+.f64 (-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 1 binary64)) #s(literal 7 binary64))  ,  6979
+(sqrt.f64 (/.f64 #s(literal 1 binary64) z0))  ,  6939
+(-.f64 (*.f64 #s(literal 3275911/10000000 binary64) z0) #s(literal -1 binary64))  ,  6931
+(*.f32 (*.f32 (*.f32 z0 (floor.f32 z1)) z2) (floor.f32 z3))  ,  6860
+(*.f64 (*.f64 #s(literal 3 binary64) z0) z0)  ,  6824
+(pow.f64 z0 #s(literal 8 binary64))  ,  6812
+(/.f64 #s(literal 1/2 binary64) z0)  ,  6798
+(/.f64 (-.f64 z0 z1) #s(literal 2 binary64))  ,  6727
+(sin.f64 (*.f64 (/.f64 z0 #s(literal 180 binary64)) (PI.f64)))  ,  6704
+(+.f64 #s(literal 2 binary64) (+.f64 z0 z1))  ,  6456
+(*.f64 (pow.f64 z0 #s(literal 3 binary64)) z1)  ,  6380
+(*.f64 (/.f64 z0 z1) z2)  ,  6364
+(+.f64 (*.f64 z0 (-.f64 z0 z1)) (*.f64 z1 z1))  ,  6349
+(cos.f64 (*.f64 (/.f64 z0 #s(literal 180 binary64)) (PI.f64)))  ,  6236
+(-.f64 (*.f64 z0 z0) #s(literal -1 binary64))  ,  6211
+(+.f64 z0 (*.f64 z1 z2))  ,  6109
+(*.f64 (*.f64 (*.f64 (*.f64 z0 z0) (*.f64 z0 z0)) (*.f64 z0 z0)) (*.f64 z0 z0))  ,  6089
+(*.f64 (*.f64 z0 z0) (*.f64 z1 z1))  ,  6085
+(/.f64 (pow.f64 (sin.f64 (*.f64 #s(literal 1/180 binary64) (*.f64 z0 (PI.f64)))) #s(literal 2 binary64)) (*.f64 z1 z1))  ,  6058
+(/.f64 z0 #s(literal 2 binary64))  ,  6017
+(*.f64 (+.f64 z0 z1) (-.f64 z1 z0))  ,  5960
+(/.f64 z0 (-.f64 z1 z2))  ,  5936
+(*.f64 z0 (*.f64 z1 #s(literal 4 binary64)))  ,  5894
+(pow.f32 (*.f32 (floor.f32 z0) z1) #s(literal 2 binary32))  ,  5873
+(/.f32 (fmax.f32 (+.f32 (pow.f32 (*.f32 z0 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z2 (floor.f32 z3)) #s(literal 2 binary32))) (+.f32 (pow.f32 (*.f32 z4 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z5 (floor.f32 z3)) #s(literal 2 binary32)))) (fabs.f32 (*.f32 (*.f32 (-.f32 (*.f32 z5 z0) (*.f32 z4 z2)) (floor.f32 z3)) (floor.f32 z1))))  ,  5800
+(log.f64 (neg.f64 z0))  ,  5759
+(*.f64 (*.f64 #s(literal 3 binary64) z0) z1)  ,  5600
+(*.f32 (neg.f32 z0) (floor.f32 z1))  ,  5596
+(*.f64 (pow.f64 z0 #s(literal 4 binary64)) #s(literal 9 binary64))  ,  5565
+(sin.f64 (/.f64 (-.f64 z0 z1) #s(literal 2 binary64)))  ,  5493
+(*.f64 (pow.f64 (cos.f64 (*.f64 #s(literal -1/180 binary64) (*.f64 (PI.f64) z0))) #s(literal 2 binary64)) (*.f64 z1 z1))  ,  5454
+(*.f64 (*.f64 z0 z0) (pow.f64 (sin.f64 (*.f64 #s(literal 1/180 binary64) (*.f64 z1 (PI.f64)))) #s(literal 2 binary64)))  ,  5400
+(-.f64 (*.f64 z0 z0) (*.f64 z1 (*.f64 z2 #s(literal 4 binary64))))  ,  5358
+(*.f64 (*.f64 z0 z0) (pow.f64 (cos.f64 (*.f64 #s(literal 1/180 binary64) (*.f64 z1 (PI.f64)))) #s(literal 2 binary64)))  ,  5313
+(-.f32 (*.f32 #s(literal 2 binary32) z0) #s(literal -1/2 binary32))  ,  5223
+(*.f64 (pow.f64 (sin.f64 (*.f64 (*.f64 (PI.f64) z0) #s(literal 1/180 binary64))) #s(literal 2 binary64)) (*.f64 z1 z1))  ,  5109
+(sin.f64 (*.f64 (PI.f64) z0))  ,  5048
+(/.f64 z0 (pow.f64 z1 #s(literal 3 binary64)))  ,  5013
+(*.f64 z0 #s(literal 30 binary64))  ,  4979
+(/.f64 (PI.f64) (sin.f64 (*.f64 (PI.f64) z0)))  ,  4960
+(*.f64 (*.f64 z0 z1) z0)  ,  4942
+(sqrt.f64 (+.f64 #s(literal 1 binary64) z0))  ,  4896
+(log.f32 (*.f32 z0 (floor.f32 z1)))  ,  4875
+(-.f64 (*.f64 (pow.f64 z0 #s(literal 4 binary64)) #s(literal 9 binary64)) (pow.f64 z1 #s(literal 4 binary64)))  ,  4872
+(>.f32 (/.f32 (fmax.f32 (+.f32 (pow.f32 (*.f32 z0 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z2 (floor.f32 z3)) #s(literal 2 binary32))) (+.f32 (pow.f32 (*.f32 z4 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z5 (floor.f32 z3)) #s(literal 2 binary32)))) (fabs.f32 (*.f32 (*.f32 (-.f32 (*.f32 z5 z0) (*.f32 z4 z2)) (floor.f32 z3)) (floor.f32 z1)))) (floor.f32 z6))  ,  4835
+(-.f64 (*.f64 z0 z0) (*.f64 (*.f64 #s(literal 4 binary64) z1) z2))  ,  4831
+(neg.f64 (-.f64 z0 z1))  ,  4818
+(-.f64 (+.f64 #s(literal 2 binary64) z0) (*.f64 #s(literal -2 binary64) z1))  ,  4753
+(*.f64 #s(literal -1/180 binary64) (*.f64 z0 (PI.f64)))  ,  4749
+(cos.f64 (*.f64 #s(literal -1/180 binary64) (*.f64 z0 (PI.f64))))  ,  4738
+(-.f64 #s(literal 1 binary64) (*.f64 z0 z0))  ,  4684
+(*.f64 (+.f64 z0 z1) z0)  ,  4663
+(/.f64 #s(literal 3764081837873279/25000000000000000000000 binary64) (+.f64 (-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 1 binary64)) #s(literal 8 binary64)))  ,  4660
+(+.f64 (-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 1 binary64)) #s(literal 8 binary64))  ,  4660
+(/.f64 #s(literal -3464277381643003/25000000000000000 binary64) (+.f64 (-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 1 binary64)) #s(literal 6 binary64)))  ,  4660
+(+.f64 (-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 1 binary64)) #s(literal 6 binary64))  ,  4660
+(+.f64 (pow.f64 z0 #s(literal 3 binary64)) (pow.f64 z1 #s(literal 3 binary64)))  ,  4648
+(*.f64 #s(literal 1/6 binary64) z0)  ,  4629
+(*.f64 (-.f64 z0 z1) z1)  ,  4604
+(-.f64 (+.f64 z0 z1) (*.f64 #s(literal -2 binary64) z2))  ,  4572
+(*.f64 z0 (neg.f64 z1))  ,  4548
+(*.f64 (cos.f64 (-.f64 z0 z1)) (cos.f64 z2))  ,  4512
+(*.f32 z0 (PI.f32))  ,  4481
+(-.f64 (+.f64 z0 z1) z2)  ,  4462
+(/.f64 #s(literal 2501468655737381/200000000000000 binary64) (+.f64 (-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 1 binary64)) #s(literal 5 binary64)))  ,  4455
+(+.f64 (-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 1 binary64)) #s(literal 5 binary64))  ,  4455
+(/.f64 (pow.f64 (cos.f64 (*.f64 #s(literal 1/180 binary64) (*.f64 z0 (PI.f64)))) #s(literal 2 binary64)) (*.f64 z1 z1))  ,  4455
+(+.f64 z0 #s(literal 1 binary64))  ,  4450
+(*.f64 z0 (sin.f64 z1))  ,  4443
+(pow.f64 (log.f64 z0) #s(literal 2 binary64))  ,  4437
+(/.f64 #s(literal 2496092394504893/250000000000000000000 binary64) (+.f64 (-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 1 binary64)) #s(literal 7 binary64)))  ,  4435
+(+.f64 (exp.f64 (neg.f64 z0)) #s(literal 1 binary64))  ,  4434
+(/.f64 (*.f64 z0 z0) (*.f64 z1 z1))  ,  4434
+(*.f64 (*.f64 z0 #s(literal 4 binary64)) z1)  ,  4383
+(*.f64 z0 (cos.f64 z1))  ,  4369
+(*.f64 z0 (+.f64 z1 z0))  ,  4363
+(*.f64 (*.f64 z0 z0) #s(literal 5 binary64))  ,  4347
+(*.f64 (*.f64 #s(literal 1/180 binary64) (PI.f64)) z0)  ,  4331
+(-.f64 (pow.f64 z0 #s(literal -1 binary64)) #s(literal -1 binary64))  ,  4321
+(cos.f64 (*.f64 #s(literal -1/2 binary64) z0))  ,  4296
+(*.f32 (+.f32 (*.f32 z0 #s(literal 2 binary32)) #s(literal 1/2 binary32)) (PI.f32))  ,  4286
+(+.f32 (*.f32 z0 #s(literal 2 binary32)) #s(literal 1/2 binary32))  ,  4286
+(*.f64 (/.f64 z0 z1) z0)  ,  4265
+(/.f64 #s(literal -883075145810703/5000000000000 binary64) (+.f64 (-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 1 binary64)) #s(literal 4 binary64)))  ,  4262
+(+.f64 (-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 1 binary64)) #s(literal 4 binary64))  ,  4262
+(-.f64 (*.f64 z0 z0) (*.f64 (*.f64 #s(literal 3 binary64) z1) z2))  ,  4242
+(-.f64 #s(literal 1 binary64) (*.f64 (*.f64 z0 z0) #s(literal 5 binary64)))  ,  4217
+(sqrt.f64 (*.f64 z0 z1))  ,  4214
+(*.f64 (+.f64 z0 z1) z1)  ,  4123
+(sin.f64 (*.f64 #s(literal 1/2 binary64) z0))  ,  4115
+(/.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 2 binary64))  ,  4102
+(*.f64 (fabs.f64 z0) (fabs.f64 z0))  ,  4098
+(/.f64 #s(literal 1 binary64) (pow.f64 z0 #s(literal 3 binary64)))  ,  4084
+(>=.f64 z0 #s(literal 0 binary64))  ,  4037
+(*.f64 #s(literal 2 binary64) (*.f64 z0 z0))  ,  4035
+(*.f64 z0 (-.f64 (*.f64 z1 z2) (*.f64 z3 z4)))  ,  3991
+(pow.f64 (exp.f64 z0) z0)  ,  3976
+(neg.f64 (+.f64 z0 z1))  ,  3974
+(pow.f32 z0 #s(literal 4 binary32))  ,  3953
+(pow.f64 (*.f64 z0 (cos.f64 (*.f64 (/.f64 z1 #s(literal 180 binary64)) (PI.f64)))) #s(literal 2 binary64))  ,  3940
+(*.f64 z0 (cos.f64 (*.f64 (/.f64 z1 #s(literal 180 binary64)) (PI.f64))))  ,  3940
+(pow.f64 #s(literal 1/2 binary64) z0)  ,  3918
+(/.f64 (-.f64 #s(literal 1 binary64) (*.f64 (*.f64 z0 z0) #s(literal 5 binary64))) (-.f64 (*.f64 z0 z0) #s(literal 1 binary64)))  ,  3917
+(-.f64 #s(literal 1 binary64) (/.f64 z0 z1))  ,  3915
+(sqrt.f64 (/.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 2 binary64)))  ,  3896
+(*.f32 (-.f32 (*.f32 #s(literal 2 binary32) z0) #s(literal -1/2 binary32)) (PI.f32))  ,  3885
+(/.f64 #s(literal 7713234287776531/10000000000000 binary64) (+.f64 (-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 1 binary64)) #s(literal 3 binary64)))  ,  3862
+(+.f64 (-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 1 binary64)) #s(literal 3 binary64))  ,  3862
+(/.f64 (/.f64 #s(literal 2 binary64) z0) (-.f64 (pow.f64 z0 #s(literal -1 binary64)) #s(literal -1 binary64)))  ,  3823
+(*.f64 (-.f64 z0 z1) z0)  ,  3801
+(*.f64 z0 #s(literal 1/2 binary64))  ,  3798
+(pow.f64 (*.f64 z0 (sin.f64 (*.f64 (/.f64 z1 #s(literal 180 binary64)) (PI.f64)))) #s(literal 2 binary64))  ,  3790
+(*.f64 z0 (sin.f64 (*.f64 (/.f64 z1 #s(literal 180 binary64)) (PI.f64))))  ,  3790
+(*.f64 z0 (/.f64 z1 z2))  ,  3767
+(*.f64 z0 (+.f64 z0 z1))  ,  3757
+(asin.f64 (-.f64 #s(literal 1 binary64) z0))  ,  3713
+(/.f32 #s(literal 1 binary32) z0)  ,  3707
+(cos.f32 (*.f32 (PI.f32) (-.f32 #s(literal 1/2 binary32) (*.f32 #s(literal -2 binary32) z0))))  ,  3662
+(-.f64 z0 #s(literal 11/20 binary64))  ,  3661
+(sin.f32 (*.f32 (PI.f32) (-.f32 #s(literal 1/2 binary32) (*.f32 #s(literal -2 binary32) z0))))  ,  3660
+(/.f64 (sin.f64 z0) (cos.f64 z0))  ,  3655
+(/.f64 (pow.f64 (cos.f64 (*.f64 #s(literal -1/180 binary64) (*.f64 (PI.f64) z0))) #s(literal 2 binary64)) (*.f64 z1 z1))  ,  3624
+(fabs.f32 (-.f32 (*.f32 z0 z1) (*.f32 z2 z3)))  ,  3561
+(sqrt.f64 (-.f64 (*.f64 z0 z0) (*.f64 (*.f64 #s(literal 4 binary64) z1) z2)))  ,  3555
+(fabs.f32 (*.f32 (floor.f32 z0) (floor.f32 z1)))  ,  3544
+(/.f64 (pow.f64 (sin.f64 (*.f64 (*.f64 (PI.f64) z0) #s(literal 1/180 binary64))) #s(literal 2 binary64)) (*.f64 z1 z1))  ,  3543
+(*.f64 #s(literal -4 binary64) (*.f64 z0 z0))  ,  3523
+(pow.f64 (/.f64 z0 z1) #s(literal 3 binary64))  ,  3522
+(asin.f64 (sqrt.f64 (/.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 2 binary64))))  ,  3521
+(*.f64 (*.f64 z0 z1) z1)  ,  3521
+(*.f32 (-.f32 #s(literal 1 binary32) z0) z1)  ,  3514
+(-.f64 z0 (*.f64 z1 z2))  ,  3467
+(/.f64 #s(literal 1 binary64) (+.f64 (exp.f64 (neg.f64 z0)) #s(literal 1 binary64)))  ,  3431
+(sqrt.f64 (-.f64 (*.f64 z0 z0) (*.f64 (*.f64 #s(literal 3 binary64) z1) z2)))  ,  3429
+(-.f64 (*.f64 (*.f64 z0 z1) z0) z2)  ,  3416
+(/.f64 #s(literal 1061405429/1000000000 binary64) (-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64)))  ,  3407
+(-.f64 #s(literal 2 binary64) (/.f64 (/.f64 #s(literal 2 binary64) z0) (-.f64 (pow.f64 z0 #s(literal -1 binary64)) #s(literal -1 binary64))))  ,  3391
+(*.f32 (log.f32 (*.f32 z0 (floor.f32 z1))) #s(literal 2 binary32))  ,  3369
+(+.f64 (*.f64 z0 (+.f64 z0 z1)) (*.f64 z1 z1))  ,  3350
+(-.f64 z0 #s(literal 11/40 binary64))  ,  3325
+(/.f64 #s(literal 2/3 binary64) z0)  ,  3323
+(/.f64 (/.f64 z0 z1) z1)  ,  3316
+(*.f64 #s(literal 0 binary64) z0)  ,  3309
+(-.f64 (+.f64 #s(literal 2 binary64) (+.f64 z0 z1)) (*.f64 #s(literal -2 binary64) z2))  ,  3306
+(pow.f64 (cos.f64 (*.f64 #s(literal -1/180 binary64) (*.f64 z0 (PI.f64)))) #s(literal 2 binary64))  ,  3260
+(/.f64 #s(literal 1 binary64) (*.f64 z0 z1))  ,  3259
+(*.f64 z0 (+.f64 z1 z2))  ,  3241
+(/.f64 #s(literal 1 binary64) (pow.f64 z0 #s(literal 5 binary64)))  ,  3226
+(*.f32 (*.f32 (-.f32 #s(literal 1 binary32) z0) z1) z0)  ,  3221
+(/.f64 #s(literal 1 binary64) (*.f64 (pow.f64 z0 #s(literal 3 binary64)) z1))  ,  3220
+(sqrt.f64 (/.f64 #s(literal 1 binary64) (*.f64 (pow.f64 z0 #s(literal 3 binary64)) z1)))  ,  3215
+(*.f64 (*.f64 (*.f64 (*.f64 (*.f64 z0 z0) (*.f64 z0 z0)) (*.f64 z0 z0)) (*.f64 z0 z0)) (*.f64 z0 z0))  ,  3201
+(fabs.f32 (*.f32 z0 (floor.f32 z1)))  ,  3192
+(*.f64 (-.f64 z0 #s(literal -1 binary64)) z0)  ,  3160
+(+.f64 (/.f64 #s(literal 1061405429/1000000000 binary64) (-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64))) #s(literal -1453152027/1000000000 binary64))  ,  3135
+(*.f64 (PI.f64) (/.f64 z0 #s(literal 180 binary64)))  ,  3125
+(pow.f32 z0 #s(literal 3 binary32))  ,  3084
+(/.f32 #s(literal 1 binary32) (sqrt.f32 (fmax.f32 (+.f32 (*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z0) z1)) (*.f32 (*.f32 (floor.f32 z2) z3) (*.f32 (floor.f32 z2) z3))) (+.f32 (*.f32 (*.f32 (floor.f32 z0) z4) (*.f32 (floor.f32 z0) z4)) (*.f32 (*.f32 (floor.f32 z2) z5) (*.f32 (floor.f32 z2) z5))))))  ,  3069
+(sqrt.f64 (/.f64 #s(literal 1 binary64) (*.f64 z0 z1)))  ,  3053
+(/.f64 (-.f64 (+.f64 z0 z1) z2) z3)  ,  3046
+(*.f64 (*.f64 z0 z0) #s(literal -2 binary64))  ,  3041
+(-.f64 (*.f64 z0 z0) (*.f64 (*.f64 z1 #s(literal 4 binary64)) z2))  ,  3036
+(asin.f64 (/.f64 (-.f64 #s(literal 1 binary64) (*.f64 (*.f64 z0 z0) #s(literal 5 binary64))) (-.f64 (*.f64 z0 z0) #s(literal 1 binary64))))  ,  3026
+(*.f64 z0 (*.f64 z1 #s(literal 3 binary64)))  ,  3021
+(*.f64 z0 (*.f64 z1 z1))  ,  3021
+(/.f64 (+.f64 (/.f64 #s(literal 1061405429/1000000000 binary64) (-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64))) #s(literal -1453152027/1000000000 binary64)) (-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64)))  ,  3001
+(log.f64 (sqrt.f64 (+.f64 (*.f64 z0 z0) (*.f64 z1 z1))))  ,  2978
+(sqrt.f64 (/.f64 #s(literal 1 binary64) (pow.f64 z0 #s(literal 3 binary64))))  ,  2974
+(/.f32 #s(literal -2 binary32) z0)  ,  2946
+(/.f64 (sin.f64 z0) z1)  ,  2944
+(-.f32 (*.f32 z0 z0) #s(literal 1 binary32))  ,  2935
+(-.f64 (*.f64 z0 z0) (*.f64 z1 z2))  ,  2934
+(*.f64 z0 #s(literal -2 binary64))  ,  2926
+(*.f64 (fabs.f64 z0) #s(literal 3275911/10000000 binary64))  ,  2916
+(*.f64 z0 (-.f64 z1 z2))  ,  2915
+(pow.f64 (-.f64 z0 (*.f64 #s(literal -2 binary64) z1)) #s(literal 2 binary64))  ,  2875
+(/.f64 (/.f64 z0 z1) z2)  ,  2856
+(*.f64 z0 (*.f64 #s(literal 4 binary64) z1))  ,  2850
+(+.f64 (*.f64 #s(literal 2 binary64) z0) z1)  ,  2849
+(/.f64 (+.f64 z0 z1) (-.f64 (+.f64 z0 z1) (*.f64 #s(literal -2 binary64) z2)))  ,  2843
+(*.f64 z0 (atan2.f64 z1 z2))  ,  2840
+(*.f32 (*.f32 z0 #s(literal 2 binary32)) (PI.f32))  ,  2838
+(+.f64 #s(literal 3 binary64) z0)  ,  2818
+(pow.f32 (-.f32 #s(literal 1 binary32) z0) #s(literal 2 binary32))  ,  2810
+(exp.f32 (*.f32 (log.f32 (*.f32 z0 (floor.f32 z1))) #s(literal 2 binary32)))  ,  2807
+(neg.f64 (sin.f64 z0))  ,  2774
+(*.f64 (-.f64 z0 z1) (+.f64 z1 z0))  ,  2758
+(*.f64 (*.f64 z0 z1) #s(literal 4 binary64))  ,  2755
+(+.f64 #s(literal 2 binary64) (-.f64 z0 (*.f64 #s(literal -2 binary64) z1)))  ,  2731
+(-.f64 (*.f64 z0 z0) (*.f64 z1 (*.f64 z2 #s(literal 3 binary64))))  ,  2721
+(-.f64 (*.f64 z0 z0) z1)  ,  2714
+(*.f64 #s(literal -1/4 binary64) z0)  ,  2695
+(/.f64 (pow.f64 z0 #s(literal 3 binary64)) z1)  ,  2692
+(+.f64 (*.f64 (pow.f64 (sin.f64 (*.f64 (*.f64 (PI.f64) z0) #s(literal 1/180 binary64))) #s(literal 2 binary64)) (*.f64 z1 z1)) (*.f64 (pow.f64 (cos.f64 (*.f64 #s(literal -1/180 binary64) (*.f64 (PI.f64) z0))) #s(literal 2 binary64)) (*.f64 z2 z2)))  ,  2685
+(-.f32 z0 #s(literal -1 binary32))  ,  2683
+(*.f64 (*.f64 z0 z1) #s(literal -12 binary64))  ,  2664
+(/.f64 (sin.f64 z0) #s(literal 16 binary64))  ,  2663
+(*.f64 #s(literal 841/108 binary64) z0)  ,  2658
+(neg.f64 (log.f64 (/.f64 #s(literal -1 binary64) z0)))  ,  2653
+(pow.f64 (neg.f64 z0) #s(literal 3 binary64))  ,  2631
+(/.f64 (tan.f64 z0) z1)  ,  2629
+(-.f64 (sqrt.f64 (-.f64 z0 #s(literal -1 binary64))) (sqrt.f64 z0))  ,  2616
+(pow.f64 z0 #s(literal -2 binary64))  ,  2604
+(/.f32 z0 (-.f32 #s(literal 1 binary32) z0))  ,  2598
+(cos.f64 (+.f64 z0 z1))  ,  2590
+(exp.f64 (/.f64 (-.f64 (+.f64 z0 z1) z2) z3))  ,  2586
+(sin.f64 (-.f64 z0 z1))  ,  2583
+(+.f64 (pow.f64 (sin.f64 z0) #s(literal 2 binary64)) (pow.f64 (sin.f64 z1) #s(literal 2 binary64)))  ,  2572
+(-.f64 (pow.f64 (-.f64 z0 z1) #s(literal 2 binary64)) (*.f64 z0 z1))  ,  2561
+(*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) (*.f32 z1 z1))  ,  2558
+(+.f64 (+.f64 (-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 1 binary64)) #s(literal 7 binary64)) #s(literal 1/2 binary64))  ,  2544
+(*.f32 (*.f32 z0 z0) z1)  ,  2542
+(/.f64 z0 (tan.f64 z1))  ,  2539
+(*.f64 #s(literal -3 binary64) z0)  ,  2535
+(-.f64 z0 #s(literal -2 binary64))  ,  2533
+(pow.f64 z0 #s(literal 1 binary64))  ,  2523
+(-.f64 (exp.f64 z0) #s(literal -1 binary64))  ,  2506
+(*.f64 (-.f64 (*.f64 z0 z1) (*.f64 z2 z3)) (-.f64 (*.f64 z4 z5) (*.f64 z6 z7)))  ,  2501
+(*.f64 (*.f64 (PI.f64) z0) (*.f64 (PI.f64) z0))  ,  2491
+(pow.f64 z0 #s(literal 3/2 binary64))  ,  2486
+(sqrt.f32 (fmax.f32 (+.f32 (pow.f32 (*.f32 z0 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z2 (floor.f32 z3)) #s(literal 2 binary32))) (+.f32 (pow.f32 (*.f32 z4 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z5 (floor.f32 z3)) #s(literal 2 binary32)))))  ,  2478
+(pow.f64 (+.f64 z0 z1) #s(literal 3 binary64))  ,  2478
+(*.f64 (pow.f64 z0 #s(literal 4 binary64)) z1)  ,  2468
+(*.f64 (-.f64 z0 z1) #s(literal -1/2 binary64))  ,  2466
+(-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal -1 binary64))  ,  2465
+(/.f64 z0 (+.f64 z1 z0))  ,  2464
+(*.f64 (/.f64 z0 z1) (/.f64 z0 z1))  ,  2446
+(+.f64 (+.f64 z0 z1) (*.f64 #s(literal 2 binary64) z2))  ,  2440
+(sqrt.f64 (-.f64 (*.f64 z0 z0) (*.f64 z1 (*.f64 z2 #s(literal 4 binary64)))))  ,  2433
+(exp.f32 (/.f32 #s(literal -2 binary32) z0))  ,  2422
+(sin.f64 (*.f64 (-.f64 z0 z1) #s(literal -1/2 binary64)))  ,  2406
+(pow.f64 z0 #s(literal 7 binary64))  ,  2404
+(acos.f64 (/.f64 (neg.f64 z0) z1))  ,  2383
+(+.f64 (*.f64 (*.f64 z0 z0) (pow.f64 (sin.f64 (*.f64 #s(literal 1/180 binary64) (*.f64 z1 (PI.f64)))) #s(literal 2 binary64))) (*.f64 (*.f64 z2 z2) (pow.f64 (cos.f64 (*.f64 #s(literal 1/180 binary64) (*.f64 z1 (PI.f64)))) #s(literal 2 binary64))))  ,  2377
+(/.f32 #s(literal -1 binary32) z0)  ,  2361
+(/.f64 (pow.f64 (sin.f64 z0) #s(literal 2 binary64)) (pow.f64 (cos.f64 z0) #s(literal 2 binary64)))  ,  2357
+(+.f64 (*.f64 (*.f64 z0 z0) (pow.f64 (cos.f64 (*.f64 #s(literal 1/180 binary64) (*.f64 z1 (PI.f64)))) #s(literal 2 binary64))) (*.f64 (*.f64 z2 z2) (pow.f64 (sin.f64 (*.f64 #s(literal 1/180 binary64) (*.f64 z1 (PI.f64)))) #s(literal 2 binary64))))  ,  2356
+(/.f64 #s(literal 1/18 binary64) z0)  ,  2350
+(-.f32 (*.f32 z0 z1) #s(literal -1 binary32))  ,  2350
+(sin.f64 (*.f64 z0 #s(literal 30 binary64)))  ,  2345
+(*.f64 (*.f64 z0 z0) #s(literal 2 binary64))  ,  2337
+(/.f64 z0 #s(literal 500 binary64))  ,  2331
+(pow.f64 (log.f64 z0) #s(literal 3 binary64))  ,  2329
+(-.f64 (pow.f64 z0 #s(literal 2 binary64)) (*.f64 (*.f64 #s(literal 4 binary64) z1) z2))  ,  2317
+(cos.f64 (*.f64 #s(literal 1/2 binary64) z0))  ,  2294
+(/.f32 (sin.f32 (*.f32 (PI.f32) (-.f32 #s(literal 1/2 binary32) (*.f32 #s(literal -2 binary32) z0)))) (cos.f32 (*.f32 (PI.f32) (-.f32 #s(literal 1/2 binary32) (*.f32 #s(literal -2 binary32) z0)))))  ,  2287
+(atan.f32 (*.f32 (/.f32 z0 z1) (/.f32 (sin.f32 (*.f32 (PI.f32) (-.f32 #s(literal 1/2 binary32) (*.f32 #s(literal -2 binary32) z2)))) (cos.f32 (*.f32 (PI.f32) (-.f32 #s(literal 1/2 binary32) (*.f32 #s(literal -2 binary32) z2)))))))  ,  2282
+(*.f32 (/.f32 z0 z1) (/.f32 (sin.f32 (*.f32 (PI.f32) (-.f32 #s(literal 1/2 binary32) (*.f32 #s(literal -2 binary32) z2)))) (cos.f32 (*.f32 (PI.f32) (-.f32 #s(literal 1/2 binary32) (*.f32 #s(literal -2 binary32) z2))))))  ,  2282
+(+.f64 (+.f64 #s(literal 2 binary64) z0) z1)  ,  2274
+(*.f64 z0 (/.f64 (PI.f64) #s(literal 4 binary64)))  ,  2271
+(*.f64 #s(literal -1/3 binary64) z0)  ,  2269
+(pow.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 2 binary64))  ,  2268
+(*.f64 (*.f64 z0 z0) #s(literal -4 binary64))  ,  2266
+(sinh.f64 (*.f64 z0 (/.f64 (PI.f64) #s(literal 4 binary64))))  ,  2263
+(*.f64 #s(literal 1/180 binary64) (*.f64 (PI.f64) z0))  ,  2260
+(pow.f64 (sin.f64 (*.f64 (-.f64 z0 z1) #s(literal -1/2 binary64))) #s(literal 2 binary64))  ,  2257
+(*.f32 (*.f32 #s(literal 2 binary32) (PI.f32)) z0)  ,  2256
+(cos.f64 (*.f64 z0 #s(literal 30 binary64)))  ,  2244
+(/.f64 z0 (+.f64 z0 z1))  ,  2237
+(/.f64 z0 (neg.f64 z1))  ,  2234
+(-.f64 #s(literal 1 binary64) (/.f64 #s(literal 1 binary64) (+.f64 (exp.f64 (neg.f64 z0)) #s(literal 1 binary64))))  ,  2231
+(*.f64 #s(literal 27061/100000 binary64) z0)  ,  2229
+(+.f64 (sqrt.f64 (-.f64 z0 #s(literal -1 binary64))) (sqrt.f64 z0))  ,  2226
+(/.f64 z0 (-.f64 z1 z0))  ,  2226
+(sqrt.f64 (+.f64 z0 #s(literal 1 binary64)))  ,  2225
+(*.f64 #s(literal 4 binary64) (*.f64 z0 z1))  ,  2222
+(fabs.f64 (-.f64 z0 z1))  ,  2220
+(-.f64 (*.f64 z0 z0) (*.f64 #s(literal -4 binary64) (*.f64 z1 z1)))  ,  2212
+(*.f64 (+.f64 (*.f64 z0 z1) z2) z1)  ,  2209
+(+.f64 (*.f64 (pow.f64 (cos.f64 (*.f64 #s(literal -1/180 binary64) (*.f64 (PI.f64) z0))) #s(literal 2 binary64)) (*.f64 z1 z1)) (*.f64 (pow.f64 (sin.f64 (*.f64 (*.f64 (PI.f64) z0) #s(literal 1/180 binary64))) #s(literal 2 binary64)) (*.f64 z2 z2)))  ,  2196
+(*.f64 (pow.f64 z0 #s(literal 4 binary64)) (*.f64 (neg.f64 z0) z0))  ,  2192
+(*.f64 #s(literal -1/2 binary64) (*.f64 z0 z0))  ,  2189
+(+.f64 (/.f64 (+.f64 (/.f64 #s(literal 1061405429/1000000000 binary64) (-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64))) #s(literal -1453152027/1000000000 binary64)) (-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64))) #s(literal 1421413741/1000000000 binary64))  ,  2187
+(/.f64 #s(literal 4 binary64) z0)  ,  2185
+(*.f64 (cos.f64 z0) (*.f64 (cos.f64 z1) (sin.f64 z2)))  ,  2181
+(-.f64 (sqrt.f64 (+.f64 z0 #s(literal 1 binary64))) (sqrt.f64 z0))  ,  2179
+(pow.f64 (tan.f64 z0) #s(literal 2 binary64))  ,  2179
+(pow.f64 (-.f64 z0 #s(literal 11/40 binary64)) #s(literal 2 binary64))  ,  2177
+(neg.f64 (fabs.f64 z0))  ,  2174
+(/.f64 #s(literal -1/2 binary64) z0)  ,  2165
+(-.f64 (/.f64 z0 z1) #s(literal 1 binary64))  ,  2161
+(-.f32 z0 #s(literal 1 binary32))  ,  2160
+(*.f64 #s(literal -1/6 binary64) z0)  ,  2154
+(/.f64 (pow.f64 (sin.f64 (*.f64 #s(literal 1/180 binary64) (*.f64 z0 (PI.f64)))) #s(literal 2 binary64)) (*.f64 (*.f64 z1 z1) (*.f64 z2 z2)))  ,  2148
+(/.f64 (cos.f64 z0) z1)  ,  2146
+(*.f64 (*.f64 #s(literal -4 binary64) z0) z1)  ,  2143
+(cos.f32 (*.f32 (+.f32 (*.f32 z0 #s(literal 2 binary32)) #s(literal 1/2 binary32)) (PI.f32)))  ,  2140
+(/.f32 (sin.f32 (*.f32 (+.f32 (*.f32 z0 #s(literal 2 binary32)) #s(literal 1/2 binary32)) (PI.f32))) (cos.f32 (*.f32 (+.f32 (*.f32 z0 #s(literal 2 binary32)) #s(literal 1/2 binary32)) (PI.f32))))  ,  2136
+(sin.f32 (*.f32 (+.f32 (*.f32 z0 #s(literal 2 binary32)) #s(literal 1/2 binary32)) (PI.f32)))  ,  2136
+(*.f64 (pow.f64 (cos.f64 (*.f64 #s(literal 1/180 binary64) (*.f64 z0 (PI.f64)))) #s(literal 2 binary64)) (/.f64 (pow.f64 (sin.f64 (*.f64 #s(literal 1/180 binary64) (*.f64 z0 (PI.f64)))) #s(literal 2 binary64)) (*.f64 (*.f64 z1 z1) (*.f64 z2 z2))))  ,  2136
+(*.f32 (/.f32 z0 z1) (/.f32 (sin.f32 (*.f32 (+.f32 (*.f32 z2 #s(literal 2 binary32)) #s(literal 1/2 binary32)) (PI.f32))) (cos.f32 (*.f32 (+.f32 (*.f32 z2 #s(literal 2 binary32)) #s(literal 1/2 binary32)) (PI.f32)))))  ,  2134
+(*.f64 #s(literal 1/4 binary64) z0)  ,  2133
+(atan.f32 (*.f32 (/.f32 z0 z1) (/.f32 (sin.f32 (*.f32 (+.f32 (*.f32 z2 #s(literal 2 binary32)) #s(literal 1/2 binary32)) (PI.f32))) (cos.f32 (*.f32 (+.f32 (*.f32 z2 #s(literal 2 binary32)) #s(literal 1/2 binary32)) (PI.f32))))))  ,  2130
+(sin.f64 (*.f64 (*.f64 #s(literal 1/180 binary64) (PI.f64)) z0))  ,  2123
+(sin.f64 (*.f64 #s(literal -1/2 binary64) z0))  ,  2122
+(+.f64 z0 (*.f64 z1 (+.f64 z2 z1)))  ,  2118
+(*.f64 z0 (/.f64 z0 z1))  ,  2112
+(*.f64 (neg.f64 z0) (neg.f64 z1))  ,  2108
+(/.f64 (+.f64 (/.f64 (+.f64 (/.f64 #s(literal 1061405429/1000000000 binary64) (-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64))) #s(literal -1453152027/1000000000 binary64)) (-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64))) #s(literal 1421413741/1000000000 binary64)) (-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64)))  ,  2098
+(*.f32 #s(literal 1/4 binary32) z0)  ,  2095
+(*.f32 z0 (-.f32 #s(literal 1 binary32) z1))  ,  2086
+(pow.f64 (-.f64 #s(literal 2 binary64) (/.f64 (/.f64 #s(literal 2 binary64) z0) (-.f64 (pow.f64 z0 #s(literal -1 binary64)) #s(literal -1 binary64)))) #s(literal 2 binary64))  ,  2085
+(-.f64 (sin.f64 z0) (/.f64 (sin.f64 z1) #s(literal 16 binary64)))  ,  2084
+(+.f64 z0 (+.f64 z1 z2))  ,  2078
+(pow.f64 (exp.f64 z0) #s(literal 2 binary64))  ,  2051
+(*.f64 z0 (*.f64 z1 z2))  ,  2044
+(pow.f32 z0 #s(literal 6 binary32))  ,  2022
+(-.f64 #s(literal 1/2 binary64) z0)  ,  2012
+(>=.f32 (+.f32 (*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z0) z1)) (*.f32 (*.f32 (floor.f32 z2) z3) (*.f32 (floor.f32 z2) z3))) (+.f32 (*.f32 (*.f32 (floor.f32 z0) z4) (*.f32 (floor.f32 z0) z4)) (*.f32 (*.f32 (floor.f32 z2) z5) (*.f32 (floor.f32 z2) z5))))  ,  2005
+(pow.f64 (cos.f64 z0) #s(literal 3 binary64))  ,  2003
+(sin.f32 (*.f32 (-.f32 (*.f32 #s(literal 2 binary32) z0) #s(literal -1/2 binary32)) (PI.f32)))  ,  1994
+(-.f64 (log.f64 #s(literal -1 binary64)) (log.f64 (/.f64 #s(literal -1 binary64) z0)))  ,  1988
+(+.f64 (-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 1 binary64)) #s(literal 2 binary64))  ,  1986
+(/.f64 #s(literal -3147848041806007/2500000000000 binary64) (+.f64 (-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 1 binary64)) #s(literal 2 binary64)))  ,  1984
+(*.f64 #s(literal 2 binary64) (-.f64 (pow.f64 z0 #s(literal 2 binary64)) (pow.f64 z1 #s(literal 2 binary64))))  ,  1977
+(-.f64 (pow.f64 z0 #s(literal 2 binary64)) (pow.f64 z1 #s(literal 2 binary64)))  ,  1977
+(-.f64 (neg.f64 z0) (sqrt.f64 (-.f64 (*.f64 z0 z0) (*.f64 (*.f64 #s(literal 3 binary64) z1) z2))))  ,  1974
+(+.f64 (/.f64 (PI.f64) #s(literal 2 binary64)) z0)  ,  1974
+(tan.f64 (+.f64 z0 z1))  ,  1971
+(sqrt.f64 (/.f64 #s(literal 1 binary64) (+.f64 (*.f64 z0 z0) (*.f64 z1 z1))))  ,  1966
+(/.f64 #s(literal 1 binary64) (+.f64 (*.f64 z0 z0) (*.f64 z1 z1)))  ,  1966
+(log.f32 (pow.f32 (*.f32 z0 (floor.f32 z1)) #s(literal 2 binary32)))  ,  1961
+(/.f64 #s(literal 1061405429/1000000000 binary64) (-.f64 (*.f64 #s(literal 3275911/10000000 binary64) z0) #s(literal -1 binary64)))  ,  1961
+(/.f64 (/.f64 z0 (tan.f64 z1)) z2)  ,  1947
+(log.f32 (*.f32 z0 z0))  ,  1946
+(/.f32 (fmax.f32 (+.f32 (pow.f32 (*.f32 z0 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z2 (floor.f32 z3)) #s(literal 2 binary32))) (+.f32 (pow.f32 (*.f32 z4 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z5 (floor.f32 z3)) #s(literal 2 binary32)))) (fabs.f32 (-.f32 (*.f32 z4 z2) (*.f32 z5 z0))))  ,  1935
+(pow.f64 (-.f64 #s(literal 1 binary64) (/.f64 #s(literal 1 binary64) (+.f64 (exp.f64 (neg.f64 z0)) #s(literal 1 binary64)))) z1)  ,  1933
+(*.f64 (pow.f64 z0 #s(literal 4 binary64)) #s(literal 4 binary64))  ,  1932
+(/.f32 (/.f32 (fmax.f32 (+.f32 (pow.f32 (*.f32 z0 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z2 (floor.f32 z3)) #s(literal 2 binary32))) (+.f32 (pow.f32 (*.f32 z4 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z5 (floor.f32 z3)) #s(literal 2 binary32)))) (fabs.f32 (-.f32 (*.f32 z4 z2) (*.f32 z5 z0)))) (fabs.f32 (*.f32 (floor.f32 z1) (floor.f32 z3))))  ,  1929
+(/.f64 #s(literal 1 binary64) (+.f64 #s(literal 1 binary64) (*.f64 #s(literal 3275911/10000000 binary64) (fabs.f64 z0))))  ,  1918
+(+.f64 #s(literal 1 binary64) (*.f64 #s(literal 3275911/10000000 binary64) (fabs.f64 z0)))  ,  1918
+(*.f64 #s(literal 3275911/10000000 binary64) (fabs.f64 z0))  ,  1918
+(pow.f64 (*.f64 (+.f64 z0 z1) (-.f64 z0 z1)) #s(literal 2 binary64))  ,  1914
+(sqrt.f64 (-.f64 (*.f64 z0 z0) (*.f64 z1 (*.f64 z2 #s(literal 3 binary64)))))  ,  1913
+(-.f64 (*.f64 z0 z1) z2)  ,  1913
+(-.f64 (*.f64 z0 z0) (*.f64 (*.f64 z1 z1) #s(literal -2 binary64)))  ,  1907
+(/.f32 (neg.f32 z0) s)  ,  1906
+(+.f64 (-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 1 binary64)) #s(literal 1/2 binary64))  ,  1904
+(-.f64 (*.f64 z0 z0) (*.f64 (*.f64 z1 z2) #s(literal 4 binary64)))  ,  1896
+(*.f64 (*.f64 z0 z1) (*.f64 z0 (neg.f64 z1)))  ,  1886
+(sin.f32 (atan.f32 (*.f32 (/.f32 z0 z1) (/.f32 (sin.f32 (*.f32 (PI.f32) (-.f32 #s(literal 1/2 binary32) (*.f32 #s(literal -2 binary32) z2)))) (cos.f32 (*.f32 (PI.f32) (-.f32 #s(literal 1/2 binary32) (*.f32 #s(literal -2 binary32) z2))))))))  ,  1882
+(*.f32 (*.f32 (PI.f32) z0) #s(literal 2 binary32))  ,  1875
+(sqrt.f64 (-.f64 (*.f64 z0 z0) (*.f64 z1 z2)))  ,  1868
+(*.f64 #s(literal -1/32400 binary64) (*.f64 z0 z0))  ,  1864
+(*.f64 #s(literal 3 binary64) (*.f64 z0 z0))  ,  1858
+(cos.f32 (*.f32 (-.f32 (*.f32 #s(literal 2 binary32) z0) #s(literal -1/2 binary32)) (PI.f32)))  ,  1856
+(/.f64 (*.f64 (*.f64 z0 z0) z1) z2)  ,  1854
+(-.f64 (*.f64 (*.f64 z0 z1) z1) z2)  ,  1853
+(*.f64 (*.f64 #s(literal 2 binary64) (-.f64 (pow.f64 z0 #s(literal 2 binary64)) (pow.f64 z1 #s(literal 2 binary64)))) (sin.f64 (*.f64 (/.f64 z2 #s(literal 180 binary64)) (PI.f64))))  ,  1853
+(*.f64 (sin.f64 (*.f64 z0 #s(literal 30 binary64))) (cos.f64 (*.f64 z1 #s(literal 30 binary64))))  ,  1846
+(/.f64 #s(literal 1 binary64) (*.f64 z0 z0))  ,  1845
+(pow.f64 (fabs.f64 z0) #s(literal 5 binary64))  ,  1843
+(*.f64 #s(literal 5 binary64) (*.f64 z0 z0))  ,  1841
+(*.f64 z0 (*.f64 #s(literal 3 binary64) z1))  ,  1840
+(sqrt.f64 (+.f64 z0 z1))  ,  1836
+(+.f64 (fabs.f64 z0) (fabs.f64 z1))  ,  1830
+(*.f64 z0 (+.f64 z1 (*.f64 z2 z0)))  ,  1829
+(-.f64 z0 (/.f64 z1 #s(literal 500 binary64)))  ,  1826
+(+.f64 #s(literal 1/2 binary64) z0)  ,  1826
+(pow.f64 (sin.f64 (/.f64 (-.f64 z0 z1) #s(literal 2 binary64))) #s(literal 2 binary64))  ,  1819
+(*.f32 (*.f32 z0 (floor.f32 z1)) (floor.f32 z2))  ,  1816
+(+.f64 (pow.f64 (*.f64 z0 (sin.f64 (*.f64 (/.f64 z1 #s(literal 180 binary64)) (PI.f64)))) #s(literal 2 binary64)) (pow.f64 (*.f64 z2 (cos.f64 (*.f64 (/.f64 z1 #s(literal 180 binary64)) (PI.f64)))) #s(literal 2 binary64)))  ,  1808
+(/.f64 (/.f64 (+.f64 (pow.f64 (*.f64 z0 (sin.f64 (*.f64 (/.f64 z1 #s(literal 180 binary64)) (PI.f64)))) #s(literal 2 binary64)) (pow.f64 (*.f64 z2 (cos.f64 (*.f64 (/.f64 z1 #s(literal 180 binary64)) (PI.f64)))) #s(literal 2 binary64))) z3) z3)  ,  1802
+(/.f64 (+.f64 (pow.f64 (*.f64 z0 (sin.f64 (*.f64 (/.f64 z1 #s(literal 180 binary64)) (PI.f64)))) #s(literal 2 binary64)) (pow.f64 (*.f64 z2 (cos.f64 (*.f64 (/.f64 z1 #s(literal 180 binary64)) (PI.f64)))) #s(literal 2 binary64))) z3)  ,  1802
+(*.f64 (sqrt.f64 #s(literal 2 binary64)) z0)  ,  1795
+(pow.f64 (cos.f64 z0) #s(literal 4 binary64))  ,  1793
+(-.f64 (*.f64 z0 z0) (*.f64 (*.f64 z1 z1) #s(literal -4 binary64)))  ,  1786
+(/.f64 (*.f64 (-.f64 z0 z1) z2) z3)  ,  1785
+(/.f64 (-.f64 z0 z1) (-.f64 (+.f64 #s(literal 2 binary64) (+.f64 z0 z1)) (*.f64 #s(literal -2 binary64) z2)))  ,  1782
+(+.f64 #s(literal -1453152027/1000000000 binary64) (/.f64 #s(literal 1061405429/1000000000 binary64) (-.f64 (*.f64 #s(literal 3275911/10000000 binary64) z0) #s(literal -1 binary64))))  ,  1781
+(*.f64 #s(literal -4 binary64) (*.f64 z0 z1))  ,  1781
+(*.f64 (*.f64 #s(literal -1/32400 binary64) (*.f64 z0 z0)) (*.f64 (PI.f64) (PI.f64)))  ,  1780
+(*.f64 #s(literal 4481/100000 binary64) z0)  ,  1779
+(exp.f32 (/.f32 (neg.f32 z0) s))  ,  1777
+(+.f64 (sqrt.f64 (+.f64 #s(literal 1 binary64) z0)) (sqrt.f64 z0))  ,  1774
+(*.f32 (neg.f32 (*.f32 (*.f32 z0 (floor.f32 z1)) (floor.f32 z2))) z3)  ,  1771
+(neg.f32 (*.f32 (*.f32 z0 (floor.f32 z1)) (floor.f32 z2)))  ,  1771
+(*.f64 (*.f64 z0 z0) (/.f64 (pow.f64 (sin.f64 (*.f64 #s(literal 1/180 binary64) (*.f64 z1 (PI.f64)))) #s(literal 2 binary64)) (*.f64 z2 z2)))  ,  1769
+(cos.f64 (*.f64 (*.f64 #s(literal 1/180 binary64) (PI.f64)) z0))  ,  1762
+(/.f32 z0 s)  ,  1759
+(*.f64 (*.f64 (sin.f64 z0) (cos.f64 z1)) (cos.f64 z2))  ,  1752
+(*.f64 (tan.f64 z0) (tan.f64 z1))  ,  1748
+(-.f32 (pow.f32 (*.f32 z0 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z2 (floor.f32 z3)) #s(literal 2 binary32)))  ,  1740
+(*.f64 (log.f64 z0) (-.f64 z1 #s(literal 1/2 binary64)))  ,  1730
+(*.f64 #s(literal -30 binary64) z0)  ,  1726
+(*.f64 (sqrt.f64 #s(literal 8 binary64)) z0)  ,  1726
+(*.f64 #s(literal -1 binary64) z0)  ,  1721
+(fabs.f32 (+.f32 (*.f32 (*.f32 (*.f32 z0 (floor.f32 z1)) z2) (floor.f32 z3)) (*.f32 (neg.f32 (*.f32 (*.f32 z4 (floor.f32 z3)) (floor.f32 z1))) z5)))  ,  1716
+(+.f32 (*.f32 (*.f32 (*.f32 z0 (floor.f32 z1)) z2) (floor.f32 z3)) (*.f32 (neg.f32 (*.f32 (*.f32 z4 (floor.f32 z3)) (floor.f32 z1))) z5))  ,  1716
+(*.f64 (-.f64 z0 z1) (-.f64 z2 z3))  ,  1715
+(*.f64 #s(literal 9 binary64) (pow.f64 z0 #s(literal 4 binary64)))  ,  1715
+(-.f64 #s(literal 15/2 binary64) z0)  ,  1712
+(/.f64 (+.f64 (*.f64 (pow.f64 (sin.f64 (*.f64 (*.f64 (PI.f64) z0) #s(literal 1/180 binary64))) #s(literal 2 binary64)) (*.f64 z1 z1)) (*.f64 (pow.f64 (cos.f64 (*.f64 #s(literal -1/180 binary64) (*.f64 (PI.f64) z0))) #s(literal 2 binary64)) (*.f64 z2 z2))) (*.f64 z3 z3))  ,  1709
+(*.f64 z0 #s(literal 4481/100000 binary64))  ,  1706
+(pow.f64 (-.f64 #s(literal 15/2 binary64) z0) (-.f64 #s(literal 1/2 binary64) z0))  ,  1705
+(/.f64 (+.f64 #s(literal -1453152027/1000000000 binary64) (/.f64 #s(literal 1061405429/1000000000 binary64) (-.f64 (*.f64 #s(literal 3275911/10000000 binary64) z0) #s(literal -1 binary64)))) (-.f64 (*.f64 #s(literal 3275911/10000000 binary64) z0) #s(literal -1 binary64)))  ,  1704
+(*.f64 (*.f64 z0 z0) (/.f64 (pow.f64 (cos.f64 (*.f64 #s(literal 1/180 binary64) (*.f64 z1 (PI.f64)))) #s(literal 2 binary64)) (*.f64 z2 z2)))  ,  1702
+(-.f64 (*.f64 z0 z0) (*.f64 #s(literal 4 binary64) (*.f64 z1 z2)))  ,  1700
+(+.f64 (*.f64 z0 (+.f64 z1 z0)) (*.f64 z1 z1))  ,  1697
+(-.f64 (-.f64 z0 #s(literal -1 binary64)) z1)  ,  1693
+(cos.f64 (/.f64 z0 #s(literal 2 binary64)))  ,  1693
+(neg.f32 (*.f32 (neg.f32 z0) (floor.f32 z1)))  ,  1690
+(/.f32 (fmax.f32 (+.f32 (*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z1) z1) (*.f32 (*.f32 (pow.f32 (floor.f32 z2) #s(literal 2 binary32)) z3) z3)) (+.f32 (*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z4) z4) (*.f32 (*.f32 (pow.f32 (floor.f32 z2) #s(literal 2 binary32)) z5) z5))) (fabs.f32 (*.f32 (*.f32 (-.f32 (*.f32 z5 z1) (*.f32 z4 z3)) (floor.f32 z0)) (floor.f32 z2))))  ,  1687
+(+.f64 (neg.f64 z0) z1)  ,  1683
+(*.f64 (*.f64 (cos.f64 z0) (cos.f64 z1)) (sin.f64 (/.f64 (-.f64 z2 z3) #s(literal 2 binary64))))  ,  1678
+(sin.f64 (/.f64 z0 #s(literal 2 binary64)))  ,  1678
+(exp.f64 (-.f64 z0 #s(literal 15/2 binary64)))  ,  1674
+(-.f64 z0 #s(literal 15/2 binary64))  ,  1674
+(sqrt.f32 (/.f32 z0 (-.f32 #s(literal 1 binary32) z0)))  ,  1674
+(neg.f64 (cos.f64 z0))  ,  1674
+(/.f64 (+.f64 z0 z1) z2)  ,  1674
+(sin.f64 (*.f64 (PI.f64) (/.f64 z0 #s(literal 180 binary64))))  ,  1667
+(*.f32 #s(literal 314159265359/50000000000 binary32) z0)  ,  1665
+(pow.f64 (log.f64 (neg.f64 z0)) #s(literal 2 binary64))  ,  1662
+(*.f64 #s(literal 5 binary64) z0)  ,  1660
+(*.f64 #s(literal 1/2 binary64) (*.f64 z0 z0))  ,  1658
+(*.f64 #s(literal -3/8 binary64) z0)  ,  1654
+(+.f32 #s(literal 1 binary32) z0)  ,  1651
+(+.f64 #s(literal 2 binary64) (*.f64 #s(literal 2 binary64) z0))  ,  1646
+(/.f32 (fmax.f32 (+.f32 (*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z0) z1)) (*.f32 (*.f32 (floor.f32 z2) z3) (*.f32 (floor.f32 z2) z3))) (+.f32 (*.f32 (*.f32 (floor.f32 z0) z4) (*.f32 (floor.f32 z0) z4)) (*.f32 (*.f32 (floor.f32 z2) z5) (*.f32 (floor.f32 z2) z5)))) (fabs.f32 (+.f32 (*.f32 (*.f32 (*.f32 z1 (floor.f32 z0)) z5) (floor.f32 z2)) (*.f32 (neg.f32 (*.f32 (*.f32 z3 (floor.f32 z2)) (floor.f32 z0))) z4))))  ,  1644
+(-.f64 #s(literal 1 binary64) (*.f64 #s(literal 5 binary64) (*.f64 z0 z0)))  ,  1642
+(-.f64 z0 #s(literal 1/3 binary64))  ,  1638
+(fabs.f64 (fabs.f64 z0))  ,  1638
+(sqrt.f64 (/.f64 #s(literal 1 binary64) (pow.f64 z0 #s(literal 5 binary64))))  ,  1637
+(*.f64 z0 (log.f64 z1))  ,  1633
+(/.f64 (/.f64 (sin.f64 z0) z1) (cos.f64 z0))  ,  1628
+(*.f64 (/.f64 (PI.f64) #s(literal -4 binary64)) z0)  ,  1626
+(/.f64 (/.f64 (*.f64 (*.f64 (*.f64 #s(literal 2 binary64) (-.f64 (pow.f64 z0 #s(literal 2 binary64)) (pow.f64 z1 #s(literal 2 binary64)))) (sin.f64 (*.f64 (/.f64 z2 #s(literal 180 binary64)) (PI.f64)))) (cos.f64 (*.f64 (/.f64 z2 #s(literal 180 binary64)) (PI.f64)))) z3) z4)  ,  1626
+(/.f64 (*.f64 (*.f64 (*.f64 #s(literal 2 binary64) (-.f64 (pow.f64 z0 #s(literal 2 binary64)) (pow.f64 z1 #s(literal 2 binary64)))) (sin.f64 (*.f64 (/.f64 z2 #s(literal 180 binary64)) (PI.f64)))) (cos.f64 (*.f64 (/.f64 z2 #s(literal 180 binary64)) (PI.f64)))) z3)  ,  1626
+(*.f64 (*.f64 (*.f64 #s(literal 2 binary64) (-.f64 (pow.f64 z0 #s(literal 2 binary64)) (pow.f64 z1 #s(literal 2 binary64)))) (sin.f64 (*.f64 (/.f64 z2 #s(literal 180 binary64)) (PI.f64)))) (cos.f64 (*.f64 (/.f64 z2 #s(literal 180 binary64)) (PI.f64))))  ,  1626
+(pow.f64 (sin.f64 z0) #s(literal 4 binary64))  ,  1625
+(/.f64 (/.f64 (+.f64 (pow.f64 (*.f64 z0 (cos.f64 (*.f64 (/.f64 z1 #s(literal 180 binary64)) (PI.f64)))) #s(literal 2 binary64)) (pow.f64 (*.f64 z2 (sin.f64 (*.f64 (/.f64 z1 #s(literal 180 binary64)) (PI.f64)))) #s(literal 2 binary64))) z3) z3)  ,  1623
+(/.f64 (+.f64 (pow.f64 (*.f64 z0 (cos.f64 (*.f64 (/.f64 z1 #s(literal 180 binary64)) (PI.f64)))) #s(literal 2 binary64)) (pow.f64 (*.f64 z2 (sin.f64 (*.f64 (/.f64 z1 #s(literal 180 binary64)) (PI.f64)))) #s(literal 2 binary64))) z3)  ,  1623
+(+.f64 (pow.f64 (*.f64 z0 (cos.f64 (*.f64 (/.f64 z1 #s(literal 180 binary64)) (PI.f64)))) #s(literal 2 binary64)) (pow.f64 (*.f64 z2 (sin.f64 (*.f64 (/.f64 z1 #s(literal 180 binary64)) (PI.f64)))) #s(literal 2 binary64)))  ,  1623
+(*.f64 (+.f64 z0 (*.f64 z1 z2)) z1)  ,  1621
+(*.f64 (*.f64 (sin.f64 z0) (sin.f64 z1)) (cos.f64 z2))  ,  1619
+(/.f32 sin2phi (*.f32 z0 z0))  ,  1614
+(neg.f64 (*.f64 z0 z0))  ,  1613
+(sqrt.f64 (-.f64 (*.f64 z0 z0) (*.f64 #s(literal -4 binary64) (*.f64 z1 z1))))  ,  1609
+(+.f64 (*.f64 z0 #s(literal 4481/100000 binary64)) #s(literal 99229/100000 binary64))  ,  1607
+(*.f64 #s(literal 18 binary64) z0)  ,  1605
+(*.f64 #s(literal 7715471019/10000000000 binary64) (*.f64 z0 z0))  ,  1599
+(*.f64 #s(literal 1049934947/10000000000 binary64) (*.f64 z0 z0))  ,  1599
+(+.f64 #s(literal 1 binary64) (*.f64 #s(literal 7715471019/10000000000 binary64) (*.f64 z0 z0)))  ,  1595
+(+.f64 #s(literal 1 binary64) (*.f64 #s(literal 1049934947/10000000000 binary64) (*.f64 z0 z0)))  ,  1595
+(*.f64 (+.f64 (*.f64 z0 #s(literal 4481/100000 binary64)) #s(literal 99229/100000 binary64)) z0)  ,  1593
+(sin.f32 (*.f32 (*.f32 z0 #s(literal 2 binary32)) (PI.f32)))  ,  1593
+(sqrt.f64 (*.f64 (+.f64 z0 z1) (-.f64 z0 z1)))  ,  1589
+(*.f64 (*.f64 (cos.f64 (-.f64 z0 z1)) (cos.f64 z2)) (cos.f64 z3))  ,  1586
+(/.f32 (fmax.f32 (+.f32 (pow.f32 (*.f32 z0 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z2 (floor.f32 z3)) #s(literal 2 binary32))) (+.f32 (pow.f32 (*.f32 z4 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z5 (floor.f32 z3)) #s(literal 2 binary32)))) (fabs.f32 (-.f32 (*.f32 z5 z0) (*.f32 z4 z2))))  ,  1583
+(+.f64 (/.f64 (+.f64 (/.f64 (+.f64 (/.f64 #s(literal 1061405429/1000000000 binary64) (-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64))) #s(literal -1453152027/1000000000 binary64)) (-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64))) #s(literal 1421413741/1000000000 binary64)) (-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64))) #s(literal -8890523/31250000 binary64))  ,  1583
+(*.f64 (exp.f64 (-.f64 z0 #s(literal 15/2 binary64))) (sqrt.f64 (PI.f64)))  ,  1583
+(pow.f32 (sin.f32 (atan.f32 (*.f32 (/.f32 z0 z1) (/.f32 (sin.f32 (*.f32 (PI.f32) (-.f32 #s(literal 1/2 binary32) (*.f32 #s(literal -2 binary32) z2)))) (cos.f32 (*.f32 (PI.f32) (-.f32 #s(literal 1/2 binary32) (*.f32 #s(literal -2 binary32) z2)))))))) #s(literal 2 binary32))  ,  1583
+(/.f32 (/.f32 (fmax.f32 (+.f32 (pow.f32 (*.f32 z0 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z2 (floor.f32 z3)) #s(literal 2 binary32))) (+.f32 (pow.f32 (*.f32 z4 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z5 (floor.f32 z3)) #s(literal 2 binary32)))) (fabs.f32 (-.f32 (*.f32 z5 z0) (*.f32 z4 z2)))) (fabs.f32 (*.f32 (floor.f32 z1) (floor.f32 z3))))  ,  1581
+(-.f64 (exp.f64 (neg.f64 z0)) #s(literal -1 binary64))  ,  1581
+(*.f64 (*.f64 (exp.f64 (-.f64 z0 #s(literal 15/2 binary64))) (sqrt.f64 (PI.f64))) (sqrt.f64 #s(literal 2 binary64)))  ,  1577
+(*.f64 (*.f64 (*.f64 (exp.f64 (-.f64 z0 #s(literal 15/2 binary64))) (sqrt.f64 (PI.f64))) (sqrt.f64 #s(literal 2 binary64))) (pow.f64 (-.f64 #s(literal 15/2 binary64) z0) (-.f64 #s(literal 1/2 binary64) z0)))  ,  1575
+(>.f32 (/.f32 (/.f32 (fmax.f32 (+.f32 (pow.f32 (*.f32 z0 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z2 (floor.f32 z3)) #s(literal 2 binary32))) (+.f32 (pow.f32 (*.f32 z4 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z5 (floor.f32 z3)) #s(literal 2 binary32)))) (fabs.f32 (-.f32 (*.f32 z5 z0) (*.f32 z4 z2)))) (fabs.f32 (*.f32 (floor.f32 z1) (floor.f32 z3)))) (floor.f32 z6))  ,  1574
+(/.f32 cos2phi (*.f32 z0 z0))  ,  1574
+(pow.f64 z0 #s(literal 12 binary64))  ,  1574
+(*.f64 #s(literal 9 binary64) z0)  ,  1570
+(-.f64 #s(literal 1 binary64) (*.f64 (tan.f64 z0) (tan.f64 z1)))  ,  1570
+(-.f32 (-.f32 (*.f32 z0 z1) #s(literal -1 binary32)) z1)  ,  1567
+(*.f32 (*.f32 z0 (floor.f32 z1)) z0)  ,  1564
+(log.f64 (-.f64 #s(literal 1 binary64) z0))  ,  1564
+(*.f32 (*.f32 #s(literal 1/2 binary32) (PI.f32)) z0)  ,  1563
+(*.f64 (/.f64 (+.f64 z0 z1) (-.f64 (+.f64 z0 z1) (*.f64 #s(literal -2 binary64) z2))) (/.f64 (-.f64 z0 z1) (-.f64 (+.f64 #s(literal 2 binary64) (+.f64 z0 z1)) (*.f64 #s(literal -2 binary64) z2))))  ,  1562
+(*.f64 #s(literal 4 binary64) (*.f64 z0 z0))  ,  1557
+(*.f64 #s(literal 106015151/2500000000 binary64) (*.f64 (*.f64 z0 z0) (*.f64 z0 z0)))  ,  1556
+(*.f64 #s(literal 2909738639/10000000000 binary64) (*.f64 (*.f64 z0 z0) (*.f64 z0 z0)))  ,  1556
+(*.f64 #s(literal 0 binary64) (/.f64 (/.f64 (sin.f64 z0) z1) (cos.f64 z0)))  ,  1545
+(pow.f64 (-.f64 (+.f64 #s(literal 2 binary64) z0) (*.f64 #s(literal -2 binary64) z1)) #s(literal 2 binary64))  ,  1545
+(+.f64 (*.f64 (+.f64 z0 z1) z0) (*.f64 z1 z1))  ,  1543
+(+.f64 (*.f64 (-.f64 z0 z1) z2) z1)  ,  1542
+(*.f64 (*.f64 z0 z0) (/.f64 (pow.f64 (sin.f64 (*.f64 (*.f64 (PI.f64) z1) #s(literal 1/180 binary64))) #s(literal 2 binary64)) (*.f64 z2 z2)))  ,  1541
+(*.f32 (*.f32 z0 (-.f32 #s(literal 1 binary32) z1)) z1)  ,  1538
+(*.f32 (*.f32 #s(literal -1/2 binary32) (PI.f32)) z0)  ,  1533
+(*.f64 (*.f64 z0 z0) z0)  ,  1531
+(*.f64 (*.f64 z0 z0) (/.f64 (pow.f64 (cos.f64 (*.f64 #s(literal -1/180 binary64) (*.f64 (PI.f64) z1))) #s(literal 2 binary64)) (*.f64 z2 z2)))  ,  1525
+(*.f64 z0 (+.f64 z1 (*.f64 z0 (+.f64 z2 z0))))  ,  1524
+(exp.f64 (neg.f64 (*.f64 (fabs.f64 z0) (fabs.f64 z0))))  ,  1522
+(neg.f64 (*.f64 (fabs.f64 z0) (fabs.f64 z0)))  ,  1522
+(/.f64 (*.f64 (/.f64 (+.f64 z0 z1) (-.f64 (+.f64 z0 z1) (*.f64 #s(literal -2 binary64) z2))) (/.f64 (-.f64 z0 z1) (-.f64 (+.f64 #s(literal 2 binary64) (+.f64 z0 z1)) (*.f64 #s(literal -2 binary64) z2)))) #s(literal 2 binary64))  ,  1522
+(/.f64 (/.f64 #s(literal 1/18 binary64) z0) z1)  ,  1521
+(-.f64 (*.f64 (*.f64 #s(literal 3 binary64) z0) z0) z0)  ,  1520
+(-.f64 (*.f64 z0 z0) (*.f64 #s(literal -2 binary64) (*.f64 z1 z1)))  ,  1520
+(/.f32 (sin.f32 (*.f32 (-.f32 (*.f32 #s(literal 2 binary32) z0) #s(literal -1/2 binary32)) (PI.f32))) (cos.f32 (*.f32 (-.f32 (*.f32 #s(literal 2 binary32) z0) #s(literal -1/2 binary32)) (PI.f32))))  ,  1520
+(-.f64 (*.f64 #s(literal 2 binary64) z0) #s(literal 3 binary64))  ,  1518
+(atan.f32 (*.f32 (/.f32 z0 z1) (/.f32 (sin.f32 (*.f32 (-.f32 (*.f32 #s(literal 2 binary32) z2) #s(literal -1/2 binary32)) (PI.f32))) (cos.f32 (*.f32 (-.f32 (*.f32 #s(literal 2 binary32) z2) #s(literal -1/2 binary32)) (PI.f32))))))  ,  1518
+(*.f32 (/.f32 z0 z1) (/.f32 (sin.f32 (*.f32 (-.f32 (*.f32 #s(literal 2 binary32) z2) #s(literal -1/2 binary32)) (PI.f32))) (cos.f32 (*.f32 (-.f32 (*.f32 #s(literal 2 binary32) z2) #s(literal -1/2 binary32)) (PI.f32)))))  ,  1518
+(+.f64 (+.f64 #s(literal 1 binary64) (*.f64 #s(literal 1049934947/10000000000 binary64) (*.f64 z0 z0))) (*.f64 #s(literal 106015151/2500000000 binary64) (*.f64 (*.f64 z0 z0) (*.f64 z0 z0))))  ,  1516
+(+.f64 (+.f64 #s(literal 1 binary64) (*.f64 #s(literal 7715471019/10000000000 binary64) (*.f64 z0 z0))) (*.f64 #s(literal 2909738639/10000000000 binary64) (*.f64 (*.f64 z0 z0) (*.f64 z0 z0))))  ,  1516
+(-.f64 (*.f64 #s(literal 1/6 binary64) z0) #s(literal -1/2 binary64))  ,  1515
+(*.f64 (*.f64 (*.f64 (cos.f64 z0) (cos.f64 z1)) (sin.f64 (/.f64 (-.f64 z2 z3) #s(literal 2 binary64)))) (sin.f64 (/.f64 (-.f64 z2 z3) #s(literal 2 binary64))))  ,  1513
+(+.f64 (sqrt.f64 z0) (sqrt.f64 (-.f64 z0 #s(literal -1 binary64))))  ,  1513
+(*.f32 (*.f32 (PI.f32) #s(literal 2 binary32)) z0)  ,  1513
+(*.f64 (*.f64 (PI.f64) #s(literal 1/180 binary64)) z0)  ,  1512
+(+.f64 #s(literal 5/6 binary64) z0)  ,  1509
+(*.f32 (*.f32 (PI.f32) z0) #s(literal -2 binary32))  ,  1508
+(+.f32 (*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z1) z1) (*.f32 (pow.f32 (floor.f32 z2) #s(literal 2 binary32)) (*.f32 z3 z3)))  ,  1504
+(/.f64 z0 (+.f64 z1 z2))  ,  1503
+(+.f64 #s(literal 9999999999998099/10000000000000000 binary64) (/.f64 #s(literal 6765203681218851/10000000000000 binary64) (+.f64 (-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 1 binary64)) #s(literal 1 binary64))))  ,  1502
+(/.f64 #s(literal 6765203681218851/10000000000000 binary64) (+.f64 (-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 1 binary64)) #s(literal 1 binary64)))  ,  1502
+(+.f64 (-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 1 binary64)) #s(literal 1 binary64))  ,  1502
+(*.f64 (sqrt.f64 #s(literal -1 binary64)) z0)  ,  1501
+(log.f32 (/.f32 #s(literal -1 binary32) z0))  ,  1500
+(*.f64 (*.f64 (*.f64 z0 z0) (*.f64 z1 z1)) #s(literal 48 binary64))  ,  1500
+(/.f64 (/.f64 (cos.f64 z0) z1) (sin.f64 z0))  ,  1491
+(+.f64 (sqrt.f64 z0) (sqrt.f64 z1))  ,  1491
+(/.f64 z0 (*.f64 #s(literal 2 binary64) z1))  ,  1488
+(+.f64 z0 (*.f64 z1 (+.f64 z2 (*.f64 z1 (+.f64 z3 z1)))))  ,  1485
+(+.f64 #s(literal 54929528941/2000000 binary64) (*.f64 z0 (+.f64 z1 (*.f64 z2 z0))))  ,  1482
+(/.f64 (log.f64 z0) z1)  ,  1482
+(-.f32 (*.f32 (*.f32 #s(literal 1/2 binary32) (PI.f32)) z0) (*.f32 #s(literal 1/4 binary32) (PI.f32)))  ,  1481
+(sqrt.f64 (-.f64 (*.f64 z0 z0) (*.f64 (*.f64 z1 #s(literal 4 binary64)) z2)))  ,  1481
+(+.f64 (exp.f64 (/.f64 (-.f64 (+.f64 z0 z1) z2) z3)) #s(literal 1 binary64))  ,  1476
+(*.f64 #s(literal 694555761/10000000000 binary64) (*.f64 (*.f64 (*.f64 z0 z0) (*.f64 z0 z0)) (*.f64 z0 z0)))  ,  1474
+(*.f64 #s(literal 36322091/5000000000 binary64) (*.f64 (*.f64 (*.f64 z0 z0) (*.f64 z0 z0)) (*.f64 z0 z0)))  ,  1474
+(-.f64 (*.f64 (fabs.f64 z0) #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64))  ,  1471
+(*.f64 (neg.f64 (neg.f64 z0)) z1)  ,  1470
+(+.f64 (sqrt.f64 z0) #s(literal 1 binary64))  ,  1467
+(-.f32 (*.f32 (*.f32 #s(literal -1/2 binary32) (PI.f32)) z0) (*.f32 #s(literal -1/4 binary32) (PI.f32)))  ,  1466
+(*.f64 (/.f64 (/.f64 #s(literal 1/18 binary64) z0) z1) z2)  ,  1464
+(*.f64 z0 (+.f64 #s(literal 54929528941/2000000 binary64) (*.f64 z0 (+.f64 z1 (*.f64 z2 z0)))))  ,  1464
+(*.f64 (log.f64 z0) #s(literal 2 binary64))  ,  1461
+(-.f64 (*.f64 z0 z0) (*.f64 z1 (*.f64 #s(literal 3 binary64) z2)))  ,  1459
+(*.f64 (*.f64 (*.f64 z0 z0) z1) z2)  ,  1457
+(+.f64 (*.f64 (sin.f64 z0) (cos.f64 z1)) (*.f64 (*.f64 (sin.f64 z1) (cos.f64 z0)) (cos.f64 z2)))  ,  1456
+(+.f64 z0 (*.f64 (log.f64 z1) z2))  ,  1455
+(*.f64 (*.f64 (/.f64 (/.f64 #s(literal 1/18 binary64) z0) z1) z2) (sqrt.f64 z3))  ,  1454
+(*.f64 (-.f64 z0 z1) (+.f64 z0 z1))  ,  1451
+(asin.f64 (*.f64 (*.f64 (/.f64 (/.f64 #s(literal 1/18 binary64) z0) z1) z2) (sqrt.f64 z3)))  ,  1448
+(-.f32 #s(literal 1 binary32) (*.f32 z0 z0))  ,  1448
+(*.f64 (-.f64 z0 (*.f64 #s(literal -2 binary64) z1)) (-.f64 (+.f64 #s(literal 2 binary64) z0) (*.f64 #s(literal -2 binary64) z1)))  ,  1431
+(+.f64 (*.f64 (+.f64 z0 z1) z0) z2)  ,  1429
+(*.f32 z0 (pow.f32 (floor.f32 z1) #s(literal 2 binary32)))  ,  1428
+(*.f64 #s(literal 70002721/5000000000 binary64) (*.f64 (*.f64 (*.f64 (*.f64 z0 z0) (*.f64 z0 z0)) (*.f64 z0 z0)) (*.f64 z0 z0)))  ,  1428
+(*.f64 #s(literal 2532017/5000000000 binary64) (*.f64 (*.f64 (*.f64 (*.f64 z0 z0) (*.f64 z0 z0)) (*.f64 z0 z0)) (*.f64 z0 z0)))  ,  1428
+(*.f64 (+.f64 (*.f64 (+.f64 z0 z1) z0) z2) z0)  ,  1426
+(-.f64 (*.f64 #s(literal 841/108 binary64) z0) #s(literal 4/29 binary64))  ,  1425
+(/.f64 (/.f64 z0 z1) #s(literal 2 binary64))  ,  1424
+(*.f64 #s(literal 0 binary64) (/.f64 (/.f64 (cos.f64 z0) z1) (sin.f64 z0)))  ,  1422
+(+.f64 #s(literal 28832688827/125000 binary64) (*.f64 z0 (+.f64 #s(literal 54929528941/2000000 binary64) (*.f64 z0 (+.f64 z1 (*.f64 z2 z0))))))  ,  1420
+(sin.f64 (*.f64 (atan2.f64 z0 z1) z2))  ,  1419
+(pow.f64 (z0) z1)  ,  1415
+(*.f64 (+.f64 (*.f64 (sin.f64 z0) (cos.f64 z1)) (*.f64 (*.f64 (sin.f64 z1) (cos.f64 z0)) (cos.f64 z2))) (sin.f64 z0))  ,  1412
+(-.f64 z0 (sqrt.f64 (+.f64 (*.f64 z0 z0) (*.f64 z1 z1))))  ,  1406
+(*.f64 (+.f64 z0 (*.f64 z1 z2)) z2)  ,  1405
+(/.f32 (fabs.f32 z0) s)  ,  1401
+(/.f64 (*.f64 #s(literal 4 binary64) (*.f64 (*.f64 z0 z1) (*.f64 z0 (neg.f64 z1)))) (pow.f64 (*.f64 z2 z3) #s(literal 2 binary64)))  ,  1401
+(*.f64 #s(literal 4 binary64) (*.f64 (*.f64 z0 z1) (*.f64 z0 (neg.f64 z1))))  ,  1401
+(pow.f64 (+.f64 (+.f64 (-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 1 binary64)) #s(literal 7 binary64)) #s(literal 1/2 binary64)) (+.f64 (-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 1 binary64)) #s(literal 1/2 binary64)))  ,  1400
+(pow.f64 (*.f64 (sin.f64 z0) z1) #s(literal 2 binary64))  ,  1399
+(*.f64 (-.f64 #s(literal 1 binary64) z0) z0)  ,  1399
+(/.f32 (fabs.f32 z0) (neg.f32 s))  ,  1394
+(*.f64 #s(literal 1665589/2000000000 binary64) (*.f64 (*.f64 (*.f64 (*.f64 (*.f64 z0 z0) (*.f64 z0 z0)) (*.f64 z0 z0)) (*.f64 z0 z0)) (*.f64 z0 z0)))  ,  1391
+(*.f64 #s(literal 1789971/10000000000 binary64) (*.f64 (*.f64 (*.f64 (*.f64 (*.f64 z0 z0) (*.f64 z0 z0)) (*.f64 z0 z0)) (*.f64 z0 z0)) (*.f64 z0 z0)))  ,  1391
+(neg.f64 (*.f64 z0 z1))  ,  1391
+(-.f64 (cos.f64 z0) (cos.f64 z1))  ,  1387
+(-.f64 (pow.f64 z0 #s(literal 3 binary64)) #s(literal -1 binary64))  ,  1387
+(+.f64 (*.f64 (fabs.f64 z0) #s(literal 3275911/10000000 binary64)) #s(literal 1 binary64))  ,  1380
+(*.f64 (*.f64 z0 z0) #s(literal -1/2 binary64))  ,  1378
+(*.f64 (-.f64 (*.f64 #s(literal 1/6 binary64) z0) #s(literal -1/2 binary64)) z0)  ,  1376
+(*.f64 (*.f64 (+.f64 z0 (*.f64 z1 z2)) z2) z3)  ,  1374
+(*.f64 z0 #s(literal 27 binary64))  ,  1370
+(+.f64 z0 z0)  ,  1369
+(*.f64 (sqrt.f64 (*.f64 (PI.f64) #s(literal 2 binary64))) (pow.f64 (+.f64 (+.f64 (-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 1 binary64)) #s(literal 7 binary64)) #s(literal 1/2 binary64)) (+.f64 (-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 1 binary64)) #s(literal 1/2 binary64))))  ,  1365
+(-.f64 (+.f64 #s(literal 2 binary64) (*.f64 #s(literal 2 binary64) z0)) (*.f64 #s(literal -4 binary64) z1))  ,  1364
+(+.f64 (+.f64 (+.f64 #s(literal 1 binary64) (*.f64 #s(literal 1049934947/10000000000 binary64) (*.f64 z0 z0))) (*.f64 #s(literal 106015151/2500000000 binary64) (*.f64 (*.f64 z0 z0) (*.f64 z0 z0)))) (*.f64 #s(literal 36322091/5000000000 binary64) (*.f64 (*.f64 (*.f64 z0 z0) (*.f64 z0 z0)) (*.f64 z0 z0))))  ,  1355
+(+.f64 (+.f64 (+.f64 #s(literal 1 binary64) (*.f64 #s(literal 7715471019/10000000000 binary64) (*.f64 z0 z0))) (*.f64 #s(literal 2909738639/10000000000 binary64) (*.f64 (*.f64 z0 z0) (*.f64 z0 z0)))) (*.f64 #s(literal 694555761/10000000000 binary64) (*.f64 (*.f64 (*.f64 z0 z0) (*.f64 z0 z0)) (*.f64 z0 z0))))  ,  1355
+(sqrt.f64 (/.f64 z0 (pow.f64 z1 #s(literal 3 binary64))))  ,  1355
+(+.f32 (pow.f32 (*.f32 (floor.f32 z0) z1) #s(literal 2 binary32)) (pow.f32 (*.f32 (floor.f32 z2) z3) #s(literal 2 binary32)))  ,  1353
+(/.f64 z0 #s(literal -2 binary64))  ,  1353
+(/.f64 #s(literal -2 binary64) z0)  ,  1350
+(*.f64 #s(literal -1/6 binary64) (*.f64 z0 z0))  ,  1347
+(log.f64 (*.f64 z0 z1))  ,  1345
+(*.f64 #s(literal 2 binary64) (+.f64 z0 z1))  ,  1345
+(-.f64 (*.f64 (+.f64 (*.f64 z0 #s(literal 4481/100000 binary64)) #s(literal 99229/100000 binary64)) z0) #s(literal -1 binary64))  ,  1343
+(*.f64 (*.f64 z0 z1) (*.f64 z0 z1))  ,  1341
+(pow.f64 (-.f64 z0 z1) #s(literal 3 binary64))  ,  1340
+(fmax.f32 (+.f32 (*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z1) z1) (*.f32 (pow.f32 (floor.f32 z2) #s(literal 2 binary32)) (*.f32 z3 z3))) (+.f32 (*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z4) z4) (*.f32 (*.f32 (pow.f32 (floor.f32 z2) #s(literal 2 binary32)) z5) z5)))  ,  1336
+(pow.f64 (sin.f64 (*.f64 (*.f64 #s(literal 1/180 binary64) (PI.f64)) z0)) #s(literal 2 binary64))  ,  1332
+(-.f64 (*.f64 z0 z0) (*.f64 z1 z1))  ,  1332
+(-.f64 (neg.f64 z0) (sqrt.f64 (-.f64 (*.f64 z0 z0) (*.f64 (*.f64 #s(literal 4 binary64) z1) z2))))  ,  1331
+(+.f64 (*.f64 (+.f64 (*.f64 (+.f64 z0 z1) z0) z2) z0) z3)  ,  1328
+(/.f64 (*.f64 z0 z0) (+.f64 z1 z0))  ,  1327
+(*.f64 (pow.f64 (sin.f64 (*.f64 (-.f64 z0 z1) #s(literal -1/2 binary64))) #s(literal 2 binary64)) (cos.f64 z2))  ,  1320
+(/.f64 (+.f64 (/.f64 (+.f64 (/.f64 (+.f64 (/.f64 #s(literal 1061405429/1000000000 binary64) (-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64))) #s(literal -1453152027/1000000000 binary64)) (-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64))) #s(literal 1421413741/1000000000 binary64)) (-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64))) #s(literal -8890523/31250000 binary64)) (-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64)))  ,  1315
+(pow.f64 (-.f64 (*.f64 (pow.f64 z0 #s(literal 4 binary64)) #s(literal 9 binary64)) (pow.f64 z1 #s(literal 4 binary64))) #s(literal 2 binary64))  ,  1306
+(*.f32 (PI.f32) (-.f32 (*.f32 #s(literal 2 binary32) z0) #s(literal -1/2 binary32)))  ,  1302
+(sin.f64 (*.f64 #s(literal 1/180 binary64) (*.f64 (PI.f64) z0)))  ,  1297
+(*.f64 #s(literal 1/2 binary64) (-.f64 z0 z1))  ,  1294
+(/.f32 (fmax.f32 (+.f32 (*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z1) z1) (*.f32 (pow.f32 (floor.f32 z2) #s(literal 2 binary32)) (*.f32 z3 z3))) (+.f32 (*.f32 (*.f32 (pow.f32 (floor.f32 z0) #s(literal 2 binary32)) z4) z4) (*.f32 (*.f32 (pow.f32 (floor.f32 z2) #s(literal 2 binary32)) z5) z5))) (fabs.f32 (*.f32 (-.f32 (*.f32 z5 z1) (*.f32 z4 z3)) (*.f32 (floor.f32 z0) (floor.f32 z2)))))  ,  1288
+(*.f64 (log.f64 z0) (-.f64 z0 #s(literal 1/2 binary64)))  ,  1288
+(pow.f64 (*.f64 (*.f64 z0 z1) #s(literal -12 binary64)) #s(literal 2 binary64))  ,  1280
+(*.f64 (*.f64 (+.f64 (*.f64 z0 z1) z2) z1) z0)  ,  1279
+(*.f64 #s(literal 1 binary64) z0)  ,  1279
+(*.f64 #s(literal 0 binary64) (sin.f64 z0))  ,  1278
+(/.f32 #s(literal 1 binary32) (sqrt.f32 (fmax.f32 (+.f32 (pow.f32 (*.f32 z0 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z2 (floor.f32 z3)) #s(literal 2 binary32))) (+.f32 (pow.f32 (*.f32 z4 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z5 (floor.f32 z3)) #s(literal 2 binary32))))))  ,  1277
+(+.f64 (+.f64 #s(literal 9999999999998099/10000000000000000 binary64) (/.f64 #s(literal 6765203681218851/10000000000000 binary64) (+.f64 (-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 1 binary64)) #s(literal 1 binary64)))) (/.f64 #s(literal -3147848041806007/2500000000000 binary64) (+.f64 (-.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 1 binary64)) #s(literal 2 binary64))))  ,  1275
+(/.f64 (+.f64 #s(literal 1 binary64) z0) (-.f64 z0 #s(literal 1 binary64)))  ,  1270
+(/.f64 (*.f64 z0 z0) (+.f64 z0 z1))  ,  1270
+(-.f64 (+.f64 (+.f64 z0 z1) z2) z3)  ,  1269
+(/.f64 z0 (-.f64 z0 #s(literal -1 binary64)))  ,  1269
+(*.f64 (sqrt.f64 #s(literal -1 binary64)) (*.f64 z0 z0))  ,  1269
+(*.f32 (/.f32 #s(literal 1 binary32) (sqrt.f32 (fmax.f32 (+.f32 (pow.f32 (*.f32 z0 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z2 (floor.f32 z3)) #s(literal 2 binary32))) (+.f32 (pow.f32 (*.f32 z4 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z5 (floor.f32 z3)) #s(literal 2 binary32)))))) (fabs.f32 (*.f32 (-.f32 (*.f32 z4 z2) (*.f32 z5 z0)) (*.f32 (floor.f32 z3) (floor.f32 z1)))))  ,  1267
+(*.f64 z0 (sqrt.f64 #s(literal -1 binary64)))  ,  1266
+(*.f64 (pow.f64 (cos.f64 (*.f64 #s(literal -1/180 binary64) (*.f64 z0 (PI.f64)))) #s(literal 2 binary64)) (/.f64 (pow.f64 (sin.f64 (*.f64 #s(literal 1/180 binary64) (*.f64 z0 (PI.f64)))) #s(literal 2 binary64)) (*.f64 z1 z1)))  ,  1262
+(*.f64 #s(literal 2/3 binary64) (*.f64 z0 z0))  ,  1261
+(-.f64 z0 #s(literal -5/6 binary64))  ,  1260
+(+.f64 (+.f64 z0 z1) (*.f64 #s(literal 2 binary64) #s(literal 1 binary64)))  ,  1260
+(-.f64 (log.f64 z0) z1)  ,  1257
+(*.f64 #s(literal 2 binary64) (/.f64 z0 z1))  ,  1257
+(+.f64 (neg.f64 (log.f64 z0)) (log.f64 z1))  ,  1254
+(*.f64 z0 (/.f64 (PI.f64) #s(literal -4 binary64)))  ,  1253
+(/.f64 (+.f64 (*.f64 (*.f64 z0 z0) (pow.f64 (sin.f64 (*.f64 #s(literal 1/180 binary64) (*.f64 z1 (PI.f64)))) #s(literal 2 binary64))) (*.f64 (*.f64 z2 z2) (pow.f64 (cos.f64 (*.f64 #s(literal 1/180 binary64) (*.f64 z1 (PI.f64)))) #s(literal 2 binary64)))) (*.f64 z3 z3))  ,  1253
+(/.f64 (pow.f64 (sin.f64 (*.f64 (*.f64 (PI.f64) z0) #s(literal 1/180 binary64))) #s(literal 2 binary64)) (pow.f64 (*.f64 z1 z2) #s(literal 2 binary64)))  ,  1250
+(sqrt.f64 (-.f64 (*.f64 z0 z0) (*.f64 #s(literal 4 binary64) (*.f64 z1 z2))))  ,  1249
+(sqrt.f64 (-.f64 (*.f64 z0 z0) (*.f64 z1 (*.f64 #s(literal 3 binary64) z2))))  ,  1248
+(/.f64 #s(literal 2 binary64) (*.f64 z0 z0))  ,  1246
+(cos.f32 (*.f32 (*.f32 z0 #s(literal 2 binary32)) (PI.f32)))  ,  1244
+(/.f64 #s(literal 1/2 binary64) (*.f64 z0 z0))  ,  1241
+(*.f64 (+.f64 (*.f64 (+.f64 (*.f64 (+.f64 z0 z1) z0) z2) z0) z3) z0)  ,  1232
+(log.f32 (-.f32 #s(literal 1 binary32) z0))  ,  1232
+(sqrt.f64 (-.f64 z0 z1))  ,  1230
+(/.f64 (+.f64 (*.f64 (*.f64 z0 z0) (pow.f64 (cos.f64 (*.f64 #s(literal 1/180 binary64) (*.f64 z1 (PI.f64)))) #s(literal 2 binary64))) (*.f64 (*.f64 z2 z2) (pow.f64 (sin.f64 (*.f64 #s(literal 1/180 binary64) (*.f64 z1 (PI.f64)))) #s(literal 2 binary64)))) (*.f64 z3 z3))  ,  1229
+(-.f64 z0 #s(literal 2 binary64))  ,  1224
+(*.f32 (PI.f32) (*.f32 #s(literal 2 binary32) z0))  ,  1223
+(-.f64 (pow.f64 (z0) z1) #s(literal 1 binary64))  ,  1222
+(/.f64 #s(literal -18 binary64) (pow.f64 z0 #s(literal 4 binary64)))  ,  1221
+(*.f64 (log.f64 (sqrt.f64 (+.f64 (*.f64 z0 z0) (*.f64 z1 z1)))) z2)  ,  1217
+(log.f64 (+.f64 z0 z1))  ,  1216
+(*.f64 #s(literal 1/24 binary64) (*.f64 z0 z0))  ,  1216
+(sqrt.f32 (-.f32 #s(literal 1 binary32) (*.f32 (*.f32 (*.f32 (-.f32 #s(literal 1 binary32) z0) z1) z0) (*.f32 (*.f32 (-.f32 #s(literal 1 binary32) z0) z1) z0))))  ,  1215
+(-.f32 #s(literal 1 binary32) (*.f32 (*.f32 (*.f32 (-.f32 #s(literal 1 binary32) z0) z1) z0) (*.f32 (*.f32 (-.f32 #s(literal 1 binary32) z0) z1) z0)))  ,  1215
+(*.f32 (*.f32 (*.f32 (-.f32 #s(literal 1 binary32) z0) z1) z0) (*.f32 (*.f32 (-.f32 #s(literal 1 binary32) z0) z1) z0))  ,  1215
+(*.f64 (-.f64 z0 #s(literal 1/2 binary64)) (log.f64 z1))  ,  1214
+(*.f64 (-.f64 z0 #s(literal 1 binary64)) z1)  ,  1214
+(/.f64 (-.f64 (+.f64 (*.f64 (*.f64 #s(literal 3 binary64) z0) z0) (*.f64 #s(literal 2 binary64) z1)) z0) (+.f64 (*.f64 z0 z0) #s(literal 1 binary64)))  ,  1211
+(-.f64 (+.f64 (*.f64 (*.f64 #s(literal 3 binary64) z0) z0) (*.f64 #s(literal 2 binary64) z1)) z0)  ,  1211
+(+.f64 (*.f64 (*.f64 #s(literal 3 binary64) z0) z0) (*.f64 #s(literal 2 binary64) z1))  ,  1211
+(*.f64 (pow.f64 (cos.f64 (*.f64 #s(literal -1/180 binary64) (*.f64 (PI.f64) z0))) #s(literal 2 binary64)) (/.f64 (pow.f64 (sin.f64 (*.f64 (*.f64 (PI.f64) z0) #s(literal 1/180 binary64))) #s(literal 2 binary64)) (pow.f64 (*.f64 z1 z2) #s(literal 2 binary64))))  ,  1211
+(*.f64 #s(literal -2 binary64) (asin.f64 (sqrt.f64 (/.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 2 binary64)))))  ,  1210
+(-.f64 (*.f64 #s(literal 2 binary64) z0) (*.f64 #s(literal -4 binary64) z1))  ,  1210
+(*.f64 (*.f64 z0 z0) #s(literal 3 binary64))  ,  1210
+(/.f64 (+.f64 (*.f64 #s(literal 1/32400 binary64) (*.f64 (*.f64 (PI.f64) z0) (*.f64 (PI.f64) z0))) (*.f64 #s(literal -1/32400 binary64) (*.f64 (*.f64 (PI.f64) z1) (*.f64 (PI.f64) z1)))) (*.f64 z2 z2))  ,  1205
+(+.f64 (*.f64 #s(literal 1/32400 binary64) (*.f64 (*.f64 (PI.f64) z0) (*.f64 (PI.f64) z0))) (*.f64 #s(literal -1/32400 binary64) (*.f64 (*.f64 (PI.f64) z1) (*.f64 (PI.f64) z1))))  ,  1205
+(*.f64 #s(literal -1/32400 binary64) (*.f64 (*.f64 (PI.f64) z0) (*.f64 (PI.f64) z0)))  ,  1205
+(*.f64 #s(literal 1/32400 binary64) (*.f64 (*.f64 (PI.f64) z0) (*.f64 (PI.f64) z0)))  ,  1205
+(/.f64 #s(literal 1 binary64) (pow.f64 (*.f64 z0 z1) #s(literal 3 binary64)))  ,  1203
+(*.f64 (*.f64 (*.f64 z0 z1) #s(literal -12 binary64)) #s(literal 1/2 binary64))  ,  1201
+(sin.f64 (+.f64 z0 z1))  ,  1201
+(*.f64 (*.f64 z0 z0) #s(literal -1/6 binary64))  ,  1195
+(pow.f64 (/.f64 #s(literal 1 binary64) (+.f64 (exp.f64 (neg.f64 z0)) #s(literal 1 binary64))) z1)  ,  1192
+(tanh.f64 (/.f64 z0 z1))  ,  1192
+(exp.f32 (/.f32 (fabs.f32 z0) (neg.f32 s)))  ,  1191
+(-.f64 (*.f64 #s(literal 9 binary64) (pow.f64 z0 #s(literal 4 binary64))) (pow.f64 z1 #s(literal 4 binary64)))  ,  1190
+(>=.f32 (+.f32 (pow.f32 (*.f32 z0 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z2 (floor.f32 z3)) #s(literal 2 binary32))) (+.f32 (pow.f32 (*.f32 z4 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z5 (floor.f32 z3)) #s(literal 2 binary32))))  ,  1189
+(/.f64 (-.f64 z0 z1) (-.f64 (+.f64 #s(literal 2 binary64) (+.f64 z1 z0)) (*.f64 #s(literal -2 binary64) z2)))  ,  1187
+(-.f64 (*.f64 z0 z0) z0)  ,  1187
+(/.f64 (*.f64 z0 z0) (sqrt.f64 #s(literal -4 binary64)))  ,  1187
+(cos.f64 (*.f64 (PI.f64) (/.f64 z0 #s(literal 180 binary64))))  ,  1187
+(pow.f64 (*.f64 (cos.f64 z0) z1) #s(literal 2 binary64))  ,  1186
+(*.f64 (pow.f64 (*.f64 (*.f64 z0 z1) #s(literal -12 binary64)) #s(literal 2 binary64)) #s(literal 1/4 binary64))  ,  1184
+(*.f64 (*.f64 z0 #s(literal 3 binary64)) z0)  ,  1183
+(-.f64 (*.f64 (*.f64 (*.f64 z0 z0) (*.f64 z1 z1)) #s(literal 48 binary64)) (*.f64 (pow.f64 (*.f64 (*.f64 z1 z0) #s(literal -12 binary64)) #s(literal 2 binary64)) #s(literal 1/4 binary64)))  ,  1180
+(pow.f64 (+.f64 (*.f64 z0 z0) (*.f64 z1 z1)) #s(literal 2 binary64))  ,  1170
+(*.f64 z0 (pow.f64 z1 #s(literal 3 binary64)))  ,  1167
+(pow.f64 (*.f64 (sin.f64 z0) (sin.f64 z1)) #s(literal 2 binary64))  ,  1167
+(*.f32 cosTheta (-.f32 (*.f32 z0 z0) #s(literal 1 binary32)))  ,  1166
+(*.f64 #s(literal 3/8 binary64) z0)  ,  1164
+(*.f64 (*.f64 #s(literal -3 binary64) z0) z1)  ,  1164
+(*.f64 (*.f64 (*.f64 z0 z0) z1) z1)  ,  1163
+(+.f64 (/.f64 (+.f64 (/.f64 (+.f64 (/.f64 (+.f64 (/.f64 #s(literal 1061405429/1000000000 binary64) (-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64))) #s(literal -1453152027/1000000000 binary64)) (-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64))) #s(literal 1421413741/1000000000 binary64)) (-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64))) #s(literal -8890523/31250000 binary64)) (-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64))) #s(literal 31853699/125000000 binary64))  ,  1162
+(-.f64 z0 z0*)  ,  1161
+(pow.f64 z0 #s(literal 9 binary64))  ,  1161
+(*.f64 z0 #s(literal 1 binary64))  ,  1158
+(*.f64 (pow.f64 #s(literal 1/2 binary64) z0) (pow.f64 #s(literal 1/2 binary64) z1))  ,  1156
+(*.f32 z0 (*.f32 (PI.f32) z1))  ,  1152
+(*.f64 #s(literal -1/8 binary64) (*.f64 z0 z0))  ,  1151
+(*.f64 (+.f64 (+.f64 z0 z1) (*.f64 #s(literal 2 binary64) z2)) (+.f64 (+.f64 z0 z1) (*.f64 #s(literal 2 binary64) z2)))  ,  1150
+(*.f64 (*.f64 z0 z0) #s(literal 1/2 binary64))  ,  1150
+(+.f64 (+.f64 (+.f64 (+.f64 #s(literal 1 binary64) (*.f64 #s(literal 1049934947/10000000000 binary64) (*.f64 z0 z0))) (*.f64 #s(literal 106015151/2500000000 binary64) (*.f64 (*.f64 z0 z0) (*.f64 z0 z0)))) (*.f64 #s(literal 36322091/5000000000 binary64) (*.f64 (*.f64 (*.f64 z0 z0) (*.f64 z0 z0)) (*.f64 z0 z0)))) (*.f64 #s(literal 2532017/5000000000 binary64) (*.f64 (*.f64 (*.f64 (*.f64 z0 z0) (*.f64 z0 z0)) (*.f64 z0 z0)) (*.f64 z0 z0))))  ,  1148
+(+.f64 (+.f64 (+.f64 (+.f64 #s(literal 1 binary64) (*.f64 #s(literal 7715471019/10000000000 binary64) (*.f64 z0 z0))) (*.f64 #s(literal 2909738639/10000000000 binary64) (*.f64 (*.f64 z0 z0) (*.f64 z0 z0)))) (*.f64 #s(literal 694555761/10000000000 binary64) (*.f64 (*.f64 (*.f64 z0 z0) (*.f64 z0 z0)) (*.f64 z0 z0)))) (*.f64 #s(literal 70002721/5000000000 binary64) (*.f64 (*.f64 (*.f64 (*.f64 z0 z0) (*.f64 z0 z0)) (*.f64 z0 z0)) (*.f64 z0 z0))))  ,  1148
+(/.f64 #s(literal 1/3 binary64) z0)  ,  1148
+(sqrt.f64 (-.f64 (*.f64 z0 z0) (*.f64 (*.f64 z1 z2) #s(literal 4 binary64))))  ,  1144
+(asinh.f64 (/.f64 (/.f64 z0 (tan.f64 z1)) z2))  ,  1142
+(*.f32 (*.f32 cosTheta (-.f32 (*.f32 z0 z0) #s(literal 1 binary32))) cosTheta)  ,  1142
+(pow.f32 (*.f32 (*.f32 (*.f32 z0 (floor.f32 z1)) z2) (floor.f32 z3)) #s(literal 2 binary32))  ,  1141
+(*.f64 #s(literal 3 binary64) (/.f64 (-.f64 (-.f64 (*.f64 (*.f64 #s(literal 3 binary64) z0) z0) (*.f64 #s(literal 2 binary64) z1)) z0) (+.f64 (*.f64 z0 z0) #s(literal 1 binary64))))  ,  1141
+(/.f64 (-.f64 (-.f64 (*.f64 (*.f64 #s(literal 3 binary64) z0) z0) (*.f64 #s(literal 2 binary64) z1)) z0) (+.f64 (*.f64 z0 z0) #s(literal 1 binary64)))  ,  1141
+(-.f64 (-.f64 (*.f64 (*.f64 #s(literal 3 binary64) z0) z0) (*.f64 #s(literal 2 binary64) z1)) z0)  ,  1141
+(-.f64 (*.f64 (*.f64 #s(literal 3 binary64) z0) z0) (*.f64 #s(literal 2 binary64) z1))  ,  1141
+(*.f64 z0 (sqrt.f64 #s(literal 8 binary64)))  ,  1141
+(+.f64 (/.f64 z0 z1) #s(literal 1 binary64))  ,  1138
+(*.f64 #s(literal 1 binary64) (cos.f64 z0))  ,  1137
+(+.f64 #s(literal 54929528941/2000000 binary64) (*.f64 (+.f64 z0 (*.f64 z1 z2)) z1))  ,  1136
+(*.f64 #s(literal 1/3 binary64) z0)  ,  1136
+(-.f32 (*.f32 z0 #s(literal 2 binary32)) #s(literal -1/2 binary32))  ,  1135
+(*.f64 (neg.f64 (log.f64 z0)) z1)  ,  1134
+(/.f64 z0 (cos.f64 z1))  ,  1134
+(pow.f64 z0 #s(literal 1/4 binary64))  ,  1132
+(pow.f64 (cos.f64 (*.f64 #s(literal -1/2 binary64) z0)) #s(literal 2 binary64))  ,  1131
+(/.f64 (-.f64 #s(literal 1 binary64) z0) z1)  ,  1131
+(sqrt.f64 (/.f64 #s(literal 1 binary64) (pow.f64 (*.f64 z0 z1) #s(literal 3 binary64))))  ,  1130
+(*.f64 (*.f64 z0 #s(literal 27 binary64)) z1)  ,  1127
+(*.f64 (+.f64 #s(literal 54929528941/2000000 binary64) (*.f64 (+.f64 z0 (*.f64 z1 z2)) z1)) z1)  ,  1125
+(+.f64 (*.f64 #s(literal 2/3 binary64) (*.f64 z0 z0)) #s(literal 2 binary64))  ,  1122
+(cosh.f64 (*.f64 z0 (/.f64 (PI.f64) #s(literal -4 binary64))))  ,  1122
+(*.f32 z0 (*.f32 z1 (PI.f32)))  ,  1117
+(log.f64 (/.f64 z0 z1))  ,  1117
+(cos.f64 (*.f64 (atan2.f64 z0 z1) z2))  ,  1117
+(cosh.f64 (*.f64 (/.f64 (PI.f64) #s(literal -4 binary64)) z0))  ,  1116
+(*.f32 (*.f32 (floor.f32 z0) z1) (floor.f32 z2))  ,  1114
+(pow.f64 (-.f64 z0 #s(literal -1 binary64)) #s(literal 2 binary64))  ,  1114
+(*.f64 (+.f64 #s(literal 216700011257/5000000000 binary64) z0) z0)  ,  1113
+(+.f64 #s(literal 216700011257/5000000000 binary64) z0)  ,  1113
+(pow.f64 (sin.f64 (*.f64 #s(literal 1/2 binary64) z0)) #s(literal 2 binary64))  ,  1109
+(pow.f64 z0 #s(literal -1/2 binary64))  ,  1107
+(*.f64 #s(literal 1/4 binary64) (*.f64 z0 z0))  ,  1106
+(-.f64 (/.f64 z0 z1) #s(literal -1 binary64))  ,  1105
+(*.f64 (*.f64 z0 z1) (+.f64 (*.f64 z0 z1) (*.f64 z2 z3)))  ,  1104
+(neg.f64 (neg.f64 (log.f64 z0)))  ,  1104
+(+.f64 (/.f64 (pow.f64 (sin.f64 z0) #s(literal 2 binary64)) (pow.f64 (cos.f64 z0) #s(literal 2 binary64))) #s(literal 1 binary64))  ,  1104
+(*.f64 (sqrt.f64 z0) z1)  ,  1103
+(*.f64 (/.f64 z0 z1) (/.f64 z2 z1))  ,  1103
+(sin.f32 (*.f32 (*.f32 (PI.f32) z0) #s(literal 2 binary32)))  ,  1102
+(*.f64 (/.f64 (-.f64 z0 z1) (-.f64 (+.f64 #s(literal 2 binary64) (+.f64 z1 z0)) (*.f64 #s(literal -2 binary64) z2))) (/.f64 (+.f64 z1 z0) (-.f64 (+.f64 z1 z0) (*.f64 #s(literal -2 binary64) z2))))  ,  1100
+(/.f64 (pow.f64 (sin.f64 z0) #s(literal 2 binary64)) z1)  ,  1100
+(neg.f64 (-.f64 (*.f64 z0 z0) (*.f64 (*.f64 z1 z1) #s(literal -2 binary64))))  ,  1100
+(/.f32 sinTheta_O z0)  ,  1098
+(-.f64 (*.f64 #s(literal 1/2 binary64) z0) z1)  ,  1097
+(*.f64 (neg.f64 z0) (sqrt.f64 (/.f64 #s(literal 1 binary64) (+.f64 (*.f64 z0 z0) (*.f64 z1 z1)))))  ,  1095
+(*.f64 (*.f64 #s(literal 2 binary64) #s(literal 1789971/10000000000 binary64)) (*.f64 (*.f64 (pow.f64 z0 #s(literal 4 binary64)) (*.f64 (neg.f64 z0) z0)) (*.f64 (pow.f64 z0 #s(literal 4 binary64)) (*.f64 (neg.f64 z0) z0))))  ,  1095
+(*.f64 (*.f64 (pow.f64 z0 #s(literal 4 binary64)) (*.f64 (neg.f64 z0) z0)) (*.f64 (pow.f64 z0 #s(literal 4 binary64)) (*.f64 (neg.f64 z0) z0)))  ,  1095
+(+.f64 #s(literal 99229/100000 binary64) (*.f64 #s(literal 4481/100000 binary64) z0))  ,  1093
+(*.f64 (-.f64 #s(literal 1 binary64) z0) z1)  ,  1093
+(cos.f64 (*.f64 #s(literal 2 binary64) z0))  ,  1091
+(sin.f32 (atan.f32 (*.f32 (/.f32 z0 z1) (/.f32 (sin.f32 (*.f32 (+.f32 (*.f32 z2 #s(literal 2 binary32)) #s(literal 1/2 binary32)) (PI.f32))) (cos.f32 (*.f32 (+.f32 (*.f32 z2 #s(literal 2 binary32)) #s(literal 1/2 binary32)) (PI.f32)))))))  ,  1090
+(+.f32 (*.f32 z0 z1) #s(literal 1 binary32))  ,  1089
+(*.f64 (*.f64 z0 z0) (pow.f64 (sin.f64 z1) #s(literal 2 binary64)))  ,  1084
+(*.f64 (sqrt.f64 (/.f64 z0 z1)) (sqrt.f64 #s(literal -1 binary64)))  ,  1084
+(+.f64 (sin.f64 z0) z1)  ,  1080
+(*.f64 (+.f64 #s(literal 99229/100000 binary64) (*.f64 #s(literal 4481/100000 binary64) z0)) z0)  ,  1072
+(+.f64 (*.f64 #s(literal 27061/100000 binary64) z0) #s(literal 230753/100000 binary64))  ,  1072
+(/.f64 (pow.f64 z0 #s(literal 8 binary64)) (pow.f64 z1 #s(literal 8 binary64)))  ,  1072
+(*.f64 #s(literal 1/120 binary64) (*.f64 z0 z0))  ,  1072
+(+.f64 (*.f64 (*.f64 z0 z1) (+.f64 (*.f64 z0 z1) (*.f64 z2 z3))) (pow.f64 (*.f64 z2 z3) #s(literal 2 binary64)))  ,  1071
+(/.f64 (pow.f64 z0 #s(literal 4 binary64)) (pow.f64 z1 #s(literal 4 binary64)))  ,  1071
+(*.f32 (/.f32 #s(literal 1 binary32) (sqrt.f32 (fmax.f32 (+.f32 (*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z0) z1)) (*.f32 (*.f32 (floor.f32 z2) z3) (*.f32 (floor.f32 z2) z3))) (+.f32 (*.f32 (*.f32 (floor.f32 z0) z4) (*.f32 (floor.f32 z0) z4)) (*.f32 (*.f32 (floor.f32 z2) z5) (*.f32 (floor.f32 z2) z5)))))) (*.f32 (floor.f32 z2) z3))  ,  1070
+(pow.f64 (*.f64 (-.f64 (*.f64 z0 z1) (*.f64 z2 z3)) z4) #s(literal 2 binary64))  ,  1070
+(+.f64 (*.f64 (+.f64 z0 z1) z1) (*.f64 z0 z0))  ,  1070
+(pow.f64 (+.f64 (*.f64 z0 z1) (*.f64 z2 z3)) #s(literal 2 binary64))  ,  1068
+(-.f32 (+.f32 (*.f32 z0 z1) #s(literal 1 binary32)) z1)  ,  1067
+(/.f64 (+.f64 (/.f64 (+.f64 (/.f64 (+.f64 (/.f64 (+.f64 (/.f64 #s(literal 1061405429/1000000000 binary64) (-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64))) #s(literal -1453152027/1000000000 binary64)) (-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64))) #s(literal 1421413741/1000000000 binary64)) (-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64))) #s(literal -8890523/31250000 binary64)) (-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64))) #s(literal 31853699/125000000 binary64)) (-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64)))  ,  1061
+(*.f64 z0 (sqrt.f64 (-.f64 (*.f64 z0 z0) (*.f64 z1 (*.f64 z2 #s(literal 4 binary64))))))  ,  1060
+(*.f64 (+.f64 (*.f64 z0 z1) z2) z0)  ,  1058
+(*.f64 #s(literal 104109730557/25000000000 binary64) z0)  ,  1058
+(*.f64 z0 (/.f64 z0 (+.f64 z0 z1)))  ,  1058
+(+.f64 #s(literal 1 binary64) (/.f64 #s(literal 1 binary64) z0))  ,  1056
+(/.f32 z0 #s(literal -3 binary32))  ,  1053
+(-.f64 (*.f64 (+.f64 (+.f64 z0 z1) (*.f64 #s(literal 2 binary64) z2)) (+.f64 (+.f64 z0 z1) (*.f64 #s(literal 2 binary64) z2))) #s(literal 1 binary64))  ,  1053
+(pow.f64 (*.f64 (+.f64 z0 z1) z2) #s(literal 2 binary64))  ,  1053
+(+.f64 (/.f64 (*.f64 z0 z1) z2) z3)  ,  1053
+(*.f32 (-.f32 (*.f32 z0 #s(literal 2 binary32)) #s(literal -1/2 binary32)) (PI.f32))  ,  1051
+(*.f32 #s(literal 1/2 binary32) z0)  ,  1050
+(/.f64 z0 (-.f64 z0 z1))  ,  1049
+(*.f64 (*.f64 z0 (neg.f64 z1)) z2)  ,  1048
+(/.f32 (/.f32 z0 #s(literal -3 binary32)) s)  ,  1047
+(-.f64 (*.f64 (log.f64 z0) z1) z0)  ,  1047
+(*.f64 (pow.f64 (sin.f64 z0) #s(literal 2 binary64)) (*.f64 z1 z1))  ,  1045
+(*.f64 #s(literal 1/2 binary64) (/.f64 z0 z1))  ,  1042
+(cos.f32 (atan.f32 (*.f32 (/.f32 z0 z1) (/.f32 (sin.f32 (*.f32 (+.f32 (*.f32 z2 #s(literal 2 binary32)) #s(literal 1/2 binary32)) (PI.f32))) (cos.f32 (*.f32 (+.f32 (*.f32 z2 #s(literal 2 binary32)) #s(literal 1/2 binary32)) (PI.f32)))))))  ,  1040
+(-.f64 (*.f64 (-.f64 z0 z1) z0) (*.f64 z1 z1))  ,  1039
+(/.f64 z0 (pow.f64 z1 #s(literal 4 binary64)))  ,  1039
+(*.f64 #s(literal 313060547623/100000000000 binary64) z0)  ,  1036
+(/.f64 (+.f64 (*.f64 z0 z1) (*.f64 z2 z3)) z4)  ,  1034
+(*.f64 (neg.f64 z0) (log.f64 (/.f64 #s(literal -1 binary64) z1)))  ,  1032
+(*.f32 (floor.f32 z0) (*.f32 z1 z1))  ,  1031
+(+.f64 (neg.f64 (log.f64 (/.f64 #s(literal -1 binary64) z0))) (log.f64 #s(literal -1 binary64)))  ,  1029
+(*.f64 #s(literal -1/2 binary64) (+.f64 z0 z1))  ,  1027
+(*.f64 (sqrt.f64 #s(literal -1 binary64)) (sqrt.f64 (/.f64 z0 z1)))  ,  1027
+(exp.f64 (*.f64 (fabs.f64 z0) (fabs.f64 z0)))  ,  1025
+(*.f64 (*.f64 z0 z0) #s(literal 6 binary64))  ,  1025
+(*.f64 (log.f64 z0) z0)  ,  1025
+(-.f32 (*.f32 (*.f32 cosTheta (-.f32 (*.f32 z0 z0) #s(literal 1 binary32))) cosTheta) #s(literal -1 binary32))  ,  1024
+(/.f64 (+.f64 (*.f64 (pow.f64 (cos.f64 (*.f64 #s(literal -1/180 binary64) (*.f64 (PI.f64) z0))) #s(literal 2 binary64)) (*.f64 z1 z1)) (*.f64 (pow.f64 (sin.f64 (*.f64 (*.f64 (PI.f64) z0) #s(literal 1/180 binary64))) #s(literal 2 binary64)) (*.f64 z2 z2))) (*.f64 z3 z3))  ,  1022
+(/.f64 z0 #s(literal 200 binary64))  ,  1021
+(*.f64 (pow.f64 (exp.f64 z0) z0) (/.f64 (+.f64 (/.f64 (+.f64 (/.f64 (+.f64 (/.f64 (+.f64 (/.f64 #s(literal 1061405429/1000000000 binary64) (-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64))) #s(literal -1453152027/1000000000 binary64)) (-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64))) #s(literal 1421413741/1000000000 binary64)) (-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64))) #s(literal -8890523/31250000 binary64)) (-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64))) #s(literal 31853699/125000000 binary64)) (-.f64 (*.f64 z0 #s(literal 3275911/10000000 binary64)) #s(literal -1 binary64))))  ,  1021
+(acos.f32 (*.f32 (*.f32 z0 (-.f32 #s(literal 1 binary32) z1)) z1))  ,  1021
+(-.f32 (*.f32 z0 (*.f32 (PI.f32) #s(literal -1/2 binary32))) (*.f32 #s(literal -1/4 binary32) (PI.f32)))  ,  1018
+(*.f32 z0 (*.f32 (PI.f32) #s(literal -1/2 binary32)))  ,  1018
+(pow.f64 (asin.f64 (/.f64 (-.f64 #s(literal 1 binary64) (*.f64 (*.f64 z0 z0) #s(literal 5 binary64))) (-.f64 (*.f64 z0 z0) #s(literal 1 binary64)))) #s(literal 4 binary64))  ,  1017
+(+.f64 (*.f64 (+.f64 (*.f64 (sin.f64 z0) (cos.f64 z1)) (*.f64 (*.f64 (sin.f64 z1) (cos.f64 z0)) (cos.f64 z2))) (sin.f64 z0)) (cos.f64 z1))  ,  1015
+(-.f32 (*.f32 z0 (*.f32 (PI.f32) #s(literal 1/2 binary32))) (*.f32 #s(literal 1/4 binary32) (PI.f32)))  ,  1015
+(*.f32 z0 (*.f32 (PI.f32) #s(literal 1/2 binary32)))  ,  1015
+(sin.f32 (acos.f32 (*.f32 (*.f32 z0 (-.f32 #s(literal 1 binary32) z1)) z1)))  ,  1013
+(sqrt.f64 (-.f64 (*.f64 z0 z0) (*.f64 (*.f64 z1 z1) #s(literal -4 binary64))))  ,  1012
+(-.f32 #s(literal 0 binary32) (*.f32 z0 z1))  ,  1012
+(*.f64 (log.f64 (/.f64 #s(literal -1 binary64) z0)) z1)  ,  1012
+(*.f64 (/.f64 z0 z1) #s(literal 1/2 binary64))  ,  1012
+(*.f32 (/.f32 #s(literal 1 binary32) (sqrt.f32 (fmax.f32 (+.f32 (*.f32 (*.f32 (floor.f32 z0) z1) (*.f32 (floor.f32 z0) z1)) (*.f32 (*.f32 (floor.f32 z2) z3) (*.f32 (floor.f32 z2) z3))) (+.f32 (*.f32 (*.f32 (floor.f32 z0) z4) (*.f32 (floor.f32 z0) z4)) (*.f32 (*.f32 (floor.f32 z2) z5) (*.f32 (floor.f32 z2) z5)))))) (*.f32 (floor.f32 z0) z4))  ,  1009
+(/.f64 (PI.f64) z0)  ,  1009
+(-.f64 (+.f64 #s(literal 5/6 binary64) z0) (/.f64 #s(literal 2/3 binary64) z1))  ,  1006
+(/.f64 z0 #s(literal -4 binary64))  ,  1004
+(/.f64 (*.f64 z0 z0) (-.f64 (neg.f64 z0) (sqrt.f64 (-.f64 (*.f64 z0 z0) (*.f64 (*.f64 #s(literal 3 binary64) z1) z2)))))  ,  1002
+(exp.f32 (/.f32 (/.f32 z0 #s(literal -3 binary32)) s))  ,  999
+(*.f64 (-.f64 #s(literal 1 binary64) (/.f64 z0 z1)) z1)  ,  999
+(log.f64 (+.f64 (exp.f64 (neg.f64 z0)) #s(literal 1 binary64)))  ,  997
+(*.f64 (*.f64 (*.f64 z0 z1) z2) #s(literal 18 binary64))  ,  996
+(sqrt.f64 (-.f64 (*.f64 z0 z0) z1))  ,  996
+(-.f32 #s(literal 2 binary32) z0)  ,  994
+(*.f64 (/.f64 #s(literal 1 binary64) (fabs.f64 z0)) (/.f64 #s(literal 1 binary64) (fabs.f64 z0)))  ,  994
+(+.f64 (+.f64 (-.f64 (*.f64 z0 z0) (*.f64 z1 (*.f64 z2 #s(literal 4 binary64)))) (*.f64 z0 (sqrt.f64 (-.f64 (*.f64 z0 z0) (*.f64 z1 (*.f64 z2 #s(literal 4 binary64))))))) (*.f64 z0 z0))  ,  992
+(+.f64 (-.f64 (*.f64 z0 z0) (*.f64 z1 (*.f64 z2 #s(literal 4 binary64)))) (*.f64 z0 (sqrt.f64 (-.f64 (*.f64 z0 z0) (*.f64 z1 (*.f64 z2 #s(literal 4 binary64)))))))  ,  992
+(exp.f32 (log.f32 (*.f32 z0 (floor.f32 z1))))  ,  990
+(sqrt.f64 (/.f64 (pow.f64 z0 #s(literal 3 binary64)) z1))  ,  990
+(*.f64 (+.f64 #s(literal 1 binary64) z0) z1)  ,  988
+(*.f64 (*.f64 (/.f64 #s(literal 1 binary64) (fabs.f64 z0)) (/.f64 #s(literal 1 binary64) (fabs.f64 z0))) (/.f64 #s(literal 1 binary64) (fabs.f64 z0)))  ,  987
+(-.f64 (-.f64 z0 #s(literal -1 binary64)) z0)  ,  987
+(pow.f64 (-.f64 #s(literal 1 binary64) z0) #s(literal 3 binary64))  ,  986
+(pow.f32 (cos.f32 (*.f32 (PI.f32) (-.f32 #s(literal 1/2 binary32) (*.f32 #s(literal -2 binary32) z0)))) #s(literal 2 binary32))  ,  985
+(pow.f32 (sin.f32 (*.f32 (PI.f32) (-.f32 #s(literal 1/2 binary32) (*.f32 #s(literal -2 binary32) z0)))) #s(literal 2 binary32))  ,  985
+(neg.f64 (*.f64 (neg.f64 (log.f64 z0)) z1))  ,  985
+(*.f64 #s(literal -5 binary64) (*.f64 z0 z0))  ,  984
+(+.f64 #s(literal 28832688827/125000 binary64) (*.f64 (+.f64 #s(literal 54929528941/2000000 binary64) (*.f64 (+.f64 z0 (*.f64 z1 z2)) z1)) z1))  ,  983
+(+.f64 z0 (*.f64 z1 z1))  ,  980
+(-.f64 (pow.f64 z0 #s(literal 6 binary64)) (pow.f64 z1 #s(literal 6 binary64)))  ,  980
+(pow.f64 (-.f64 #s(literal 1 binary64) (/.f64 #s(literal 1 binary64) (+.f64 (exp.f64 (neg.f64 s)) #s(literal 1 binary64)))) z0)  ,  979
+(*.f64 (-.f64 z0 #s(literal -1 binary64)) z1)  ,  978
+(-.f64 (*.f64 (*.f64 (+.f64 (*.f64 z0 z1) z2) z1) z0) (*.f64 z2 z2))  ,  977
+(-.f64 (pow.f64 z0 #s(literal 4 binary64)) (pow.f64 z1 #s(literal 4 binary64)))  ,  977
+(*.f64 (/.f64 (tan.f64 z0) z1) z2)  ,  974
+(*.f32 (neg.f32 z0) z1)  ,  970
+(log.f64 (*.f64 (neg.f64 z0) (neg.f64 z1)))  ,  969
+(>.f32 (/.f32 (/.f32 (fmax.f32 (+.f32 (pow.f32 (*.f32 z0 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z2 (floor.f32 z3)) #s(literal 2 binary32))) (+.f32 (pow.f32 (*.f32 z4 (floor.f32 z1)) #s(literal 2 binary32)) (pow.f32 (*.f32 z5 (floor.f32 z3)) #s(literal 2 binary32)))) (fabs.f32 (-.f32 (*.f32 z4 z2) (*.f32 z5 z0)))) (fabs.f32 (*.f32 (floor.f32 z1) (floor.f32 z3)))) (floor.f32 z6))  ,  968
+(exp.f64 (*.f64 (log.f64 z0) #s(literal 2 binary64)))  ,  967
+(*.f64 (neg.f64 z0) (neg.f64 z0))  ,  967
+(/.f32 (pow.f32 (sin.f32 (atan.f32 (*.f32 (/.f32 z0 z1) (/.f32 (sin.f32 (*.f32 (PI.f32) (-.f32 #s(literal 1/2 binary32) (*.f32 #s(literal -2 binary32) z2)))) (cos.f32 (*.f32 (PI.f32) (-.f32 #s(literal 1/2 binary32) (*.f32 #s(literal -2 binary32) z2)))))))) #s(literal 2 binary32)) (*.f32 z0 z0))  ,  965
+(pow.f64 z0 (-.f64 z1 #s(literal 1 binary64)))  ,  964
+(-.f64 (/.f64 (pow.f64 (cos.f64 (*.f64 #s(literal 1/180 binary64) (*.f64 z0 (PI.f64)))) #s(literal 2 binary64)) (*.f64 z1 z1)) (/.f64 (pow.f64 (sin.f64 (*.f64 #s(literal 1/180 binary64) (*.f64 z0 (PI.f64)))) #s(literal 2 binary64)) (*.f64 z2 z2)))  ,  964
+(-.f64 (/.f64 (pow.f64 (sin.f64 (*.f64 #s(literal 1/180 binary64) (*.f64 z0 (PI.f64)))) #s(literal 2 binary64)) (*.f64 z1 z1)) (/.f64 (pow.f64 (cos.f64 (*.f64 #s(literal 1/180 binary64) (*.f64 z0 (PI.f64)))) #s(literal 2 binary64)) (*.f64 z2 z2)))  ,  964
+(pow.f64 (cos.f64 (*.f64 (*.f64 #s(literal 1/180 binary64) (PI.f64)) z0)) #s(literal 2 binary64))  ,  963
+(-.f64 #s(literal 1 binary64) (pow.f64 (/.f64 z0 z1) #s(literal 2 binary64)))  ,  963
+(/.f64 #s(literal 3 binary64) z0)  ,  962
+(sin.f32 (*.f32 z0 (PI.f32)))  ,  961
+(*.f64 z0 (+.f64 #s(literal 7936500793651/10000000000000000 binary64) z1))  ,  959
+(+.f64 #s(literal 7936500793651/10000000000000000 binary64) z0)  ,  959
+(*.f64 (/.f64 #s(literal 1 binary64) (sqrt.f64 (PI.f64))) (exp.f64 (*.f64 (fabs.f64 z0) (fabs.f64 z0))))  ,  958
+(-.f64 #s(literal 2 binary64) (*.f64 #s(literal -2 binary64) z0))  ,  956
+(-.f64 (*.f64 z0 (+.f64 #s(literal 7936500793651/10000000000000000 binary64) z1)) #s(literal 13888888888889/5000000000000000 binary64))  ,  954
+(cos.f32 (*.f32 (*.f32 (PI.f32) z0) #s(literal -2 binary32)))  ,  954
+(+.f64 (pow.f64 z0 #s(literal 4 binary64)) (pow.f64 z1 #s(literal 4 binary64)))  ,  954
+(-.f64 (neg.f64 z0) (sqrt.f64 (-.f64 (*.f64 z0 z0) (*.f64 z1 (*.f64 z2 #s(literal 3 binary64))))))  ,  952
+(*.f64 z0 (*.f64 #s(literal 18 binary64) z1))  ,  951
+(sin.f32 (*.f32 (PI.f32) z0))  ,  951
+(+.f64 #s(literal 1421413741/1000000000 binary64) (/.f64 (+.f64 #s(literal -1453152027/1000000000 binary64) (/.f64 #s(literal 1061405429/1000000000 binary64) (-.f64 (*.f64 #s(literal 3275911/10000000 binary64) z0) #s(literal -1 binary64)))) (-.f64 (*.f64 #s(literal 3275911/10000000 binary64) z0) #s(literal -1 binary64))))  ,  950
+(*.f64 (*.f64 (pow.f64 (cos.f64 (*.f64 #s(literal -1/180 binary64) (*.f64 z0 (PI.f64)))) #s(literal 2 binary64)) (/.f64 (pow.f64 (sin.f64 (*.f64 #s(literal 1/180 binary64) (*.f64 z0 (PI.f64)))) #s(literal 2 binary64)) (*.f64 z1 z1))) #s(literal 2 binary64))  ,  950
+(/.f64 z0 (*.f64 z1 z2))  ,  948
+(*.f64 #s(literal -1/8 binary64) z0)  ,  948

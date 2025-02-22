@@ -74,6 +74,14 @@
   (choose-alts!)
   (localize!)
   (reconstruct! (generate-candidates (^locs^)))
+;; Step 2: Access the reconstructed alternatives
+(define reconstructed-alts (^patched^))
+
+;; Step 3: Extract the expressions from the reconstructed alternatives
+(define expressions
+  (for/list ([altn (in-list reconstructed-alts)])
+    (alt-expr altn)))
+(displayln expressions)
   (finalize-iter!))
 
 (define (extract!)
@@ -174,7 +182,7 @@
 
   (timeline-event! 'simplify)
   (define exprs (map alt-expr (^next-alts^)))
-  (displayln exprs)
+  ;;; (displayln exprs)
   (define localized-exprs empty)
   (define repr (context-repr (*context*)))
 
@@ -249,6 +257,8 @@
 
   (timeline-event! 'eval)
   (define new-alts (^patched^))
+  ;; maybe new-alts dump here 
+  
   (define orig-fresh-alts (atab-not-done-alts (^table^)))
   (define orig-done-alts (set-subtract (atab-active-alts (^table^)) (atab-not-done-alts (^table^))))
   (define-values (errss costs) (atab-eval-altns (^table^) new-alts (*context*)))

@@ -23,7 +23,9 @@
          "../core/preprocess.rkt"
          "../utils/profile.rkt"
          "../utils/timeline.rkt"
-         (submod "../utils/timeline.rkt" debug))
+         (submod "../utils/timeline.rkt" debug)
+         "../syntax/load-plugin.rkt"
+         )
 
 (provide run-herbie
          get-table-data-from-hash
@@ -31,13 +33,25 @@
          *timeout*
          (struct-out job-result)
          (struct-out improve-result)
-         (struct-out alt-analysis))
+         (struct-out alt-analysis)
+         sample-pcontext
+         *num-points*)
 
 (struct job-result (command test status time timeline profile warnings backend))
 (struct improve-result (preprocess pctxs start target end bogosity))
 (struct alt-analysis (alt train-errors test-errors) #:prefab)
 
 (define (sample-pcontext vars specification precondition)
+;;; (displayln "vars")
+;;; (displayln vars)
+;;; (displayln "spec")
+;;; (displayln specification)
+;;; (displayln "precon")
+;;; (displayln precondition)
+;;; (displayln (prog->spec '(*.f64 x x)))
+;;; (parse-test '(*.f64 x x))
+
+  
   (define sample (sample-points precondition (list specification) (list (*context*))))
   (match-define (cons domain pts+exs) sample)
   (cons domain (apply mk-pcontext pts+exs)))
@@ -236,6 +250,23 @@
   (define timeline #f)
   (define profile #f)
 
+;;; (define fpcore-expr
+;;;   '(FPCore (x) (- (* (+ x 1) (+ x 1)) 1)))
+;;; (displayln (prog->spec '(*.f64 x x)))
+;;; ;; Convert the plain list into a syntax object
+;;; (define stx
+;;;   (datum->syntax #f fpcore-expr))
+;;;   (define parsed-test (parse-test stx))
+;;;   (displayln parsed-test)
+;;;   ;;; (get-cost parsed-test)
+;;;   (define testctx (test-context parsed-test))
+;;;   (displayln testctx)
+;;;   ;;; (sample-pcontext (test-vars parsed-test)
+;;;   ;;;                      (prog->spec (or (test-spec parsed-test) (test-input parsed-test)))
+;;;   ;;;                      (prog->spec (test-pre parsed-test)))
+;;;   ;;; (get-sample parsed-test)
+
+
   (define (on-exception start-time e)
     (parameterize ([*timeline-disabled* timeline-disabled?])
       (timeline-event! 'end)
@@ -295,7 +326,9 @@
   (define eng (engine in-engine))
   (if (engine-run (*timeout*) eng)
       (engine-result eng)
-      (on-timeout)))
+      (on-timeout))
+    
+      )
 
 (define (dummy-table-row-from-hash result-hash status link)
   (define test (hash-ref result-hash 'test))

@@ -175,5 +175,6 @@
     (if (flag-set? 'generate 'rr)
         (run-rr start-altns global-batch)
         '()))
-
-  (remove-duplicates (append approximations rewritten) #:key (λ (x) (batchref-idx (alt-expr x)))))
+  (define ret (remove-duplicates (append approximations rewritten) #:key (λ (x) (batchref-idx (alt-expr x)))))
+  ;;; (displayln ret)
+  ret)
