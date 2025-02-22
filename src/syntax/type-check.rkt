@@ -3,6 +3,7 @@
 (require "../utils/common.rkt"
          "../utils/errors.rkt"
          "types.rkt"
+         "platform.rkt"
          "syntax.rkt")
 (provide assert-program-typed!)
 

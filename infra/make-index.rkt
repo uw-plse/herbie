@@ -40,9 +40,7 @@
 
 (define key-contracts
   (hash string?
-        '(date-full date-short folder commit branch hostname)
-        (or/c string? false)
-        '(note)
+        '(date-full date-short folder commit branch)
         exact-nonnegative-integer?
         '(date-unix tests-passed tests-available tests-crashed)
         (listof string?)
@@ -79,12 +77,10 @@
   (match-define (report-info date
                              commit
                              branch
-                             hostname
                              seed
                              flags
                              points
                              iterations
-                             note
                              tests
                              merged-cost-accuracy)
     info)
@@ -117,16 +113,12 @@
         speed
         'folder
         (path->string folder)
-        'hostname
-        hostname
         'commit
         commit
         'branch
         branch
         'options
         (map ~a (get-options info))
-        'note
-        note
         'tests-passed
         total-passed
         'tests-available
@@ -173,8 +165,6 @@
                 (time ([data-unix ,(~a (field 'date-unix))]) ,(field 'date-short)))
             (td (time ([data-ms ,(~a (field 'speed))]) ,(format-time (field 'speed))))
             (td ([title ,(field 'commit)]) ,(field 'branch))
-            (td ([title ,(string-join (field 'options) " ")] (class ,(if (field 'note) "note" "")))
-                ,(or (field 'note) "⭐"))
             (td ,(if (> (field 'tests-available) 0)
                      (format "~a/~a" (field 'tests-passed) (field 'tests-available))
                      ""))
@@ -182,10 +172,7 @@
                      (format "~a/~a" (round* (field 'bits-improved)) (round* (field 'bits-available)))
                      ""))
             (td ([title
-                  ,(format "At ~a\nOn ~a\nFlags ~a"
-                           (field 'date-full)
-                           (field 'hostname)
-                           (string-join (field 'options) " "))])
+                  ,(format "At ~a\nFlags ~a" (field 'date-full) (string-join (field 'options) " "))])
                 (a ([href ,(format "./~a/index.html" (field 'folder))]) "»")))))))
 
 (define (make-index-page folders out)
@@ -203,18 +190,6 @@
   (define-values (mainline-infos other-infos)
     (partition (λ (x) (set-member? '("master" "develop" "main") (dict-ref (first x) 'branch)))
                branch-infos))
-
-  (when (null? mainline-infos)
-    (set! mainline-infos
-          (list (filter (curryr dict-ref 'note)
-                        (map first
-                             (group-by (curryr dict-ref 'note)
-                                       (sort (filter (λ (x)
-                                                       (set-member? '("master" "develop" "main")
-                                                                    (dict-ref x 'branch)))
-                                                     folders)
-                                             >
-                                             #:key (curryr dict-ref 'date-unix))))))))
 
   (define crashes (filter (λ (x) (> (dict-ref x 'tests-crashed) 0)) (apply append mainline-infos)))
   (define last-crash

@@ -30,6 +30,7 @@
     [(literal val precision) (get-representation precision)]
     [(? variable?) (context-lookup ctx expr)]
     [(approx _ impl) (repr-of impl ctx)]
+    [(hole precision spec) (get-representation precision)]
     [(list 'if cond ift iff) (repr-of ift ctx)]
     [(list op args ...) (impl-info op 'otype)]))
 
@@ -40,6 +41,7 @@
     [(literal val precision) (get-representation precision)]
     [(? variable?) (context-lookup ctx node)]
     [(approx _ impl) (repr-of-node batch impl ctx)]
+    [(hole precision spec) (get-representation precision)]
     [(list 'if cond ift iff) (repr-of-node batch ift ctx)]
     [(list op args ...) (impl-info op 'otype)]))
 
@@ -99,12 +101,13 @@
        [else
         (let loop ([a a]
                    [b b])
-          (if (null? a)
-              0
-              (let ([cmp (expr-cmp (car a) (car b))])
-                (if (zero? cmp)
-                    (loop (cdr a) (cdr b))
-                    cmp))))])]
+          (cond
+            [(null? a) 0]
+            [else
+             (define cmp (expr-cmp (car a) (car b)))
+             (if (zero? cmp)
+                 (loop (cdr a) (cdr b))
+                 cmp)]))])]
     [((? list?) _) 1]
     [(_ (? list?)) -1]
     [((? approx?) (? approx?))
@@ -130,7 +133,7 @@
        [else 1])]))
 
 (define (expr<? a b)
-  (< (expr-cmp a b) 0))
+  (negative? (expr-cmp a b)))
 
 ;; Converting constants
 
@@ -168,6 +171,10 @@
          [(1) (approx (loop spec rest) impl)]
          [(2) (approx spec (loop impl rest))]
          [else (invalid! prog loc)])]
+      [((hole prec spec) (cons idx rest)) ; approx nodes
+       (case idx
+         [(1) (hole prec (loop spec rest))]
+         [else (invalid! prog loc)])]
       [((list op args ...) (cons idx rest)) ; operator
        (let seek ([elts (cons op args)]
                   [idx idx])
@@ -180,7 +187,8 @@
 (define/contract (location-get loc prog)
   (-> location? expr? expr?)
   ; Clever continuation usage to early-return
-  (let/ec return (location-do loc prog return)))
+  (let/ec return
+    (location-do loc prog return)))
 
 (define/contract (replace-expression expr from to)
   (-> expr? expr? expr? expr?)

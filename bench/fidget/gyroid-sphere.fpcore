@@ -1,0 +1,8 @@
+(FPCore (x y z)
+  :name "Gyroid sphere"
+  :precision binary64
+  (let* ([scale 30]
+         [gyroid (+ (+ (* (sin (* x scale)) (cos (* y scale))) (* (sin (* y scale)) (cos (* z scale)))) (* (sin (* z scale)) (cos (* x scale))))]
+         [fill (- (fabs gyroid) 0.2)]
+         [sphere (- (sqrt (+ (+ (pow (* x scale) 2) (pow (* y scale) 2)) (pow (* z scale) 2))) 25)])
+    (fmax sphere fill)))

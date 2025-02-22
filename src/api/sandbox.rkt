@@ -5,6 +5,7 @@
          json)
 
 (require "../syntax/read.rkt"
+         "../syntax/syntax.rkt"
          "../syntax/sugar.rkt"
          "../syntax/types.rkt"
          "../core/localize.rkt"
@@ -25,9 +26,6 @@
          (submod "../utils/timeline.rkt" debug))
 
 (provide run-herbie
-         unparse-result
-         get-table-data
-         partition-pcontext
          get-table-data-from-hash
          *reeval-pts*
          *timeout*
@@ -35,18 +33,9 @@
          (struct-out improve-result)
          (struct-out alt-analysis))
 
-(struct job-result (command test status time timeline warnings backend))
+(struct job-result (command test status time timeline profile warnings backend))
 (struct improve-result (preprocess pctxs start target end bogosity))
 (struct alt-analysis (alt train-errors test-errors) #:prefab)
-
-;; true if Racket CS <= 8.2
-(define cs-places-workaround?
-  (let ([major (string->number (substring (version) 0 1))]
-        [minor (string->number (substring (version) 2 3))]
-        [rest (substring (version) 3)])
-    (or (< major 8)
-        (and (= major 8) (< minor 2))
-        (and (= major 8) (= minor 2) (zero? (string-length rest))))))
 
 (define (sample-pcontext vars specification precondition)
   (define sample (sample-points precondition (list specification) (list (*context*))))
@@ -223,8 +212,8 @@
 
   ;; compute error/cost for output expression
   (define end-exprs (map alt-expr end-alts))
-  (define end-train-errs (flip-lists (batch-errors end-exprs train-pcontext ctx)))
-  (define end-test-errs (flip-lists (batch-errors end-exprs test-pcontext* ctx)))
+  (define end-train-errs (batch-errors end-exprs train-pcontext ctx))
+  (define end-test-errs (batch-errors end-exprs test-pcontext* ctx))
   (define end-alts-data (map alt-analysis end-alts end-train-errs end-test-errs))
 
   ;; bundle up the result
@@ -245,18 +234,14 @@
                     #:profile? [profile? #f]
                     #:timeline-disabled? [timeline-disabled? #f])
   (define timeline #f)
-
-  ;; CS versions <= 8.2: problems with scheduler cause places to stay
-  ;; in a suspended state
-  (when cs-places-workaround?
-    (thread (lambda () (sync (system-idle-evt)))))
+  (define profile #f)
 
   (define (on-exception start-time e)
     (parameterize ([*timeline-disabled* timeline-disabled?])
       (timeline-event! 'end)
       (define time (- (current-inexact-milliseconds) start-time))
       (match command
-        ['improve (job-result command test 'failure time (timeline-extract) (warning-log) e)]
+        ['improve (job-result command test 'failure time (timeline-extract) #f (warning-log) e)]
         [_ (raise e)])))
 
   (define (on-timeout)
@@ -264,16 +249,16 @@
       (timeline-load! timeline)
       (timeline-event! 'end)
       (match command
-        ['improve (job-result command test 'timeout (*timeout*) (timeline-extract) (warning-log) #f)]
+        ['improve
+         (job-result command test 'timeout (*timeout*) (timeline-extract) #f (warning-log) #f)]
         [_ (error 'run-herbie "command ~a timed out" command)])))
 
-  (define (compute-result test)
+  (define (compute-result)
     (parameterize ([*timeline-disabled* timeline-disabled?])
       (define start-time (current-inexact-milliseconds))
       (reset!)
       (*context* (test-context test))
-      (*active-platform* (get-platform (*platform-name*)))
-      (activate-platform! (*active-platform*))
+      (activate-platform! (*platform-name*))
       (set! timeline (*timeline*))
       (when seed
         (set-seed! seed))
@@ -293,50 +278,24 @@
             [_ (error 'compute-result "unknown command ~a" command)]))
         (timeline-event! 'end)
         (define time (- (current-inexact-milliseconds) start-time))
-        (job-result command test 'success time (timeline-extract) (warning-log) result))))
+        (job-result command test 'success time (timeline-extract) #f (warning-log) result))))
 
   (define (in-engine _)
-    (if profile?
-        (profile-thunk (λ () (compute-result test))
-                       #:order 'total
-                       #:delay 0.01
-                       #:render (λ (p order) (write-json (profile->json p) profile?)))
-        (compute-result test)))
+    (cond
+      [profile?
+       (define result
+         (profile-thunk compute-result
+                        #:order 'total
+                        #:delay 0.05
+                        #:render (λ (p order) (set! profile (profile->json p)))))
+       (struct-copy job-result result [profile profile])]
+      [else (compute-result)]))
 
   ;; Branch on whether or not we should run inside an engine
   (define eng (engine in-engine))
   (if (engine-run (*timeout*) eng)
       (engine-result eng)
       (on-timeout)))
-
-(define (dummy-table-row result status link)
-  (define test (job-result-test result))
-  (define repr (test-output-repr test))
-  (define preprocess
-    (if (eq? (job-result-status result) 'success)
-        (improve-result-preprocess (job-result-backend result))
-        (test-preprocess test)))
-  (table-row (test-name test)
-             (test-identifier test)
-             status
-             (prog->fpcore (test-pre test) (test-context test))
-             preprocess
-             (representation-name repr)
-             '() ; TODO: eliminate field
-             (test-vars test)
-             (map car (job-result-warnings result))
-             (prog->fpcore (test-input test) (test-context test))
-             #f
-             (prog->fpcore (test-spec test) (test-context test))
-             (test-output test)
-             #f
-             #f
-             #f
-             #f
-             #f
-             (job-result-time result)
-             link
-             '()))
 
 (define (dummy-table-row-from-hash result-hash status link)
   (define test (hash-ref result-hash 'test))
@@ -445,125 +404,3 @@
      (dummy-table-row-from-hash result-hash status link)]
     ['timeout (dummy-table-row-from-hash result-hash "timeout" link)]
     [_ (error 'get-table-data "unknown result type ~a" status)]))
-
-(define (get-table-data result link)
-  (match-define (job-result command test status time _ _ backend) result)
-  (match status
-    ['success
-     (match-define (improve-result _ _ start targets end _) backend)
-     (define expr-cost (platform-cost-proc (*active-platform*)))
-     (define repr (test-output-repr test))
-
-     ; starting expr analysis
-     (match-define (alt-analysis start-alt start-train-errs start-test-errs) start)
-     (define start-expr (alt-expr start-alt))
-     (define start-train-score (errors-score start-train-errs))
-     (define start-test-score (errors-score start-test-errs))
-     (define start-cost (expr-cost start-expr repr))
-
-     (define target-cost-score
-       (for/list ([target targets])
-         (define target-expr (alt-expr (alt-analysis-alt target)))
-         (define tar-cost (expr-cost target-expr repr))
-         (define tar-score (errors-score (alt-analysis-test-errors target)))
-
-         (list tar-cost tar-score)))
-
-     ; Important to calculate value of status
-     (define best-score
-       (if (null? target-cost-score)
-           target-cost-score
-           (apply min (map second target-cost-score))))
-
-     ; analysis of output expressions
-     (define-values (end-exprs end-train-scores end-test-scores end-costs)
-       (for/lists (l1 l2 l3 l4)
-                  ([result end])
-                  (match-define (alt-analysis alt train-errors test-errors) result)
-                  (values (alt-expr alt)
-                          (errors-score train-errors)
-                          (errors-score test-errors)
-                          (expr-cost (alt-expr alt) repr))))
-
-     ; terribly formatted pareto-optimal frontier
-     (define cost&accuracy
-       (list (list start-cost start-test-score)
-             (list (car end-costs) (car end-test-scores))
-             (map list (cdr end-costs) (cdr end-test-scores) (cdr end-exprs))))
-
-     (define fuzz 0.1)
-     (define end-est-score (car end-train-scores))
-     (define end-score (car end-test-scores))
-     (define status
-       (if (not (null? best-score))
-           (begin
-             (cond
-               [(< end-score (- best-score fuzz)) "gt-target"]
-               [(< end-score (+ best-score fuzz)) "eq-target"]
-               [(> end-score (+ start-test-score fuzz)) "lt-start"]
-               [(> end-score (- start-test-score fuzz)) "eq-start"]
-               [(> end-score (+ best-score fuzz)) "lt-target"]))
-
-           (cond
-             [(and (< start-test-score 1) (< end-score (+ start-test-score 1))) "ex-start"]
-             [(< end-score (- start-test-score 1)) "imp-start"]
-             [(< end-score (+ start-test-score fuzz)) "apx-start"]
-             [else "uni-start"])))
-
-     (struct-copy table-row
-                  (dummy-table-row result status link)
-                  [start-est start-train-score]
-                  [start start-test-score]
-                  [target target-cost-score]
-                  [result-est end-est-score]
-                  [result end-score]
-                  [output (car end-exprs)]
-                  [cost-accuracy cost&accuracy])]
-    ['failure
-     (match-define (list 'exn type _ ...) backend)
-     (define status (if type "error" "crash"))
-     (dummy-table-row result status link)]
-    ['timeout (dummy-table-row result "timeout" link)]
-    [_ (error 'get-table-data "unknown result type ~a" status)]))
-
-(define (unparse-result row #:expr [expr #f] #:description [descr #f])
-  (define vars (table-row-vars row))
-  (define repr (get-representation (table-row-precision row)))
-  (define ctx (context vars repr (map (const repr) vars))) ; TODO: this seems wrong
-  (define expr* (or expr (table-row-output row) (table-row-input row)))
-  (define top
-    (if (table-row-identifier row)
-        (list (table-row-identifier row) vars)
-        (list vars)))
-  `(FPCore ,@top
-           :herbie-status
-           ,(string->symbol (table-row-status row))
-           :herbie-time
-           ,(table-row-time row)
-           :herbie-error-input
-           ([,(*num-points*) ,(table-row-start-est row)] [,(*reeval-pts*) ,(table-row-start row)])
-           :herbie-error-output
-           ([,(*num-points*) ,(table-row-result-est row)] [,(*reeval-pts*) ,(table-row-result row)])
-           ,@(append (for/list ([rec (in-list (table-row-target row))])
-                       (match-define (list cost score) rec)
-                       `(:herbie-error-target ([,(*reeval-pts*) ,(table-row-target row)]))))
-           ,@(if (empty? (table-row-warnings row))
-                 '()
-                 `(:herbie-warnings ,(table-row-warnings row)))
-           :name
-           ,(table-row-name row)
-           ,@(if descr
-                 `(:description ,(~a descr))
-                 '())
-           :precision
-           ,(table-row-precision row)
-           ,@(if (eq? (table-row-pre row) 'TRUE)
-                 '()
-                 `(:pre ,(table-row-pre row)))
-           ,@(if (equal? (table-row-preprocess row) empty)
-                 '()
-                 `(:herbie-preprocess ,(table-row-preprocess row)))
-           ,@(append (for/list ([(target enabled?) (in-dict (table-row-target-prog row))]
-                                #:when enabled?)
-                       `(:alt ,target)))
-           ,(prog->fpcore expr* ctx)))

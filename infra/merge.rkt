@@ -36,7 +36,7 @@
                          #:exists 'replace
                          (curry write-json (profile->json joint-pf))))
 
-(define (merge-reports outdir name . dirs)
+(define (merge-reports outdir . dirs)
   (load-herbie-builtins)
   (define rss
     (filter (conjoin (negate eof-object?) identity)
@@ -48,15 +48,13 @@
                       eof
                       (cons df dir)))))))
   (define dfs (map car rss))
-  (define joint-rs (merge-datafiles dfs #:dirs dirs #:name name))
+  (define joint-rs (merge-datafiles dfs #:dirs dirs))
   (write-datafile (build-path outdir "results.json") joint-rs)
   (copy-file (web-resource "report.html") (build-path outdir "index.html") #t))
 
 (module+ main
-  (define name #f)
-  (command-line #:once-each [("--name") _name "Name for the merged report" (set! name _name)]
-                #:args (outdir . dirs)
-                (apply merge-reports outdir name dirs)
+  (command-line #:args (outdir . dirs)
+                (apply merge-reports outdir dirs)
                 (apply merge-timelines outdir dirs)
                 (apply merge-profiles outdir dirs)
                 (copy-file (web-resource "report.js") (build-path outdir "report.js") #t)

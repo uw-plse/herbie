@@ -9,6 +9,7 @@
          "../syntax/types.rkt"
          "../syntax/sugar.rkt"
          "../syntax/syntax.rkt"
+         "../syntax/platform.rkt"
          "../config.rkt"
          "compiler.rkt"
          "programs.rkt"
@@ -98,8 +99,10 @@
   (define pts
     (for/list ([(pt ex) (in-pcontext pcontext)])
       pt))
+  ; new-sampler returns: (cons (cons val pts) hint)
+  ; Since the sampler does not call rival-analyze, the hint is set to #f
   (define (new-sampler)
-    (cons val (random-ref pts)))
+    (cons (cons val (random-ref pts)) #f))
   (apply mk-pcontext (cdr (batch-prepare-points evaluator new-sampler))))
 
 (define/reset *prepend-arguement-cache* (make-hash))

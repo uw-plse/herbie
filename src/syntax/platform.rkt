@@ -5,18 +5,17 @@
          "../core/programs.rkt"
          "../core/rules.rkt"
          "matcher.rkt"
-         "sugar.rkt"
          "syntax.rkt"
          "types.rkt")
 
 (provide define-platform
-         get-platform
          *active-platform*
          activate-platform!
-         *fp-safe-simplify-rules*
+         platform-simplify-rules
          platform-lifting-rules
          platform-lowering-rules
-         platform-impl-rules
+
+         get-fpcore-impl
          ;; Platform API
          ;; Operator sets
          (contract-out ;; Platforms
@@ -24,7 +23,6 @@
           [platform-name (-> platform? any/c)]
           [platform-reprs (-> platform? (listof representation?))]
           [platform-impls (-> platform? (listof symbol?))]
-          [platform-casts (-> platform? (listof symbol?))]
           [platform-union (-> platform? platform? ... platform?)]
           [platform-intersect (-> platform? platform? ... platform?)]
           [platform-subtract (-> platform? platform? ... platform?)]
@@ -35,13 +33,7 @@
           [platform-cost-proc (-> platform? procedure?)]))
 
 (module+ internals
-  (provide define-platform
-           get-platform
-           register-platform!
-           platform-union
-           platform-intersect
-           platform-subtract
-           platform-filter))
+  (provide register-platform!))
 
 ;;; Platforms describe a set of representations, operator, and constants
 ;;; Herbie should use during its improvement loop. Platforms are just
@@ -68,19 +60,17 @@
 ;; Active platform
 (define *active-platform* (make-parameter #f))
 
-;; Looks up a platform by identifier.
-;; Panics if no platform is found.
-(define (get-platform name)
-  (or (hash-ref platforms name #f)
-      (raise-herbie-error "unknown platform `~a`, found (~a)"
-                          name
-                          (string-join (map ~a (hash-keys platforms)) ", "))))
-
 ;; Loads a platform.
-(define (activate-platform! pform)
-  ; replace the active operator table
-  (clear-active-operator-impls!)
-  (for-each activate-operator-impl! (platform-impls pform)))
+(define (activate-platform! name)
+  (define pform (hash-ref platforms name #f))
+
+  (unless pform
+    (raise-herbie-error "unknown platform `~a`, found (~a)"
+                        name
+                        (string-join (map ~a (hash-keys platforms)) ", ")))
+
+  (*platform-name* name)
+  (*active-platform* pform))
 
 ;; Registers a platform under identifier `name`.
 (define (register-platform! name pform)
@@ -229,10 +219,6 @@
            [_ (oops! "bad syntax")])))]
     [_ (oops! "bad syntax")]))
 
-;; Casts between representations in a platform.
-(define (platform-casts pform)
-  (filter cast-impl? (platform-impls pform)))
-
 ;; Merger for costs.
 (define (merge-cost pform-costs key #:optional? [optional? #f])
   (define costs (map (lambda (h) (hash-ref h key #f)) pform-costs))
@@ -291,71 +277,6 @@
   (make-set-operation (λ (rs . rss)
                         (for/fold ([rs rs]) ([rs0 (in-list rss)])
                           (filter-not (curry set-member? (list->set rs0)) rs)))))
-
-;; Coarse-grained filters on platforms.
-(define ((make-platform-filter repr-supported? op-supported?) pform)
-  (define reprs* (filter repr-supported? (platform-reprs pform)))
-  (define impls*
-    (filter (λ (impl)
-              (define spec (impl-info impl 'spec))
-              (and (andmap op-supported? (ops-in-expr spec))
-                   (repr-supported? (impl-info impl 'otype))
-                   (andmap repr-supported? (impl-info impl 'itype))))
-            (platform-impls pform)))
-  (create-platform #f reprs* impls*))
-
-;; Macro version of `make-platform-filter`.
-(define-syntax (platform-filter stx)
-  (define (oops! why [sub-stx #f])
-    (raise-syntax-error 'platform why stx sub-stx))
-  (syntax-case stx ()
-    [(_ cs ... pform)
-     (let loop ([clauses (syntax->list #'(cs ...))]
-                [repr-filter #f]
-                [op-filter #f])
-       (syntax-case clauses ()
-         [()
-          (with-syntax ([repr-filter repr-filter]
-                        [op-filter op-filter])
-            #'((make-platform-filter (or repr-filter (const #t)) (or op-filter (const #t))) pform))]
-         [(#:representations [reprs ...] rest ...)
-          (begin
-            (when repr-filter
-              (oops! "cannot set both #:representations and #:not-representations"))
-            (loop #'(rest ...)
-                  #'(lambda (r)
-                      (define rs (map get-representation '(reprs ...)))
-                      (set-member? (list->set rs) r))
-                  op-filter))]
-         [(#:not-representations [reprs ...] rest ...)
-          (begin
-            (when repr-filter
-              (oops! "cannot set both #:representations and #:not-representations"))
-            (loop #'(rest ...)
-                  #'(lambda (r)
-                      (define rs (map get-representation '(reprs ...)))
-                      (not (set-member? (list->set rs) r)))
-                  op-filter))]
-         [(#:operators [ops ...] rest ...)
-          (begin
-            (when op-filter
-              (oops! "cannot set both #:operators and #:not-operators"))
-            (loop #'(rest ...)
-                  repr-filter
-                  #'(lambda (r)
-                      (define ops* '(ops ...))
-                      (set-member? (list->set ops*) r))))]
-         [(#:not-operators [ops ...] rest ...)
-          (begin
-            (when op-filter
-              (oops! "cannot set both #:operators and #:not-operators"))
-            (loop #'(rest ...)
-                  repr-filter
-                  #'(lambda (r)
-                      (define ops* '(ops ...))
-                      (not (set-member? (list->set '(ops ...)) r)))))]
-         [_ (oops! "bad syntax")]))]
-    [_ (oops! "bad syntax" stx)]))
 
 ; Implementation cost in a platform.
 (define (platform-impl-cost pform impl)
@@ -452,92 +373,6 @@
                  (define otype (representation-type (impl-info impl 'otype)))
                  (rule name spec-expr impl-expr (map cons vars itypes) otype '(lowering))))))
 
-;; All possible assignments of implementations.
-(define (impl-combinations ops impls)
-  (reap [sow]
-        (let loop ([ops ops]
-                   [assigns '()])
-          (match ops
-            [(? null?) (sow assigns)]
-            [(list 'if rest ...) (loop rest assigns)]
-            [(list (? (curryr assq assigns)) rest ...) (loop rest assigns)]
-            [(list op rest ...)
-             (for ([impl (in-set impls)])
-               (define pattern (cons op (map (lambda _ (gensym)) (operator-info op 'itype))))
-               (when (pattern-match (impl-info impl 'spec) pattern)
-                 (loop rest (cons (cons op impl) assigns))))]))))
-
-;; Attempts to lower a specification to an expression using
-;; a precomputed assignment of operator implementations.
-;; Fails if the result is not well-typed.
-(define (try-lower expr repr op->impl)
-  (let/ec k
-          (define env '())
-          (define expr*
-            (let loop ([expr expr]
-                       [repr repr])
-              (match expr
-                [(? symbol? x) ; variable
-                 (match (dict-ref env x #f)
-                   [#f (set! env (cons (cons x repr) env))]
-                   [(? (curry equal? repr)) (k #f env)]
-                   [_ (void)])
-                 x]
-                ; number
-                [(? number? n) (literal n (representation-name repr))]
-                [(list 'if cond ift iff) ; if expression
-                 (list 'if (loop cond (get-representation 'bool)) (loop ift repr) (loop iff repr))]
-                [(list op args ...) ; application
-                 (define impl (dict-ref op->impl op))
-                 (unless (equal? (impl-info impl 'otype) repr)
-                   (k #f env))
-                 (cons impl (map loop args (impl-info impl 'itype)))])))
-          (define ctx (context (map car env) repr (map cdr env)))
-          (values (and (equal? (repr-of expr* ctx) repr) expr*) env)))
-
-;; Merges two variable -> value mappings.
-;; If any mapping disagrees, the result is `#f`.
-(define (merge-envs env1 env2)
-  (let/ec k
-          (for/fold ([env env1]) ([(x ty) (in-dict env2)])
-            (match (dict-ref env x #f)
-              [#f (cons (cons x ty) env)]
-              [(? (curry equal? ty)) env]
-              [_ (k #f)]))))
-
-;; Synthesizes impl-to-impl rules for a given platform.
-;; If a rule is over implementations, filters by supported implementations.
-;; If a rule is over real operators, instantiates for every
-;; possible implementation assignment.
-(define (platform-impl-rules rules [pform (*active-platform*)])
-  (define impls (list->seteq (platform-impls pform)))
-  (reap [sow]
-        (for ([ru (in-list rules)])
-          (match-define (rule name input output _ otype tags) ru)
-          (cond
-            [(representation? otype) ; rule over representation
-             (define ops (append (ops-in-expr input) (ops-in-expr output)))
-             (when (andmap (lambda (op) (or (eq? op 'if) (set-member? impls op))) ops)
-               (sow ru))]
-            [else ; rules over types
-             (define ops (append (ops-in-expr input) (ops-in-expr output)))
-             (define isubsts (impl-combinations ops impls))
-             (for* ([isubst (in-list isubsts)]
-                    [repr (in-list (platform-reprs pform))]
-                    #:when (equal? (representation-type repr) otype))
-               (define-values (input* ienv) (try-lower input repr isubst))
-               (define-values (output* oenv) (try-lower output repr isubst))
-               (when (and input* output*)
-                 (define itypes* (merge-envs ienv oenv))
-                 (when itypes*
-                   (define name*
-                     (string->symbol
-                      (format "~a-~a-~a"
-                              name
-                              (representation-name repr)
-                              (string-join (map (lambda (subst) (~a (cdr subst))) isubst) "-"))))
-                   (sow (rule name* input* output* itypes* repr tags)))))]))))
-
 (define (expr-otype expr)
   (match expr
     [(? number?) #f]
@@ -592,7 +427,7 @@
     [`(,impl ,args ...)
      (and (set-member? (platform-impls (*active-platform*)) impl) (andmap impls-supported? args))]))
 
-(define (*fp-safe-simplify-rules*)
+(define (platform-simplify-rules)
   (reap [sow]
         (for ([impl (in-list (platform-impls (*active-platform*)))])
           (define rules (impl-info impl 'identities))
@@ -613,7 +448,7 @@
                          (for/hash ([binding (in-list var-types)])
                            (values (car binding) (cdr binding)))
                          (impl-info impl 'otype)
-                         '(fp-safe)))
+                         '()))
                  (sow r))]
               [(list 'commutes name expr rev-expr)
                (when (impls-supported? expr)
@@ -627,7 +462,7 @@
                          (for/hash ([v (in-list vars)])
                            (values v itype))
                          otype
-                         '(fp-safe))) ; Commutes by definition the types are matching
+                         '())) ; Commutes by definition the types are matching
                  (sow r))]
               [(list 'directed name lhs rhs)
                (when (and (impls-supported? lhs) (impls-supported? rhs))
@@ -649,5 +484,49 @@
                          (for/hash ([binding (in-list var-types)])
                            (values (car binding) (cdr binding)))
                          (impl-info impl 'otype)
-                         '(fp-safe)))
+                         '()))
                  (sow r))])))))
+
+;; Extracts the `fpcore` field of an operator implementation
+;; as a property dictionary and expression.
+(define (impl->fpcore impl)
+  (match (impl-info impl 'fpcore)
+    [(list '! props ... body) (values (props->dict props) body)]
+    [body (values '() body)]))
+
+;; For a given FPCore operator, rounding context, and input representations,
+;; finds the best operator implementation. Panics if none can be found.
+(define/contract (get-fpcore-impl op prop-dict ireprs)
+  (-> symbol? prop-dict/c (listof representation?) (or/c symbol? #f))
+  ; gather all implementations that have the same spec, input representations,
+  ; and its FPCore translation has properties that are found in `prop-dict`
+  (define impls
+    (reap [sow]
+          (for ([impl (in-list (platform-impls (*active-platform*)))]
+                #:when (equal? ireprs (impl-info impl 'itype)))
+            (define-values (prop-dict* expr) (impl->fpcore impl))
+            (define pattern (cons op (map (lambda (_) (gensym)) ireprs)))
+            (when (and (subset? prop-dict* prop-dict) (pattern-match pattern expr))
+              (sow impl)))))
+  ; check that we have any matching impls
+  (cond
+    [(null? impls) #f]
+    [else
+     ; we rank implementations and select the highest scoring one
+     (define scores
+       (for/list ([impl (in-list impls)])
+         (define-values (prop-dict* _) (impl->fpcore impl))
+         (define num-matching (count (lambda (prop) (member prop prop-dict*)) prop-dict))
+         (cons num-matching (- (length prop-dict) num-matching))))
+     ; select the best implementation
+     ; sort first by the number of matched properties,
+     ; then tie break on the number of extraneous properties
+     (match-define (list (cons _ best) _ ...)
+       (sort (map cons scores impls)
+             (lambda (x y)
+               (cond
+                 [(> (car x) (car y)) #t]
+                 [(< (car x) (car y)) #f]
+                 [else (> (cdr x) (cdr y))]))
+             #:key car))
+     best]))

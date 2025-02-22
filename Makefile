@@ -42,7 +42,8 @@ minimal-distribution:
 	[ ! -f herbie ] || (raco distribute herbie-compiled herbie && rm herbie)
 
 nightly: install
-	bash infra/nightly.sh reports
+	bash infra/nightly.sh bench/ reports/ --threads 4
+	bash infra/publish.sh upload reports/
 
 upgrade:
 	git pull
@@ -53,19 +54,16 @@ start-server:
 		--demo --public --prefix /demo/ --port 4053 --save-session www/demo/ \
 		--log infra/server.log --quiet 2>&1
 
-hooks:
-	echo "#!/bin/sh" >.git/hooks/pre-commit
-	echo "make fmt" >>.git/hooks/pre-commit
-
 fmt:
 	@raco fmt -i $(shell find egg-herbie/ src/ infra/ -name '*.rkt')
-
-# This rule is run by herbie.uwplse.org on every commit to Github.
-# It does not restart the demo server, but it does pull new static content
-deploy:
-	git -C $(shell ~/uwplse/getdir) pull
 
 herbie.zip herbie.zip.CHECKSUM:
 	raco pkg create src/
 	mv src.zip herbie.zip
 	mv src.zip.CHECKSUM herbie.zip.CHECKSUM
+
+random-file:
+	@find src infra -path '*/compiled/*' -prune \
+		    -o -path 'infra/survey/*' -prune \
+		    -o -type f -print | \
+	sort -R | head -n1

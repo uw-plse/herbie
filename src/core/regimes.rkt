@@ -27,7 +27,7 @@
      (fprintf port "#<option ~a>" (option-split-indices opt)))])
 
 (define (pareto-regimes sorted ctx)
-  (define err-lsts (flip-lists (batch-errors (map alt-expr sorted) (*pcontext*) ctx)))
+  (define err-lsts (batch-errors (map alt-expr sorted) (*pcontext*) ctx))
   (define branches
     (if (null? sorted)
         '()

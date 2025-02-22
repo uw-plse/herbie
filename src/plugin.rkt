@@ -2,6 +2,7 @@
 
 (require "syntax/types.rkt"
          "utils/errors.rkt"
+         "syntax/platform.rkt"
          (submod "syntax/types.rkt" internals)
          (submod "syntax/syntax.rkt" internals)
          (submod "syntax/platform.rkt" internals))
@@ -11,6 +12,8 @@
 (define-syntax-rule (define-ruleset* _ ...)
   (void))
 (define (register-ruleset! . args)
+  (void))
+(define (register-conversion-generator! proc)
   (void))
 
 (provide define-type
@@ -30,9 +33,7 @@
          get-representation
          warn
          define-platform
-         get-platform
          register-platform!
          platform-union
          platform-intersect
-         platform-subtract
-         platform-filter)
+         platform-subtract)

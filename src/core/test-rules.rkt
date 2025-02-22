@@ -10,6 +10,7 @@
          "../syntax/types.rkt"
          "compiler.rkt"
          "rival.rkt"
+         "programs.rkt"
          "sampling.rkt")
 
 (load-herbie-builtins)
@@ -37,9 +38,6 @@
   (define vars (dict-keys env))
   (define itypes (map type->repr (dict-values env)))
   (context vars (type->repr out) itypes))
-
-(define (rule->impl-rules rule)
-  (platform-impl-rules (list rule)))
 
 (define (check-rule-sound test-rule)
   (match-define (rule name p1 p2 env out tags) test-rule)
@@ -94,13 +92,20 @@
                      (match-define (vector v1 v2) (apply prog pt))
                      (check-equal? v1 v2))))
 
+(define (check-platform pform)
+  (define simplify-rules
+    (parameterize ([*active-platform* pform])
+      (platform-simplify-rules)))
+  (for ([rule (in-list simplify-rules)]
+        ; "exact" rules use spec outputs; we don't test those
+        #:unless (spec-prog? (rule-output rule)))
+    (test-case (~a (rule-name rule))
+      (check-rule-fp-safe rule))))
+
 (define (check-rule rule)
   (check-rule-correct rule)
   (when (set-member? (rule-tags rule) 'sound)
-    (check-rule-sound rule))
-  (when (set-member? (rule-tags rule) 'fp-safe)
-    (for ([rule* (rule->impl-rules rule)])
-      (check-rule-fp-safe rule*))))
+    (check-rule-sound rule)))
 
 (module+ main
   (num-test-points (* 100 (num-test-points)))
@@ -114,4 +119,5 @@
 (module+ test
   (for* ([rule (in-list (*rules*))])
     (test-case (~a (rule-name rule))
-      (check-rule rule))))
+      (check-rule rule)))
+  (check-platform (*active-platform*)))

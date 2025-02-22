@@ -60,7 +60,7 @@
   `(div ((class ,(format "timeline-block timeline-~a" type)) [id ,(format "timeline~a" n)])
         (h3 (a ([href ,(format "#timeline~a" n)]) ,(~a type))
             (span ((class "time")) ,(format-time time) " (" ,(format-percent time total-time) ")"))
-        (dl ,@(dict-call curr render-phase-memory 'memory)
+        (dl ,@(dict-call curr render-phase-memory 'memory 'gc-time)
             ,@(dict-call curr render-phase-algorithm 'method)
             ,@(dict-call curr render-phase-locations 'locations)
             ,@(dict-call curr render-phase-accuracy 'accuracy 'oracle 'baseline 'name 'link 'repr)
@@ -317,12 +317,14 @@
               (td ,(~r (apply + (map (curryr altnum 1) '(new fresh picked done))) #:group-sep " "))
               (td ,(~r (apply + (map altnum '(new fresh picked done))) #:group-sep " "))))))))
 
-(define (render-phase-memory mem)
+(define (render-phase-memory mem gc-time)
   (match-define (list live alloc) (car mem))
   `((dt "Memory") (dd ,(~r (/ live (expt 2 20)) #:group-sep " " #:precision '(= 1))
                       "MiB live, "
                       ,(~r (/ alloc (expt 2 20)) #:group-sep " " #:precision '(= 1))
-                      "MiB allocated")))
+                      "MiB allocated; "
+                      ,(format-time gc-time)
+                      " collecting garbage")))
 
 (define (render-phase-error min-error-table)
   (match-define (list min-error repr-name) (car min-error-table))
@@ -540,12 +542,10 @@
   (match-define (report-info date
                              commit
                              branch
-                             hostname
                              seed
                              flags
                              points
                              iterations
-                             note
                              tests
                              merged-cost-accuracy)
     info)
@@ -558,7 +558,6 @@
                            (substring commit 0 8)))
                   " on "
                   ,branch))
-          (tr (th "Hostname:") (td ,hostname " with Racket " ,(version)))
           (tr (th "Seed:") (td ,(~a seed)))
           (tr (th "Parameters:")
               (td ,(~a (*num-points*)) " points for " ,(~a (*num-iterations*)) " iterations"))

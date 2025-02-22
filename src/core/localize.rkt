@@ -27,153 +27,8 @@
            "../syntax/sugar.rkt")
   (load-herbie-builtins))
 
-(provide batch-localize-costs
-         batch-localize-errors
-         compute-local-errors
+(provide compute-local-errors
          local-error-as-tree)
-
-(define (regroup-nested inputss outputs)
-  (match* (inputss outputs)
-    [((cons (cons fhead ftail) rest) (cons head tail))
-     (match-define (cons fout out) (regroup-nested (cons ftail rest) tail))
-     (cons (cons head fout) out)]
-    [((cons '() rest) outputs) (cons '() (regroup-nested rest outputs))]
-    [('() '()) '()]))
-
-(define (fraction-with-odd-denominator? frac)
-  (and (rational? frac) (let ([denom (denominator frac)]) (and (> denom 1) (odd? denom)))))
-
-(define (pow-impl-args impl args)
-  (define vars (impl-info impl 'vars))
-  (match (impl-info impl 'spec)
-    [(list 'pow b e)
-     #:when (set-member? vars e)
-     (define env (map cons vars args))
-     (define b* (dict-ref env b b))
-     (define e* (dict-ref env e e))
-     (cons b* e*)]
-    [_ #f]))
-
-(define (default-cost-proc expr _)
-  (let rec ([expr expr])
-    (match expr
-      [(literal _ _) 1]
-      [(? symbol?) 1]
-      ; approx node
-      [(approx _ impl) (rec impl)]
-      [(list 'if cond ift iff) (+ 1 (rec cond) (rec ift) (rec iff))]
-      [(list (? impl-exists? impl) args ...)
-       (match (pow-impl-args impl args)
-         [(cons _ (literal e _))
-          #:when (fraction-with-odd-denominator? e)
-          +inf.0]
-         [_ (apply + 1 (map rec args))])]
-      [(list _ args ...) (apply + 1 (map rec args))])))
-
-(define (batch-localize-costs exprs ctx)
-  (define subexprss (map all-subexpressions exprs))
-  (define progs (apply append subexprss))
-
-  ; inputs to egg
-  (define reprs (map (lambda (prog) (repr-of prog ctx)) progs))
-  (define rules (*simplify-rules*))
-  (define lifting-rules (platform-lifting-rules))
-  (define lowering-rules (platform-lowering-rules))
-
-  ; egg runner (2-phases for real rewrites and implementation selection)
-  (define batch (progs->batch progs))
-  (define runner
-    (make-egg-runner batch
-                     (batch-roots batch)
-                     reprs
-                     `((,lifting-rules . ((iteration . 1) (scheduler . simple)))
-                       (,rules . ((node . ,(*node-limit*))))
-                       (,lowering-rules . ((iteration . 1) (scheduler . simple))))))
-
-  ; run egg
-  (define simplified
-    (map (compose debatchref last)
-         (simplify-batch runner
-                         (typed-egg-batch-extractor
-                          (if (*egraph-platform-cost*) platform-egg-cost-proc default-egg-cost-proc)
-                          batch))))
-
-  ; run egg
-  (define simplifiedss (regroup-nested subexprss simplified))
-
-  ; build map from starting expr to simplest
-  (define expr->simplest (make-hash))
-  (for ([subexprs (in-list subexprss)]
-        [simplifieds (in-list simplifiedss)]
-        #:when #t
-        [subexpr (in-list subexprs)]
-        [simplified (in-list simplifieds)])
-    (hash-set! expr->simplest subexpr simplified))
-
-  ; platform-based expression cost
-  (define cost-proc
-    (if (*egraph-platform-cost*)
-        (platform-cost-proc (*active-platform*))
-        default-cost-proc))
-  (define (expr->cost expr)
-    (cost-proc expr (repr-of expr ctx)))
-
-  (define (cost-opportunity subexpr children)
-    ; start and end cost of roots
-    (define start-cost (expr->cost subexpr))
-    (define best-cost (expr->cost (hash-ref expr->simplest subexpr)))
-    ; start and end cost of children
-    (define start-child-costs (map expr->cost children))
-    (define best-child-costs
-      (for/list ([child (in-list children)])
-        (expr->cost (hash-ref expr->simplest child))))
-    (unless (>= start-cost best-cost)
-      (error 'cost-opportunity
-             "Initial expression ~a is better than final expression ~a\n"
-             subexpr
-             (hash-ref expr->simplest subexpr)))
-
-    ; Cost opportunity would normally be:
-    ;   (start cost - start child costs) - (best cost - best child costs)
-    ; However, we rearrange to handle infinities:
-    (define a (apply + start-cost best-child-costs))
-    (define b (apply + best-cost start-child-costs))
-    (if (= a b)
-        0
-        (- a b))) ; This `if` statement handles `inf - inf`
-
-  ; rank subexpressions by cost opportunity
-  (define localize-costss
-    (for/list ([subexprs (in-list subexprss)])
-      (sort (reap [sow]
-                  (for ([subexpr (in-list subexprs)])
-                    (match subexpr
-                      [(? literal?) (void)]
-                      [(? symbol?) (void)]
-                      [(approx _ impl)
-                       (define cost-opp (cost-opportunity subexpr (list impl)))
-                       (sow (cons cost-opp subexpr))]
-                      [(list _ args ...)
-                       (define cost-opp (cost-opportunity subexpr args))
-                       (sow (cons cost-opp subexpr))])))
-            >
-            #:key car)))
-
-  localize-costss)
-
-(define (batch-localize-errors exprs ctx)
-  (define subexprss (map all-subexpressions exprs))
-  (define errss (compute-local-errors subexprss ctx))
-
-  (for/list ([_ (in-list exprs)]
-             [errs (in-list errss)])
-    (sort (sort (for/list ([(subexpr err) (in-hash errs)]
-                           #:when (or (list? subexpr) (approx? subexpr)))
-                  (cons err subexpr))
-                expr<?
-                #:key cdr)
-          >
-          #:key (compose errors-score car))))
 
 ;; The local error of an expression f(x, y) is
 ;;
@@ -369,12 +224,14 @@
     (define exact-error (~s (translate-booleans (first (hash-ref data 'exact-values)))))
     (define actual-error (~s (translate-booleans (first (hash-ref data 'approx-values)))))
     (define percent-accurate
-      (if (nan? (first (hash-ref data 'absolute-error)))
-          'invalid ; HACK: should specify if invalid or unsamplable
-          (let* ([repr (repr-of expr ctx)]
-                 [total-bits (representation-total-bits repr)]
-                 [bits-error (ulps->bits (first (hash-ref data 'ulp-errs)))])
-            (* 100 (- 1 (/ bits-error total-bits))))))
+      (cond
+        [(nan? (first (hash-ref data 'absolute-error)))
+         'invalid] ; HACK: should specify if invalid or unsamplable
+        [else
+         (define repr (repr-of expr ctx))
+         (define total-bits (representation-total-bits repr))
+         (define bits-error (ulps->bits (first (hash-ref data 'ulp-errs))))
+         (* 100 (- 1 (/ bits-error total-bits)))]))
     (hasheq 'ulps-error
             ulp-error
             'avg-error

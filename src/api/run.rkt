@@ -15,8 +15,7 @@
          "server.rkt")
 
 (provide make-report
-         rerun-report
-         diff-report)
+         rerun-report)
 
 (define (extract-test row)
   (define vars (table-row-vars row))
@@ -37,18 +36,18 @@
           (cons k (representation-name v)))
         (table-row-conversions row)))
 
-(define (make-report bench-dirs #:dir dir #:note note #:threads threads)
+(define (make-report bench-dirs #:dir dir #:threads threads)
   (define tests (reverse (sort (append-map load-tests bench-dirs) test<?)))
-  (run-tests tests #:dir dir #:note note #:threads threads))
+  (run-tests tests #:dir dir #:threads threads))
 
-(define (rerun-report json-file #:dir dir #:note note #:threads threads)
+(define (rerun-report json-file #:dir dir #:threads threads)
   (define data (call-with-input-file json-file read-datafile))
   (define tests (map extract-test (report-info-tests data)))
   (*flags* (report-info-flags data))
   (set-seed! (report-info-seed data))
   (*num-points* (report-info-points data))
   (*num-iterations* (report-info-iterations data))
-  (run-tests tests #:dir dir #:note note #:threads threads))
+  (run-tests tests #:dir dir #:threads threads))
 
 (define (read-json-files info dir name)
   (filter identity
@@ -64,8 +63,7 @@
 (define (merge-profile-jsons ps)
   (profile->json (apply profile-merge (map json->profile (dict-values ps)))))
 
-(define (generate-bench-report job-id bench-name test-number dir number-of-test)
-  (define result (wait-for-job job-id))
+(define (generate-bench-report result bench-name test-number dir total-tests)
   (define report-path (bench-folder-path bench-name test-number))
   (define report-directory (build-path dir report-path))
   (unless (directory-exists? report-directory)
@@ -80,32 +78,26 @@
                                (make-page page out result #t #f)))))
 
   (define table-data (get-table-data-from-hash result report-path))
-  (print-test-result (+ test-number 1) number-of-test table-data)
+  (print-test-result (+ test-number 1) total-tests table-data)
   table-data)
 
-(define (run-tests tests #:dir dir #:note note #:threads threads)
+(define (run-tests tests #:dir dir #:threads threads)
   (define seed (get-seed))
   (unless (directory-exists? dir)
     (make-directory dir))
 
   (start-job-server threads)
-  (define-values (job-ids bench-names)
-    (for/lists
-     (l1 l2)
-     ([test (in-list tests)])
-     (values
-      (start-job
-       (create-job 'improve test #:seed seed #:pcontext #f #:profile? #f #:timeline-disabled? #f))
-      (test-name test))))
+  (define job-ids
+    (for/list ([test (in-list tests)])
+      (start-job 'improve test #:seed seed #:pcontext #f #:profile? #t #:timeline-disabled? #f)))
 
-  (define info
-    (make-report-info (for/list ([job-id job-ids]
-                                 [bench-name bench-names]
-                                 [test-number (in-naturals 0)])
-                        (generate-bench-report job-id bench-name test-number dir (length tests)))
-                      #:seed seed
-                      #:note note))
+  (define results
+    (for/list ([job-id (in-list job-ids)]
+               [test (in-list tests)]
+               [test-number (in-naturals)])
+      (generate-bench-report (wait-for-job job-id) (test-name test) test-number dir (length tests))))
 
+  (define info (make-report-info results #:seed seed))
   (write-datafile (build-path dir "results.json") info)
   (copy-file (web-resource "report-page.js") (build-path dir "report-page.js") #t)
   (copy-file (web-resource "report.js") (build-path dir "report.js") #t)
@@ -140,12 +132,6 @@
     [(and (not (test-output t1)) (not (test-output t2))) (string<? (test-name t1) (test-name t2))]
     ; Put things with an output first
     [else (test-output t1)]))
-
-(define (diff-report old new)
-  (define df
-    (diff-datafiles (call-with-input-file (build-path old "results.json") read-datafile)
-                    (call-with-input-file (build-path new "results.json") read-datafile)))
-  (copy-file (web-resource "report.html") (build-path new "index.html") #t))
 
 ;; Generate a path for a given benchmark name
 (define (bench-folder-path bench-name index)

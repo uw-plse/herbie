@@ -15,7 +15,7 @@
 (define (all-pages result-hash)
   (define good? (eq? (hash-ref result-hash 'status) 'success))
   (define default-pages '("graph.html" "timeline.html" "timeline.json"))
-  (define success-pages '("points.json"))
+  (define success-pages '("points.json" "profile.json"))
   (append default-pages (if good? success-pages empty)))
 
 (define ((page-error-handler result-hash page out) e)
@@ -40,6 +40,7 @@
                                 #:path "..")
                  out)]
     ["timeline.json" (write-json (hash-ref result-hash 'timeline) out)]
+    ["profile.json" (write-json (hash-ref result-hash 'profile) out)]
     ["points.json" (write-json (make-points-json result-hash) out)]))
 
 (define (make-graph-html result-hash output? profile?)

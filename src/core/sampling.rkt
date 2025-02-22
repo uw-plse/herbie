@@ -66,21 +66,24 @@
 (module+ test
   (define rand-list
     (let loop ([current 0])
-      (if (> current 200)
-          empty
-          (let ([r (+ current (random-integer 1 10))]) (cons r (loop r))))))
+      (cond
+        [(> current 200) empty]
+        [else
+         (define r (+ current (random-integer 1 10)))
+         (cons r (loop r))])))
   (define arr (list->vector rand-list))
   (for ([i (range 0 20)])
     (define max-num (vector-ref arr (- (vector-length arr) 1)))
     (define search-for (random-integer 0 max-num))
     (define search-result (binary-search arr search-for))
     (check-true (> (vector-ref arr search-result) search-for))
-    (when (> search-result 0)
+    (when (positive? search-result)
       (check-true (<= (vector-ref arr (- search-result 1)) search-for)))))
 
-(define (make-hyperrect-sampler hyperrects* reprs)
+(define (make-hyperrect-sampler hyperrects* hints* reprs)
   (when (null? hyperrects*)
     (raise-herbie-sampling-error "No valid values." #:url "faq.html#no-valid-values"))
+  (define hints (list->vector hints*))
   (define hyperrects (list->vector hyperrects*))
   (define lo-ends
     (for/vector #:length (vector-length hyperrects)
@@ -98,15 +101,19 @@
             ((representation-bf->repr repr) (ival-hi interval)))))))
   (define weights (partial-sums (vector-map (curryr hyperrect-weight reprs) hyperrects)))
   (define weight-max (vector-ref weights (- (vector-length weights) 1)))
+
+  ;; returns (cons (listof pts) hint)
   (λ ()
     (define rand-ordinal (random-integer 0 weight-max))
     (define idx (binary-search weights rand-ordinal))
     (define los (vector-ref lo-ends idx))
     (define his (vector-ref hi-ends idx))
-    (for/list ([lo (in-list los)]
-               [hi (in-list his)]
-               [repr (in-list reprs)])
-      ((representation-ordinal->repr repr) (random-integer lo hi)))))
+    (define hint (vector-ref hints idx))
+    (cons (for/list ([lo (in-list los)]
+                     [hi (in-list his)]
+                     [repr (in-list reprs)])
+            ((representation-ordinal->repr repr) (random-integer lo hi)))
+          hint)))
 
 #;(module+ test
     (define two-point-hyperrects (list (list (ival (bf 0) (bf 0)) (ival (bf 1) (bf 1)))))
@@ -115,7 +122,7 @@
                         ((make-hyperrect-sampler two-point-hyperrects (list repr repr))))))
 
 (define (make-sampler compiler)
-  (match-define (real-compiler pre vars var-reprs _ reprs _) compiler)
+  (match-define (real-compiler pre vars var-reprs _ reprs _ _) compiler)
   (cond
     [(and (flag-set? 'setup 'search)
           (not (empty? var-reprs))
@@ -123,12 +130,14 @@
             (equal? (representation-type repr) 'real)))
      (timeline-push! 'method "search")
      (define hyperrects-analysis (precondition->hyperrects pre vars var-reprs))
-     (match-define (cons hyperrects sampling-table)
+     ; hints-hyperrects is a (listof '(hint hyperrect))
+     (match-define (list hyperrects hints sampling-table)
        (find-intervals compiler hyperrects-analysis #:fuel (*max-find-range-depth*)))
-     (cons (make-hyperrect-sampler hyperrects var-reprs) sampling-table)]
+     (cons (make-hyperrect-sampler hyperrects hints var-reprs) sampling-table)]
     [else
      (timeline-push! 'method "random")
-     (cons (λ () (map random-generate var-reprs)) (hash 'unknown 1.0))]))
+     ; sampler return false hint since rival-analyze has not been called in random method
+     (cons (λ () (cons (map random-generate var-reprs) #f)) (hash 'unknown 1.0))]))
 
 ;; Returns an evaluator for a list of expressions.
 (define (eval-progs-real specs ctxs)
@@ -156,9 +165,8 @@
                [skipped 0]
                [points '()]
                [exactss '()])
-      (define pt (sampler))
-
-      (define-values (status exs) (real-apply compiler pt))
+      (match-define (cons pt hint) (sampler))
+      (define-values (status exs) (real-apply compiler pt hint))
       (case status
         [(exit)
          (warn 'ground-truth
