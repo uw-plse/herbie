@@ -281,7 +281,7 @@
                (list (header #"X-Job-Count" (string->bytes/utf-8 (~a (job-count))))
                      (header #"X-Herbie-Job-ID" (string->bytes/utf-8 job-id))
                      (header #"Access-Control-Allow-Origin" (string->bytes/utf-8 "*")))
-               (λ (out) `()))]
+               (λ (out) (append)))]
     [job-result
      (response 201
                #"Job complete"
@@ -396,7 +396,7 @@
                (list (header #"X-Job-Count" (string->bytes/utf-8 (~a (job-count))))
                      (header #"X-Herbie-Job-ID" (string->bytes/utf-8 job-id))
                      (header #"Access-Control-Allow-Origin" (string->bytes/utf-8 "*")))
-               (λ (out) `()))]
+               (λ (out) (append)))]
     [job-result
      (response 201
                #"Job complete"

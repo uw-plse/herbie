@@ -374,20 +374,21 @@
      (define end-est-score (car end-train-scores))
      (define end-score (car end-test-scores))
      (define status
-       (if (not (null? best-score))
-           (begin
-             (cond
-               [(< end-score (- best-score fuzz)) "gt-target"]
-               [(< end-score (+ best-score fuzz)) "eq-target"]
-               [(> end-score (+ start-test-score fuzz)) "lt-start"]
-               [(> end-score (- start-test-score fuzz)) "eq-start"]
-               [(> end-score (+ best-score fuzz)) "lt-target"]))
-
-           (cond
-             [(and (< start-test-score 1) (< end-score (+ start-test-score 1))) "ex-start"]
-             [(< end-score (- start-test-score 1)) "imp-start"]
-             [(< end-score (+ start-test-score fuzz)) "apx-start"]
-             [else "uni-start"])))
+       (cond
+         [(not (null? best-score))
+          (cond
+            [(< end-score (- best-score fuzz)) "gt-target"]
+            [(< end-score (+ best-score fuzz)) "eq-target"]
+            [(> end-score (+ start-test-score fuzz)) "lt-start"]
+            [(> end-score (- start-test-score fuzz)) "eq-start"]
+            [(> end-score (+ best-score fuzz)) "lt-target"])]
+       
+         [else
+          (cond
+            [(and (< start-test-score 1) (< end-score (+ start-test-score 1))) "ex-start"]
+            [(< end-score (- start-test-score 1)) "imp-start"]
+            [(< end-score (+ start-test-score fuzz)) "apx-start"]
+            [else "uni-start"])]))
 
      (struct-copy table-row
                   (dummy-table-row-from-hash result-hash status link)
